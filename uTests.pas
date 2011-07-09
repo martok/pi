@@ -230,7 +230,7 @@ end;
 procedure TMathSysTest.TestContexts;
 var cnst: IExpression;
 begin
-  BeginGroup('Contexts - TBD');
+  BeginGroup('Contexts');
   try
     cnst:= TE_ConstantN.Create(42.000);
     BeginGroup('Define 1');
@@ -270,7 +270,7 @@ end;
 
 procedure TMathSysTest.TestFunctions;
 begin
-  BeginGroup('Functions - TBD');
+  BeginGroup('Functions');
   try
     BeginGroup('Numeric');
       BeginGroup('Abs');
