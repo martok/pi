@@ -460,6 +460,7 @@ var p: Integer;
       CharBraceOpen: begin
         bd := blindParse(CharBraceOpen, CharBraceClose);
         into:= Parse(bd);
+        pSpace;
         exit;
       end;
       'a'..'z','A'..'Z','_': mode:= tmVarname;
