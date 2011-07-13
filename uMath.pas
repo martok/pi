@@ -38,8 +38,8 @@ type
     constructor Create;
     destructor Destroy; override;
     function Parse(const Expr: String): IExpression;
-    procedure Run(const Expr: String);
     function Eval(const Expr: String): TValue;
+    procedure Run(const Expr: String);
     property Context: TContext read FContext;
     property Constants: TContext read FConstants;
     property Output: TOutput read FOutput;
@@ -387,7 +387,7 @@ end;
 function TMathSystem.Parse(const Expr: String): IExpression;
 const
   CharsSpace = [' ',#9];
-  CharsNum   = ['0'..'9','.','e','E','-'];
+  CharsNum   = ['0'..'9'];
   CharsAlpha = ['a'..'z','A'..'Z','_'];
   CharsAlphaNum = CharsAlpha + CharsNum;
 
@@ -450,12 +450,16 @@ var p: Integer;
   end;
 
   procedure parseTerm(var into: IExpression);
-  var mode: (tmNumber, tmString, tmVarname);
+  var mode: (tmNumberSign, tmNumber, tmNumberDecimals, tmNumberExponentSign, tmNumberExponent,
+             tmString,
+             tmVarname);
       data, bd: string;
       b: PChar;
   begin
     case Expr[p] of
-      '0'..'9','-': mode:= tmNumber;
+      '0'..'9': mode:= tmNumber;
+      '-': mode:= tmNumberSign;
+      '.': mode:= tmNumberDecimals;
       CharQuote: mode:= tmString;
       CharBraceOpen: begin
         bd := blindParse(CharBraceOpen, CharBraceClose);
@@ -474,16 +478,58 @@ var p: Integer;
 
     while p<=Length(Expr) do begin
       case mode of
+        tmNumberSign:
+          if Expr[p] in ['0'..'9'] then begin
+            data:= data + Expr[p];
+            mode:= tmNumber;
+          end else
+            break;
         tmNumber:
-          if Expr[p] in CharsNum then
+          if Expr[p] in ['0'..'9'] then
             data:= data + Expr[p]
           else
-            Break;
-        tmString:
-          if (Expr[p-1] = CharQuote) and (Expr[p]<>CharQuote) then
-            break
-          else
+          if Expr[p]=NeutralFormatSettings.DecimalSeparator then begin
             data:= data + Expr[p];
+            mode:= tmNumberDecimals;
+          end else
+          if Expr[p] in ['e','E'] then begin
+            data:= data + Expr[p];
+            mode:= tmNumberExponentSign;
+          end else
+            break;
+        tmNumberDecimals:
+          if Expr[p] in ['0'..'9'] then
+            data:= data + Expr[p]
+          else
+          if Expr[p] in ['e','E'] then begin
+            data:= data + Expr[p];
+            mode:= tmNumberExponentSign;
+          end else
+            break;
+        tmNumberExponentSign: begin
+          if Expr[p] in ['0'..'9','-'] then begin
+            data:= data + Expr[p];
+            mode:= tmNumberExponent;
+          end else
+            break;
+          end;
+        tmNumberExponent:
+          if Expr[p] in ['0'..'9'] then
+            data:= data + Expr[p]
+          else
+            break;
+
+        tmString:
+          if (Expr[p]<>CharQuote) then
+            data:= data + Expr[p]
+          else begin
+            data:= data + Expr[p];
+            inc(p);
+            if (p<=length(Expr)) and (Expr[p]=CharQuote) then
+              data:= data + Expr[p]
+            else
+              break;
+          end;
         tmVarname:
           if Expr[p] in CharsAlphaNum then
             data:= data + Expr[p]
@@ -494,7 +540,8 @@ var p: Integer;
     end;
 
     case mode of
-      tmNumber: into:= TE_ConstantN.Create(StrToFloat(data, NeutralFormatSettings));
+      tmNumberSign, tmNumber, tmNumberDecimals, tmNumberExponentSign, tmNumberExponent:
+        into:= TE_ConstantN.Create(StrToFloat(data, NeutralFormatSettings));
       tmString: begin
         b:= PChar(data);
         into:= TE_ConstantS.Create(AnsiExtractQuotedStr(b,CharQuote))
@@ -609,7 +656,7 @@ begin
             PS:= psRHS;
             if Expressions[op].Unary then begin
               if lhs<>nil then
-                raise EMathSysError.CreateFmt('Unaray operator %s was given an LHS!',[Expressions[op].Infix]);
+                raise EMathSysError.CreateFmt('Unary operator %s was given an LHS!',[Expressions[op].Infix]);
             end;
           end;
         if op<0 then
