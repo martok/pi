@@ -7,7 +7,7 @@ uses
   Dialogs, uMath, StdCtrls, ExtCtrls, ActnList, ToolWin, ComCtrls, ImgList;
 
 type
-  TForm1 = class(TForm)
+  TfmPiMain = class(TForm)
     Memo1: TMemo;
     Panel1: TPanel;
     Panel2: TPanel;
@@ -40,7 +40,7 @@ type
   end;
 
 var
-  Form1: TForm1;
+  fmPiMain: TfmPiMain;
 
 implementation
 
@@ -48,7 +48,7 @@ uses uTests;
 
 {$R *.dfm}
 
-procedure TForm1.FormCreate(Sender: TObject);
+procedure TfmPiMain.FormCreate(Sender: TObject);
 begin
   MathS:= TMathSystem.Create;
   MathS.Output.Memo:= Memo1;
@@ -56,12 +56,12 @@ begin
   cbInput.Clear;
 end;
 
-procedure TForm1.FormDestroy(Sender: TObject);
+procedure TfmPiMain.FormDestroy(Sender: TObject);
 begin
   FreeAndNil(MathS);
 end;
 
-procedure TForm1.UpdateContext;
+procedure TfmPiMain.UpdateContext;
 var ct:TContext;
     i, j: integer;
 begin
@@ -77,13 +77,13 @@ begin
   end;
 end;
 
-procedure TForm1.FormShow(Sender: TObject);
+procedure TfmPiMain.FormShow(Sender: TObject);
 begin
   UpdateContext;
   cbInput.SetFocus;
 end;
 
-procedure TForm1.cbInputKeyPress(Sender: TObject; var Key: Char);
+procedure TfmPiMain.cbInputKeyPress(Sender: TObject; var Key: Char);
 begin
   if Key=#13 then begin
     Key:= #0;
@@ -91,7 +91,7 @@ begin
   end;
 end;
 
-procedure TForm1.acRunCmdExecute(Sender: TObject);
+procedure TfmPiMain.acRunCmdExecute(Sender: TObject);
 var f: string;
 begin
   try
@@ -109,12 +109,12 @@ begin
   UpdateContext;
 end;
 
-procedure TForm1.acExitExecute(Sender: TObject);
+procedure TfmPiMain.acExitExecute(Sender: TObject);
 begin
   Close;
 end;
 
-procedure TForm1.acRunTestExecute(Sender: TObject);
+procedure TfmPiMain.acRunTestExecute(Sender: TObject);
 var testsys: TMathSysTest;
 begin
   testsys:= TMathSysTest.Create(Memo1);

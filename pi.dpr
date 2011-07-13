@@ -3,7 +3,7 @@ program pi;
 uses
   FastMM4,
   Forms,
-  uMain in 'uMain.pas' {Form1},
+  uMain in 'uMain.pas' {fmPiMain},
   uMath in 'uMath.pas',
   uTests in 'uTests.pas';
 
@@ -12,6 +12,6 @@ uses
 begin
   fastmm4.ReportMemoryLeaksOnShutdown:= True;
   Application.Initialize;
-  Application.CreateForm(TForm1, Form1);
+  Application.CreateForm(TfmPiMain, fmPiMain);
   Application.Run;
 end.
