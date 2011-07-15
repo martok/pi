@@ -95,6 +95,8 @@ object fmPiMain: TfmPiMain
       Top = 3
       Width = 856
       Height = 24
+      AutoComplete = False
+      AutoDropDown = True
       Anchors = [akLeft, akTop, akRight, akBottom]
       ItemHeight = 16
       TabOrder = 0
