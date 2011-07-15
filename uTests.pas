@@ -46,7 +46,7 @@ end;
 
 procedure TMathSysTest.BeginGroup(Name: string);
 begin
-  Sys.Output.LineOut(FIndent + 'Begin: ' + Name);
+  Sys.Output.Hint(FIndent + 'Begin: ' + Name,[]);
   FIndent:= FIndent + '  ';
 end;
 

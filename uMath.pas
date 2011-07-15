@@ -48,9 +48,10 @@ type
   TOutput = class
   private
     FMemo: TMemo;
+    procedure LineOut(const Line: string);
   public
     constructor Create;
-    procedure LineOut(const Line: string);
+    procedure Input(const Line: string);
     procedure Hint(const Line: string; Params: array of const);
     procedure Error(const Line: string; Params: array of const);
     procedure Result(const Line: string);
@@ -706,6 +707,11 @@ end;
 procedure TOutput.Result(const Line: string);
 begin
   LineOut(Line);
+end;
+
+procedure TOutput.Input(const Line: string);
+begin
+  LineOut('> '+Line);
 end;
 
 { TContext }

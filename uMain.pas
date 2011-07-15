@@ -96,7 +96,7 @@ var f: string;
 begin
   try
     f:= cbInput.Text;
-    MathS.Output.LineOut('> '+f);
+    MathS.Output.Input(f);
     MathS.Run(f);
     cbInput.Text:= '';
     if cbInput.Items.IndexOf(f)>=0 then
@@ -104,7 +104,7 @@ begin
     cbInput.Items.Insert(0,f);
   except
     on e: Exception do
-      MathS.Output.LineOut(e.ClassName+': '+e.Message);
+      MathS.Output.Error('%s: %s',[e.ClassName, e.Message]);
   end;
   UpdateContext;
 end;
