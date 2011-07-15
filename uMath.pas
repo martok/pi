@@ -72,6 +72,7 @@ type
     property Parent: TContext read FParent;
     property System : TMathSystem read FSystem; 
     procedure Define(const Name: string; Expression: IExpression);
+    procedure DefineValue(const Name: string; Value: TValue);
     procedure Undefine(const Name: string);
     function Definition(const Name: string): IExpression;
     function Value(const Name: string): TValue;
@@ -378,7 +379,10 @@ begin
       vtUnassigned: ;
       vtNull: ;
     else
-      Output.Result(re.GetString);
+      begin
+        Output.Result(re.GetString);
+        Context.DefineValue('ans',re);
+      end;
     end;
   except
     on e: EMathSysError do
@@ -761,7 +765,9 @@ begin
     intf:= IExpression(Pointer(FExpressions.Objects[i]));
     intf._Release;
     FExpressions.Objects[i]:= TObject(Expression);
-    FSystem.Output.Hint('Reassigned Variable: %s',[Name]);
+    // only warn on non-system variables
+    if not SameText(Name,'ans') then
+      FSystem.Output.Hint('Reassigned Variable: %s',[Name]);
   end else
     FExpressions.AddObject(Name,TObject(Expression));
   Expression._AddRef;
@@ -816,6 +822,20 @@ begin
   Result:= FExpressions[Index];
 end;
 
+
+procedure TContext.DefineValue(const Name: string; Value: TValue);
+var expr: IExpression;
+begin
+  expr:= nil;
+  case Value.ValueType of
+    vtUnassigned,
+    vtNull:;
+    vtNumber: expr:= TE_ConstantN.Create(Value.GetNumber);
+    vtString: expr:= TE_ConstantS.Create(Value.GetString);
+  end;
+  if Assigned(expr) then
+    Define(Name,expr);
+end;
 
 { TExpression }
 
@@ -1174,15 +1194,10 @@ end;
 function TE_AssignmentStatic.Evaluate(Context: TContext): TValue;
 var name: string;
     v: TValue;
-    ex: IExpression;
 begin
   name:= (LHS.GetObject as TE_ExprRef).FName;
   v:= RHS.Evaluate(Context);
-  if v.ValueType=vtNumber then
-    ex:= TE_ConstantN.Create(v.GetNumber)
-  else
-    ex:= TE_ConstantS.Create(v.GetString);
-  Context.Define(name, ex);
+  Context.DefineValue(name, v);
 end;
 
 
