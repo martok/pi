@@ -372,15 +372,15 @@ var re: TValue;
 begin
   try
     re:= Eval(Expr);
+    case re.ValueType of
+      vtUnassigned: ;
+      vtNull: ;
+    else
+      Output.Result(re.GetString);
+    end;
   except
     on e: EMathSysError do
       Output.Error(E.Message,[]);
-  end;
-  case re.ValueType of
-    vtUnassigned: ;
-    vtNull: ;
-  else
-    Output.Result(re.GetString);
   end;
 end;
 
