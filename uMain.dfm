@@ -26,18 +26,6 @@ object fmPiMain: TfmPiMain
     Beveled = True
     ResizeStyle = rsUpdate
   end
-  object Memo1: TMemo
-    Left = 0
-    Top = 0
-    Width = 645
-    Height = 583
-    Align = alClient
-    Lines.Strings = (
-      'Memo1')
-    ScrollBars = ssVertical
-    TabOrder = 0
-    WordWrap = False
-  end
   object Panel1: TPanel
     Left = 648
     Top = 0
@@ -45,7 +33,7 @@ object fmPiMain: TfmPiMain
     Height = 583
     Align = alRight
     BevelOuter = bvNone
-    TabOrder = 1
+    TabOrder = 0
     object lbContext: TListBox
       Left = 0
       Top = 0
@@ -98,7 +86,7 @@ object fmPiMain: TfmPiMain
     Height = 30
     Align = alBottom
     BevelOuter = bvNone
-    TabOrder = 2
+    TabOrder = 1
     DesignSize = (
       862
       30)
@@ -113,6 +101,18 @@ object fmPiMain: TfmPiMain
       Text = 'cbInput'
       OnKeyPress = cbInputKeyPress
     end
+  end
+  object reOutput: TRichEdit
+    Left = 0
+    Top = 0
+    Width = 645
+    Height = 583
+    Align = alClient
+    Lines.Strings = (
+      'reOutput')
+    ReadOnly = True
+    ScrollBars = ssVertical
+    TabOrder = 2
   end
   object ActionList1: TActionList
     Images = ilButtons

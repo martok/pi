@@ -2,7 +2,8 @@ unit uMath;
 
 interface
 
-uses SysUtils, Classes, IniFiles, StdCtrls, Variants, Math, Windows, TypInfo;
+uses SysUtils, Classes, IniFiles, ComCtrls, Variants, Math, Windows, TypInfo,
+     Messages, Graphics;
 
 type
   TValueType = (vtUnassigned, vtNull, vtNumber, vtString);
@@ -47,15 +48,15 @@ type
 
   TOutput = class
   private
-    FMemo: TMemo;
-    procedure LineOut(const Line: string);
+    FRender: TRichEdit;
+    procedure LineOut(const Line: string; Indent: integer; Color: TColor; Style: TFontStyles);
   public
     constructor Create;
     procedure Input(const Line: string);
     procedure Hint(const Line: string; Params: array of const);
     procedure Error(const Line: string; Params: array of const);
     procedure Result(const Line: string);
-    property Memo : TMemo read FMemo write FMemo;
+    property Render : TRichEdit read FRender write FRender;
   end;
 
   TContext = class
@@ -685,33 +686,51 @@ end;
 constructor TOutput.Create;
 begin
   inherited;
-  FMemo:= nil;
+  FRender:= nil;
 end;
 
-procedure TOutput.LineOut(const Line: string);
+procedure TOutput.LineOut(const Line: string; Indent: integer; Color: TColor; Style: TFontStyles);
 begin
-  if Assigned(FMemo) then
-    FMemo.Lines.Add(Line);
+  FRender.SelStart:= length(FRender.Text);
+  FRender.SelLength:= 0;
+  if Indent<0 then begin
+    FRender.Paragraph.FirstIndent:= 0;
+    FRender.Paragraph.LeftIndent:= -Indent;
+    FRender.Paragraph.TabCount:= 1;
+    FRender.Paragraph.Tab[0]:= -Indent;
+  end else begin
+    FRender.Paragraph.FirstIndent:= Indent;
+    FRender.Paragraph.LeftIndent:= 0;
+    FRender.Paragraph.TabCount:= 0;
+  end;
+  FRender.SelAttributes.Color:= Color;   
+  FRender.SelAttributes.Style:= Style;
+  FRender.Lines.Add(Line);
+  PostMessage(FRender.Handle, EM_SCROLLCARET, 0, 0);
 end;
 
 procedure TOutput.Hint(const Line: string; Params: array of const);
 begin
-  LineOut(Format(Line, Params));
+  LineOut(Format(Line, Params), 10, clNavy,[fsItalic]);
 end;
 
 procedure TOutput.Error(const Line: string; Params: array of const);
 begin
-  LineOut(Format(Line, Params));
+  LineOut(Format(Line, Params), 10, $009eff,[]);
 end;
 
 procedure TOutput.Result(const Line: string);
 begin
-  LineOut(Line);
+  LineOut('='#9+Line, -10, FRender.Font.Color,[]);
 end;
 
 procedure TOutput.Input(const Line: string);
+var s: string;
 begin
-  LineOut('> '+Line);
+  s:= '>'#9+Line;
+  if FRender.Lines.Count>0 then
+    s:= #13#10+s;
+  LineOut(s, -10, clDkGray,[]);
 end;
 
 { TContext }

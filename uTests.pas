@@ -2,7 +2,7 @@ unit uTests;
 
 interface
 
-uses SysUtils, uMath, StdCtrls;
+uses SysUtils, uMath, ComCtrls;
 
 type
   TMathSysTest = class
@@ -20,7 +20,7 @@ type
     procedure TestContexts;
     procedure TestFunctions;
   public
-    constructor Create(Output: TMemo);
+    constructor Create(Output: TRichEdit);
     destructor Destroy; override;
     procedure Run;
   end;
@@ -31,11 +31,11 @@ uses Math;
 
 { TMathSysTest }
 
-constructor TMathSysTest.Create(Output: TMemo);
+constructor TMathSysTest.Create(Output: TRichEdit);
 begin
   inherited Create;
   Sys:= TMathSystem.Create;
-  Sys.Output.Memo:= Output;
+  Sys.Output.Render:= Output;
 end;
 
 destructor TMathSysTest.Destroy;

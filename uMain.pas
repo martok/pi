@@ -8,7 +8,6 @@ uses
 
 type
   TfmPiMain = class(TForm)
-    Memo1: TMemo;
     Panel1: TPanel;
     Panel2: TPanel;
     lbContext: TListBox;
@@ -24,6 +23,7 @@ type
     ToolButton3: TToolButton;
     ToolButton4: TToolButton;
     ilButtons: TImageList;
+    reOutput: TRichEdit;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -51,8 +51,8 @@ uses uTests;
 procedure TfmPiMain.FormCreate(Sender: TObject);
 begin
   MathS:= TMathSystem.Create;
-  MathS.Output.Memo:= Memo1;
-  Memo1.Clear;
+  MathS.Output.Render:= reOutput;
+  reOutput.Clear;
   cbInput.Clear;
 end;
 
@@ -117,7 +117,7 @@ end;
 procedure TfmPiMain.acRunTestExecute(Sender: TObject);
 var testsys: TMathSysTest;
 begin
-  testsys:= TMathSysTest.Create(Memo1);
+  testsys:= TMathSysTest.Create(reOutput);
   try
     testsys.Run;
   finally
