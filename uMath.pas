@@ -661,9 +661,7 @@ begin
             inc(p, Length(Expressions[op].Infix));
             PS:= psRHS;
             if Expressions[op].Unary and (lhs<>nil) then
-                raise EMathSysError.CreateFmt('Unary operator %s was given an LHS!',[Expressions[op].Infix]);
-            if not Expressions[op].Unary and (lhs=nil) then
-                raise EMathSysError.CreateFmt('Binary operator %s was not given an LHS!',[Expressions[op].Infix]);
+              raise EMathSysError.CreateFmt('Unary operator %s was given an LHS!',[Expressions[op].Infix]);
           end;
         if op<0 then
           raise EMathSysError.CreateFmt('Expected Operator at %d, none found.',[p]);
