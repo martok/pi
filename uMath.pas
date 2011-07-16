@@ -570,16 +570,25 @@ var p: Integer;
     pSpace;
   end;
 
-  procedure StoreExpr(AsClass: TExpressionClass);
+  procedure CheckBalance(Expr: TExpression; Operator: integer);
+  begin
+    if Expressions[Operator].Unary and Assigned(Expr.LHS) then
+      raise EMathSysError.CreateFmt('Unary operator %s was given an LHS!',[Expressions[op].Infix]);
+    if not Expressions[Operator].Unary and not Assigned(Expr.LHS) then
+      raise EMathSysError.CreateFmt('Binary operator %s does not require an LHS!',[Expressions[op].Infix]);
+  end;
+
+  procedure StoreExpr(Operator: integer);
   var i, j, cpr, npr: integer;
       no: TExpression;
       refs: array of IExpression;
   begin
     if not Assigned(Result) then begin
-      no:= AsClass.Create;
+      no:= Expressions[Operator].Cls.Create;
       no.LHS:= lhs;
       no.RHS:= rhs;
       Result:= no;
+      CheckBalance(no, Operator);
     end
     else begin
       SetLength(refs, 1);
@@ -589,12 +598,7 @@ var p: Integer;
         refs[high(refs)]:= refs[high(refs)-1].rhs;
       end;
 
-      npr:= 0;
-      for i:= 0 to High(Expressions) do
-        if Expressions[i].Cls = AsClass then begin
-          npr:= Expressions[i].P;
-          Break;
-        end;
+      npr:= Expressions[Operator].P;
       Assert(npr<>0);
       // wenn prec < als bisher: als rhs des aktuellen ablegen, aktuelle rhs als lhs verwenden
       // wenn prec >= bisher: als neuen ref annehmen und altes als lhs ablegen
@@ -613,7 +617,7 @@ var p: Integer;
       SetLength(refs, Length(refs)-j+1);
 
       // insert just below that
-      no:= AsClass.Create;
+      no:= Expressions[Operator].Cls.Create;
       if Length(refs)>0 then begin
         if npr < cpr then begin
           no.LHS:= refs[high(refs)].RHS;
@@ -627,6 +631,7 @@ var p: Integer;
           else
             Result:= no;
         end;
+        CheckBalance(no, Operator);
       end
       else begin
         no.LHS:= Result;
@@ -660,8 +665,6 @@ begin
             op:= i;
             inc(p, Length(Expressions[op].Infix));
             PS:= psRHS;
-            if Expressions[op].Unary and (lhs<>nil) then
-              raise EMathSysError.CreateFmt('Unary operator %s was given an LHS!',[Expressions[op].Infix]);
           end;
         if op<0 then
           raise EMathSysError.CreateFmt('Expected Operator at %d, none found.',[p]);
@@ -671,7 +674,7 @@ begin
       psRHS: begin
         parseTerm(rhs);
 
-        StoreExpr(Expressions[op].Cls);
+        StoreExpr(op);
         lhs:= nil;
         rhs:= nil;
         PS:= psOp;
