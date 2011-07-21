@@ -175,6 +175,9 @@ type
     function ArSinh_1(Context: TContext; args: TExprList): TValue;
     function ArCosh_1(Context: TContext; args: TExprList): TValue;
     function ArTanh_1(Context: TContext; args: TExprList): TValue;
+
+    function ToBase_2(Context: TContext; args: TExprList): TValue;
+    function FromBase_2(Context: TContext; args: TExprList): TValue;
   end;
 
   TE_ArgList = class(TExpression)
@@ -1090,6 +1093,52 @@ end;
 function TE_FunctionCall.ArTanh_1(Context: TContext; args: TExprList): TValue;
 begin
   Result.SetNumber(ArcTanh(args[0].Evaluate(Context).GetNumber));
+end;
+
+const
+  BaseString = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+function TE_FunctionCall.FromBase_2(Context: TContext; args: TExprList): TValue;
+var base, v, i, j: integer;
+    n: string;
+begin
+  base:= Trunc(args[1].Evaluate(Context).GetNumber);
+  n:= args[0].Evaluate(Context).GetString;
+  if base > Length(BaseString) then
+    raise EMathSysError.CreateFmt('Base %d exceeds maximum allowed value of %d',[base, Length(BaseString)]);
+  v:= 0;
+  for i:= 1 to Length(n) do begin
+    j:= Pos(n[i], BaseString)-1;
+    if j>=base then
+      raise EMathSysError.CreateFmt('Invalid numeral in base %d: ''%s''',[base, n[i]]);
+    v:= v * base + j;
+  end;
+  Result.SetNumber(v);
+end;
+
+function TE_FunctionCall.ToBase_2(Context: TContext; args: TExprList): TValue;
+var base, v, i: integer;
+    n: string;
+begin
+  base:= Trunc(args[1].Evaluate(Context).GetNumber);
+  v:= Trunc(args[0].Evaluate(Context).GetNumber);
+
+  if v = 0 then begin
+    Result.SetString('0');
+    exit;
+  end;
+
+  if base > Length(BaseString) then
+    raise EMathSysError.CreateFmt('Base %d exceeds maximum allowed value of %d',[base, Length(BaseString)]);
+
+  n:= '';
+
+  while v <> 0 do begin
+    i:= v mod base;
+    v:= v div base;
+    n:= BaseString[i + 1] + n;
+  end;
+  Result.SetString(n);
 end;
 
 { TE_ArgList }
