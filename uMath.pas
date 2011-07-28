@@ -1303,8 +1303,11 @@ function TE_Describe.Evaluate(Context: TContext): TValue;
 var name: string;
     e: IExpression;
 begin
-  name:= (RHS.GetObject as TE_ExprRef).FName;
-  e:= Context.Definition(name);
+  if RHS.GetObject is TE_ExprRef then begin
+    name:= (RHS.GetObject as TE_ExprRef).FName;
+    e:= Context.Definition(name);
+  end else
+    e:= RHS;
   if Assigned(e) then
     Result.SetString(e.StringForm)
   else
