@@ -29,6 +29,7 @@ type
   TExpression = class;
   IExpression = interface;
   EMathSysError = class(Exception);
+  ESyntaxError = class(EMathSysError);
 
   TMathSystem = class
   private
@@ -252,6 +253,13 @@ type
     function Evaluate(Context: TContext): TValue; override;
   end;
 
+  TE_Negation = class(TExpression)
+  private
+  public
+    function Evaluate(Context: TContext): TValue; override;
+  end;
+
+
   TExpressionDef = record
     P: integer;
     Infix: String;
@@ -262,6 +270,8 @@ type
 const
   Expressions : array[0..9] of TExpressionDef = (
     (P: 10; Infix: '?'; Unary: true; Cls: TE_Describe),
+
+//    (P: 15; Infix: '-'; Unary: True; Cls: TE_Negation), // Done by Parse/Fold if it finds a Subtraction with no LHS 
 
     (P: 19; Infix: '^'; Unary: False; Cls: TE_Power),
     (P: 20; Infix: '*'; Unary: False; Cls: TE_Multiplication),
@@ -359,6 +369,371 @@ begin
   inherited;
 end;
 
+function TMathSystem.Parse(const Expr: String): IExpression;
+const
+  CharQuote = '''';
+
+  CharBraceOpen = '(';
+  CharBraceClose = ')';
+  CharContextOpen = '[';
+  CharContextClose = ']';
+type
+  TTokenKind = (tokVoid, tokExpression,
+                tokNumber, tokString, tokFuncRef, tokExprRef, tokExprContext,
+                tokBraceOpen, tokBraceClose, tokContextOpen, tokContextClose,
+                tokOperator);
+  TToken= record
+    Pos: integer;
+    Value: String;
+    Expr: IExpression;
+    case Kind: TTokenKind of
+      tokVoid: ();
+      tokExpression: ();
+      tokNumber: ();
+      tokString: ();
+      tokFuncRef: ();
+      tokExprRef: ();
+      tokExprContext: ();
+  //  tokBraceOpen, tokBraceClose, tokContextOpen, tokContextClose
+      tokOperator: (OpIdx: integer);
+  end;
+  TTokenList= array of TToken;
+var Tokens: TTokenList;
+
+  procedure Tokenize;
+  var p, i:integer;
+      t: TToken;
+    procedure ParseNumber(var Nr: TToken);
+    var mode: (tmNumberSign, tmNumber, tmNumberDecimals, tmNumberExponentSign, tmNumberExponent);
+        data: string;
+    begin
+      case Expr[p] of
+        '0'..'9': mode:= tmNumber;
+        '-': mode:= tmNumberSign;
+        '.': mode:= tmNumberDecimals;
+      else
+        exit;
+      end;
+      data:= Expr[p];
+      inc(p);
+
+      while p<=Length(Expr) do begin
+        case mode of
+          tmNumberSign:
+            if Expr[p] in ['0'..'9'] then begin
+              data:= data + Expr[p];
+              mode:= tmNumber;
+            end else
+              break;
+          tmNumber:
+            if Expr[p] in ['0'..'9'] then
+              data:= data + Expr[p]
+            else
+            if Expr[p]=NeutralFormatSettings.DecimalSeparator then begin
+              data:= data + Expr[p];
+              mode:= tmNumberDecimals;
+            end else
+            if Expr[p] in ['e','E'] then begin
+              data:= data + Expr[p];
+              mode:= tmNumberExponentSign;
+            end else
+              break;
+          tmNumberDecimals:
+            if Expr[p] in ['0'..'9'] then
+              data:= data + Expr[p]
+            else
+            if Expr[p] in ['e','E'] then begin
+              data:= data + Expr[p];
+              mode:= tmNumberExponentSign;
+            end else
+              break;
+          tmNumberExponentSign: begin
+            if Expr[p] in ['0'..'9','-'] then begin
+              data:= data + Expr[p];
+              mode:= tmNumberExponent;
+            end else
+              break;
+            end;
+          tmNumberExponent:
+            if Expr[p] in ['0'..'9'] then
+              data:= data + Expr[p]
+            else
+              break;
+        end;
+        inc(p);
+      end;
+      Nr.Kind:= tokNumber;
+      Nr.Value:= data;
+    end;
+
+    procedure ParseString(var Str: TToken);
+    var
+        data: string;
+    begin
+      data:= Expr[p];
+      inc(p);
+      while p<=Length(Expr) do begin
+        if (Expr[p]<>CharQuote) then
+          data:= data + Expr[p]
+        else begin
+          data:= data + Expr[p];
+          inc(p);
+          if (p<=length(Expr)) and (Expr[p]=CharQuote) then
+            data:= data + Expr[p]
+          else
+            break;
+        end;
+        inc(p);
+      end;
+      Str.Kind:= tokString;
+      Str.Value:= data;
+    end;
+
+    procedure ParseIdentifier(var Id: TToken);
+    var
+        data: string;
+    begin
+      data:= Expr[p];
+      inc(p);
+      while p<=Length(Expr) do begin
+       if Expr[p] in ['a'..'z','A'..'Z','_','0'..'9'] then
+          data:= data + Expr[p]
+        else
+          Break;
+        inc(p);
+      end;
+      case  Expr[p] of
+        CharBraceOpen: Id.Kind:= tokFuncRef;
+        CharContextOpen: Id.Kind:= tokExprContext;
+      else
+        Id.Kind:= tokExprRef;
+      end;
+      Id.Value:= data;
+    end;
+
+  begin
+    p:= 1;
+    while p<=length(expr) do begin
+      t.Value:= '';
+      FillChar(t,sizeof(t),0);
+      t.Pos:= p;
+      case Expr[p] of
+        ' ': begin
+          inc(p);
+          continue;
+        end;
+        '0'..'9',
+//        '-',
+        '.': ParseNumber(t);
+        CharQuote: ParseString(t);
+        CharBraceOpen: begin
+          t.Kind:= tokBraceOpen;
+          inc(p);
+        end;
+        CharBraceClose: begin
+          t.Kind:= tokBraceClose;
+          inc(p);
+        end;
+        CharContextOpen: begin
+          t.Kind:= tokContextOpen;
+          inc(p);
+        end;
+        CharContextClose: begin
+          t.Kind:= tokContextClose;  
+          inc(p);
+        end;
+        'a'..'z','A'..'Z','_': ParseIdentifier(t);
+      else
+        for i:= 0 to high(Expressions) do begin
+          if (Expressions[i].Infix>'') and
+             SameText(Expressions[i].Infix, Copy(Expr, p, length(Expressions[i].Infix))) then begin
+            t.Kind:= tokOperator;
+            t.Value:= expressions[i].Infix;
+            t.OpIdx:= i;
+            inc(p, length(t.Value));
+            break;
+          end;
+        end;
+      end;
+
+      SetLength(Tokens, Length(Tokens)+1);
+      Tokens[high(Tokens)]:= t;
+    end;
+  end;
+
+  procedure Fold(L,R: integer);
+  var i,A,ll,rr:integer;
+      tmp: IExpression;
+      b: pchar;
+    function NextR(k: integer): integer;
+    var j:integer;
+    begin
+      Result:= -1;
+      for j:= k+1 to R do
+        if Tokens[j].Kind<>tokVoid then begin
+          Result:= j;
+          exit;
+        end;
+    end;
+    function NextL(k: integer): integer;
+    var j:integer;
+    begin
+      Result:= -1;
+      for j:= k-1 downto L do
+        if Tokens[j].Kind<>tokVoid then begin
+          Result:= j;
+          exit;
+        end;
+    end;
+  begin
+    //given stupid values?
+    if R<L then
+      exit;
+
+    //collapse braces first
+    repeat
+      A:= -1;
+      for i:= L to R do begin
+        if Tokens[i].Kind=tokBraceOpen then
+          A:= i
+        else if Tokens[i].Kind=tokBraceClose then begin
+          if A>=0 then begin
+            Fold(A+1,I-1);
+            Tokens[A].Kind:= tokVoid;
+            Tokens[I].Kind:= tokVoid;
+          end else
+            raise ESyntaxError.CreateFmt('Position %d: Closing () never opened',[Tokens[i].Pos]);
+          A:= -2;
+          break;
+        end;
+      end;
+      if A>=0 then
+        raise ESyntaxError.CreateFmt('() opened at position %d is never closed',[Tokens[A].Pos]);
+    until A=-1;
+
+    //then subcontexts
+    repeat
+      A:= -1;
+      for i:= L to R do begin
+        if Tokens[i].Kind=tokContextOpen then
+          A:= i
+        else if Tokens[i].Kind=tokContextClose then begin
+          if A>=0 then begin
+            Fold(A+1,I-1);
+            Tokens[A].Kind:= tokVoid;
+            Tokens[I].Kind:= tokVoid;
+          end else
+            raise ESyntaxError.CreateFmt('Position %d: Closing [] never opened',[Tokens[i].Pos]);
+          A:= -2;
+          break;
+        end;
+      end;
+      if A>=0 then
+        raise ESyntaxError.CreateFmt('[] opened at position %d is never closed',[Tokens[A].Pos]);
+    until A=-1;
+
+    // simple expressions
+    for i:= L to R do
+      case Tokens[i].Kind of
+        tokNumber: begin
+          Tokens[i].Kind:= tokExpression;
+          Tokens[i].Expr:= TE_ConstantN.Create(StrToFloat(Tokens[i].Value, NeutralFormatSettings));
+        end;
+        tokString: begin
+          Tokens[i].Kind:= tokExpression;
+          b:= PChar(Tokens[i].Value);
+          Tokens[i].Expr:= TE_ConstantS.Create(AnsiExtractQuotedStr(b,CharQuote));
+        end;
+        tokExprRef: begin
+          Tokens[i].Kind:= tokExpression;
+          Tokens[i].Expr:= TE_ExprRef.Create(Tokens[i].Value);
+        end;
+        tokExprContext: begin
+          Tokens[i].Kind:= tokExpression;
+          tmp:= TE_Subcontext.Create(Tokens[i].Value);
+          A:= NextR(i);
+          TE_Subcontext(tmp.GetObject).Arguments:= Tokens[A].Expr;
+          Tokens[A].Expr:= nil;
+          Tokens[a].Kind:= tokVoid;
+          Tokens[i].Expr:= tmp;
+        end;
+        tokFuncRef: begin
+          Tokens[i].Kind:= tokExpression;
+          tmp:= TE_FunctionCall.Create(Tokens[i].Value);
+          A:= NextR(i);
+          TE_FunctionCall(tmp.GetObject).Arguments:= Tokens[A].Expr;
+          Tokens[A].Expr:= nil;
+          Tokens[a].Kind:= tokVoid;
+          Tokens[i].Expr:= tmp;
+        end;
+      end;
+
+    //finally, operators
+    for A:= 0 to high(Expressions) do begin
+      for i:= L to R do
+        if (Tokens[i].Kind=tokOperator) and (Tokens[i].OpIdx=A) then begin
+          rr:= NextR(i);
+          ll:= NextL(i);
+
+          if rr<0 then
+            raise ESyntaxError.CreateFmt('Position %d: Operator has no RHS',[Tokens[i].Pos]);
+
+          if Tokens[rr].Kind<>tokExpression then
+            raise ESyntaxError.CreateFmt('Position %d: expected expression, found %s',[Tokens[rr].Pos, Tokens[rr].Value]);
+
+          if (Expressions[A].Cls = TE_Subtraction) and
+             ((ll<0) or (Tokens[ll].Kind<>tokExpression)) then begin
+            tmp:= TE_Negation.Create;
+            tmp.RHS:= Tokens[rr].Expr;
+          end else begin
+            tmp:= Expressions[A].Cls.Create;
+
+            tmp.RHS:= Tokens[rr].Expr;
+            if not Expressions[A].Unary then begin
+              if ll<0 then
+                raise ESyntaxError.CreateFmt('Position %d: Operator has no LHS',[Tokens[i].Pos]);
+              if Tokens[ll].Kind<>tokExpression then
+                raise ESyntaxError.CreateFmt('Position %d: expected expression, found %s',[Tokens[ll].Pos, Tokens[ll].Value]);
+              tmp.LHS:= Tokens[ll].Expr;
+              Tokens[ll].Kind:= tokVoid;
+            end;
+          end;
+          Tokens[rr].Kind:= tokVoid;
+          Tokens[i].Kind:= tokExpression;
+          Tokens[i].Expr:= tmp;    
+        end;
+    end;
+
+
+    //shift to L position if neccessary
+    i:= NextR(L-1);
+    if i<>L then begin
+      Tokens[L]:= Tokens[i];
+      Tokens[i].Kind:= tokVoid;
+    end;
+  end;
+
+  function CheckResults: boolean;
+  var i:integer;
+  begin
+    Result:= length(Tokens)>0;
+    if not Result then
+      exit;
+    for i:= 1 to high(Tokens) do
+      if Tokens[i].Kind<>tokVoid then
+        raise ESyntaxError.CreateFmt('Position %d: Leftover token', [Tokens[i].Pos]);
+    Result:= true;
+  end;
+begin
+  Result:= nil; 
+  SetLength(Tokens, 0);
+  Tokenize;
+  Fold(0, high(Tokens));
+  if CheckResults then begin
+    Result:= Tokens[0].Expr;
+  end;
+end;
+
 function TMathSystem.Eval(const Expr: String): TValue;
 var ex: IExpression;
 begin
@@ -391,302 +766,6 @@ begin
     on e: EMathSysError do
       Output.Error(E.Message,[]);
   end;
-end;
-
-function TMathSystem.Parse(const Expr: String): IExpression;
-const
-  CharsSpace = [' ',#9];
-  CharsNum   = ['0'..'9'];
-  CharsAlpha = ['a'..'z','A'..'Z','_'];
-  CharsAlphaNum = CharsAlpha + CharsNum;
-
-  CharQuote = '''';
-
-  CharBraceOpen = '(';
-  CharBraceClose = ')';
-  CharContextOpen = '[';
-  CharContextClose = ']';
-
-type
-  TParserState = (psLHS, psOP, psRHS);
-
-var p: Integer;
-    ps: TParserState;
-    lhs,rhs: IExpression;
-    i,op:integer;
-  procedure pSpace;
-  begin
-    while (p<=Length(Expr)) and (Expr[p] in CharsSpace) do
-      inc(p);
-  end;
-
-  function pToken: string;
-  begin
-    Result:= '';
-    while (p<=Length(Expr)) and (Expr[p] in CharsAlphaNum) do begin
-      Result:= Result + Expr[p];
-      inc(p);
-    end;
-  end;
-
-  function blindParse(O,C: Char; Sub: boolean=true): string;
-  var l: integer;
-  begin
-    l:= 0;
-    Result:= '';
-    while p<= Length(Expr) do begin
-      if Expr[p] = O then begin
-        inc(l);
-        if not Sub and (l>1) then
-          raise EMathSysError.CreateFmt('Subexpression contained by %s and %s does not allow nesting.',[O,C]);
-        if l>1 then
-          Result:= Result + Expr[p];
-      end else begin
-        Result:= Result + Expr[p];
-        if Expr[p] = C then begin
-          dec(l);
-          if l=0 then begin
-            inc(P);
-            SetLength(Result, Length(Result)-1);
-            Exit;
-          end;
-        end else
-      end;
-      inc(p);
-    end;
-    if l>0 then
-      raise EMathSysError.CreateFmt('Unterminated Subexpression contained by %s and %s.',[O,C])
-  end;
-
-  procedure parseTerm(var into: IExpression);
-  var mode: (tmNumberSign, tmNumber, tmNumberDecimals, tmNumberExponentSign, tmNumberExponent,
-             tmString,
-             tmVarname);
-      data, bd: string;
-      b: PChar;
-  begin
-    case Expr[p] of
-      '0'..'9': mode:= tmNumber;
-      '-': mode:= tmNumberSign;
-      '.': mode:= tmNumberDecimals;
-      CharQuote: mode:= tmString;
-      CharBraceOpen: begin
-        bd := blindParse(CharBraceOpen, CharBraceClose);
-        into:= Parse(bd);
-        pSpace;
-        exit;
-      end;
-      'a'..'z','A'..'Z','_': mode:= tmVarname;
-    else
-      into:= nil;
-      exit;
-    end;
-
-    data:= Expr[p];
-    inc(p);
-
-    while p<=Length(Expr) do begin
-      case mode of
-        tmNumberSign:
-          if Expr[p] in ['0'..'9'] then begin
-            data:= data + Expr[p];
-            mode:= tmNumber;
-          end else
-            break;
-        tmNumber:
-          if Expr[p] in ['0'..'9'] then
-            data:= data + Expr[p]
-          else
-          if Expr[p]=NeutralFormatSettings.DecimalSeparator then begin
-            data:= data + Expr[p];
-            mode:= tmNumberDecimals;
-          end else
-          if Expr[p] in ['e','E'] then begin
-            data:= data + Expr[p];
-            mode:= tmNumberExponentSign;
-          end else
-            break;
-        tmNumberDecimals:
-          if Expr[p] in ['0'..'9'] then
-            data:= data + Expr[p]
-          else
-          if Expr[p] in ['e','E'] then begin
-            data:= data + Expr[p];
-            mode:= tmNumberExponentSign;
-          end else
-            break;
-        tmNumberExponentSign: begin
-          if Expr[p] in ['0'..'9','-'] then begin
-            data:= data + Expr[p];
-            mode:= tmNumberExponent;
-          end else
-            break;
-          end;
-        tmNumberExponent:
-          if Expr[p] in ['0'..'9'] then
-            data:= data + Expr[p]
-          else
-            break;
-
-        tmString:
-          if (Expr[p]<>CharQuote) then
-            data:= data + Expr[p]
-          else begin
-            data:= data + Expr[p];
-            inc(p);
-            if (p<=length(Expr)) and (Expr[p]=CharQuote) then
-              data:= data + Expr[p]
-            else
-              break;
-          end;
-        tmVarname:
-          if Expr[p] in CharsAlphaNum then
-            data:= data + Expr[p]
-          else
-            Break;
-      end;
-      inc(p);
-    end;
-
-    case mode of
-      tmNumberSign, tmNumber, tmNumberDecimals, tmNumberExponentSign, tmNumberExponent:
-        into:= TE_ConstantN.Create(StrToFloat(data, NeutralFormatSettings));
-      tmString: begin
-        b:= PChar(data);
-        into:= TE_ConstantS.Create(AnsiExtractQuotedStr(b,CharQuote))
-      end;
-      tmVarname: begin
-        if (data>'') and (Expr[p] = CharBraceOpen) then begin
-          into:= TE_FunctionCall.Create(data);
-          bd := blindParse(CharBraceOpen, CharBraceClose);
-          TE_FunctionCall(into.GetObject).Arguments:= Parse(bd);
-        end else
-        if (data>'') and (Expr[p] = CharContextOpen) then begin
-          into:= TE_Subcontext.Create(data);
-          bd := blindParse(CharContextOpen, CharContextClose);
-          TE_Subcontext(into.GetObject).Arguments:= Parse(bd);
-        end else
-        into:= TE_ExprRef.Create(data);
-      end;
-    end;
-
-    pSpace;
-  end;
-
-  procedure CheckBalance(Expr: TExpression; Operator: integer);
-  begin
-    if Expressions[Operator].Unary and Assigned(Expr.LHS) then
-      raise EMathSysError.CreateFmt('Unary operator %s was given an LHS!',[Expressions[op].Infix]);
-    if not Expressions[Operator].Unary and not Assigned(Expr.LHS) then
-      raise EMathSysError.CreateFmt('Binary operator %s does not require an LHS!',[Expressions[op].Infix]);
-  end;
-
-  procedure StoreExpr(Operator: integer);
-  var i, j, cpr, npr: integer;
-      no: TExpression;
-      refs: array of IExpression;
-  begin
-    if not Assigned(Result) then begin
-      no:= Expressions[Operator].Cls.Create;
-      no.LHS:= lhs;
-      no.RHS:= rhs;
-      Result:= no;
-      CheckBalance(no, Operator);
-    end
-    else begin
-      SetLength(refs, 1);
-      Refs[0]:= Result;
-      while (refs[high(refs)].RHS<>nil) and (refs[high(refs)].RHS.RHS<>nil) do begin
-        SetLength(refs, length(refs)+1);
-        refs[high(refs)]:= refs[high(refs)-1].rhs;
-      end;
-
-      npr:= Expressions[Operator].P;
-      Assert(npr<>0);
-      // wenn prec < als bisher: als rhs des aktuellen ablegen, aktuelle rhs als lhs verwenden
-      // wenn prec >= bisher: als neuen ref annehmen und altes als lhs ablegen
-
-      // scan upwards, until weaker bound is found
-      j:= 0;
-      repeat
-        cpr:= 0;
-        for i:= 0 to High(Expressions) do
-          if Expressions[i].Cls = refs[high(refs)-j].GetClassType then begin
-            cpr:= Expressions[i].P;
-            break;
-          end;
-        inc(j);
-      until (npr < cpr) or (j>high(refs));
-      SetLength(refs, Length(refs)-j+1);
-
-      // insert just below that
-      no:= Expressions[Operator].Cls.Create;
-      if Length(refs)>0 then begin
-        if npr < cpr then begin
-          no.LHS:= refs[high(refs)].RHS;
-          no.RHS:= rhs;
-          refs[high(refs)].rhs:= no;
-        end else begin
-          no.LHS:= refs[high(refs)];
-          no.RHS:= rhs;
-          if length(refs)>1 then
-            refs[high(refs)-1].rhs:= no
-          else
-            Result:= no;
-        end;
-        CheckBalance(no, Operator);
-      end
-      else begin
-        no.LHS:= Result;
-        no.RHS:= rhs;
-        Result:= no;
-      end;
-    end;
-  end;
-
-begin
-  Result:= nil;
-  op:= 0;
-  p:= 1;
-  PS:= psLHS;
-
-  pSpace;
-// sum(x+1) / y * !5
-// e=m*c^2
-  while p<= Length(Expr) do begin
-    case PS of
-      psLHS: begin
-        parseTerm(lhs);
-        PS:= psOP;
-      end;
-
-      psOp: begin
-        op:= -1;
-        for i:= 0 to high(Expressions) do
-          if (Expressions[i].Infix>'') and 
-            (Copy(Expr,p,Length(Expressions[i].Infix))=Expressions[i].Infix) then begin
-            op:= i;
-            inc(p, Length(Expressions[op].Infix));
-            PS:= psRHS;
-          end;
-        if op<0 then
-          raise EMathSysError.CreateFmt('Expected Operator at %d, none found.',[p]);
-        pSpace;
-      end;
-
-      psRHS: begin
-        parseTerm(rhs);
-
-        StoreExpr(op);
-        lhs:= nil;
-        rhs:= nil;
-        PS:= psOp;
-        pSpace;
-      end;
-    end;
-  end;
-  if not Assigned(Result) and Assigned(lhs) then
-    Result:= lhs; 
 end;
 
 { TOutput }
@@ -1293,6 +1372,13 @@ end;
 function TE_Subtraction.Evaluate(Context: TContext): TValue;
 begin
   Result.SetNumber(LHS.Evaluate(Context).GetNumber - RHS.Evaluate(Context).GetNumber);
+end;
+
+{ TE_Negation }
+
+function TE_Negation.Evaluate(Context: TContext): TValue;
+begin
+  Result.SetNumber(0 - RHS.Evaluate(Context).GetNumber);
 end;
 
 initialization
