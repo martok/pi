@@ -1099,7 +1099,8 @@ const
   BaseString = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 function TE_FunctionCall.FromBase_2(Context: TContext; args: TExprList): TValue;
-var base, v, i, j: integer;
+var base, i, j: integer;
+    v: int64;
     n: string;
 begin
   base:= Trunc(args[1].Evaluate(Context).GetNumber);
@@ -1117,8 +1118,9 @@ begin
 end;
 
 function TE_FunctionCall.ToBase_2(Context: TContext; args: TExprList): TValue;
-var base, v, i: integer;
+var base, i: integer;
     n: string;
+    v: int64;
 begin
   base:= Trunc(args[1].Evaluate(Context).GetNumber);
   v:= Trunc(args[0].Evaluate(Context).GetNumber);
