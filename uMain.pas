@@ -4,13 +4,13 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, uMath, StdCtrls, ExtCtrls, ActnList, ToolWin, ComCtrls, ImgList;
+  Dialogs, uMath, StdCtrls, ExtCtrls, ActnList, ToolWin, ComCtrls, ImgList,
+  TreeNT;
 
 type
   TfmPiMain = class(TForm)
     Panel1: TPanel;
     Panel2: TPanel;
-    lbContext: TListBox;
     Splitter1: TSplitter;
     cbInput: TComboBox;
     ToolBar1: TToolBar;
@@ -24,6 +24,7 @@ type
     ToolButton4: TToolButton;
     ilButtons: TImageList;
     reOutput: TRichEdit;
+    trContext: TTreeNT;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -31,6 +32,8 @@ type
     procedure acRunCmdExecute(Sender: TObject);
     procedure acExitExecute(Sender: TObject);
     procedure acRunTestExecute(Sender: TObject);
+    procedure trContextCollapsing(Sender: TObject; Node: TTreeNTNode;
+      var AllowCollapse: Boolean);
   private
     { Private-Deklarationen }
     procedure UpdateContext;
@@ -64,17 +67,19 @@ end;
 procedure TfmPiMain.UpdateContext;
 var ct:TContext;
     i, j: integer;
+    n: TTreeNTNode;
 begin
-  lbContext.Clear;
+  trContext.Items.Clear;
   ct:= MathS.Context;
   i:= 1;
   while ct<>nil do begin
-    lbContext.Items.Add('Context '+IntToStr(I));
+    n:= trContext.Items.AddObject(nil, 'Context '+IntToStr(I), ct);
     for j:= 0 to ct.Count-1 do
-      lbContext.Items.Add('  '+ct.Name[j]+' = '+ct.Definition(ct.Name[j]).StringForm);
+      trContext.Items.AddChild(n, ct.Name[j]+' = '+ct.Definition(ct.Name[j]).StringForm);
     ct:= ct.Parent;
     inc(i);
   end;
+  trContext.FullExpand;
 end;
 
 procedure TfmPiMain.FormShow(Sender: TObject);
@@ -123,6 +128,12 @@ begin
   finally
     testsys.Free;
   end;
+end;
+
+procedure TfmPiMain.trContextCollapsing(Sender: TObject; Node: TTreeNTNode;
+  var AllowCollapse: Boolean);
+begin
+  AllowCollapse:= false;
 end;
 
 end.

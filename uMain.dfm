@@ -34,15 +34,6 @@ object fmPiMain: TfmPiMain
     Align = alRight
     BevelOuter = bvNone
     TabOrder = 0
-    object lbContext: TListBox
-      Left = 0
-      Top = 0
-      Width = 214
-      Height = 555
-      Align = alClient
-      ItemHeight = 16
-      TabOrder = 0
-    end
     object ToolBar1: TToolBar
       Left = 0
       Top = 555
@@ -77,6 +68,21 @@ object fmPiMain: TfmPiMain
         Top = 2
         Action = acExit
       end
+    end
+    object trContext: TTreeNT
+      Left = 0
+      Top = 0
+      Width = 214
+      Height = 555
+      Align = alClient
+      Indent = 19
+      InsertMarkColor = clScrollBar
+      ItemHeight = 16
+      Options = [toAutoExpand, toAutoScroll, toEvenHeight, toHideSelection, toReadOnly, toRightClickSelect, toShowLines]
+      ParentColor = False
+      ScrollTime = 0
+      TabOrder = 0
+      OnCollapsing = trContextCollapsing
     end
   end
   object Panel2: TPanel
