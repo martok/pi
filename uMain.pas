@@ -49,10 +49,16 @@ implementation
 
 uses uTests;
 
+const
+  sProgramTitle = 'pi - Tiny Math Tool';
+  sProgramVersionStr = 'TP 2';
+
 {$R *.dfm}
 
 procedure TfmPiMain.FormCreate(Sender: TObject);
 begin
+  Application.Title:= sProgramTitle;
+  Caption:= Format('%s   (%s)',[sProgramTitle, sProgramVersionStr]);
   MathS:= TMathSystem.Create;
   MathS.Output.Render:= reOutput;
   reOutput.Clear;
