@@ -42,9 +42,12 @@ type
     function Parse(const Expr: String): IExpression;
     function Eval(const Expr: String): TValue;
     procedure Run(const Expr: String);
+    property Output: TOutput read FOutput;
     property Context: TContext read FContext;
     property Constants: TContext read FConstants;
-    property Output: TOutput read FOutput;
+
+    procedure NewContext(const Name: string);
+    procedure DropContext;
   end;
 
   TOutput = class
@@ -65,13 +68,15 @@ type
     FExpressions: THashedStringList;
     FParent: TContext;
     FSystem: TMathSystem;
+    FContextName: string;
     function GetCount: integer;
     function GetName(index: integer): string;
   public
     constructor Create(ASystem: TMathSystem; AParent: TContext);
     destructor Destroy; override;
     property Parent: TContext read FParent;
-    property System : TMathSystem read FSystem; 
+    property System : TMathSystem read FSystem;
+    property ContextName: string read FContextName write FContextName;
     procedure Define(const Name: string; Expression: IExpression);
     procedure DefineValue(const Name: string; Value: TValue);
     procedure Undefine(const Name: string);
@@ -293,6 +298,10 @@ const
   cE : Number = 2.718281828459045235360287471353;
 implementation
 
+resourcestring
+  sConstants = 'Constants';
+  sWork      = 'Work';
+
 { TValue }
 
 function TValue.GetNumber: Number;
@@ -349,8 +358,10 @@ end;
 constructor TMathSystem.Create;
 begin
   inherited;
-  FConstants:= TContext.Create(Self, nil);
-  FContext:= TContext.Create(Self, FConstants);
+  FContext:= TContext.Create(Self, nil);
+  FContext.ContextName:= sConstants;
+  FConstants:= FContext;
+  NewContext(sWork);
   FOutput:= TOutput.Create;
   FConstants.Define('Pi',  TE_ConstantN.Create(cPi));
   FConstants.Define('e',   TE_ConstantN.Create(cE));
@@ -766,6 +777,25 @@ begin
     on e: EMathSysError do
       Output.Error(E.Message,[]);
   end;
+end;
+
+procedure TMathSystem.DropContext;
+var cont: TContext;
+begin
+  if FContext.Parent<>FContext then begin
+    cont:= FContext.Parent;
+    FContext.Free;
+    FContext:= cont;
+  end else
+    raise EMathSysError.Create('Cannot drop this context.');
+end;
+
+procedure TMathSystem.NewContext(const Name: string);
+var cont: TContext;
+begin
+  cont:= TContext.Create(Self, FContext);
+  cont.ContextName:= Name;
+  FContext:= cont;
 end;
 
 { TOutput }

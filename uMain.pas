@@ -66,18 +66,16 @@ end;
 
 procedure TfmPiMain.UpdateContext;
 var ct:TContext;
-    i, j: integer;
+    j: integer;
     n: TTreeNTNode;
 begin
   trContext.Items.Clear;
   ct:= MathS.Context;
-  i:= 1;
   while ct<>nil do begin
-    n:= trContext.Items.AddObject(nil, 'Context '+IntToStr(I), ct);
+    n:= trContext.Items.AddObject(nil, format('%s (%d)',[ct.ContextName,ct.Count]), ct);
     for j:= 0 to ct.Count-1 do
-      trContext.Items.AddChild(n, ct.Name[j]+' = '+ct.Definition(ct.Name[j]).StringForm);
+      trContext.Items.AddChild(n, format('%s = %s', [ct.Name[j], ct.Definition(ct.Name[j]).StringForm]));
     ct:= ct.Parent;
-    inc(i);
   end;
   trContext.FullExpand;
 end;
