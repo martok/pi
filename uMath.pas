@@ -389,7 +389,7 @@ const
   CharContextOpen = '[';
   CharContextClose = ']';
 type
-  TTokenKind = (tokVoid, tokExpression,
+  TTokenKind = (tokVoid, tokExpression, tokEmpty, 
                 tokNumber, tokString, tokFuncRef, tokExprRef, tokExprContext,
                 tokBraceOpen, tokBraceClose, tokContextOpen, tokContextClose,
                 tokOperator);
@@ -609,8 +609,12 @@ var Tokens: TTokenList;
           A:= i
         else if Tokens[i].Kind=tokBraceClose then begin
           if A>=0 then begin
-            Fold(A+1,I-1);
-            Tokens[A].Kind:= tokVoid;
+            if A=I-1 then begin
+              Tokens[A].Kind:= tokEmpty;
+            end else begin
+              Fold(A+1,I-1);
+              Tokens[A].Kind:= tokVoid;
+            end;
             Tokens[I].Kind:= tokVoid;
           end else
             raise ESyntaxError.CreateFmt('Position %d: Closing () never opened',[Tokens[i].Pos]);
@@ -630,8 +634,12 @@ var Tokens: TTokenList;
           A:= i
         else if Tokens[i].Kind=tokContextClose then begin
           if A>=0 then begin
-            Fold(A+1,I-1);
-            Tokens[A].Kind:= tokVoid;
+            if A=I-1 then begin
+              Tokens[A].Kind:= tokEmpty;
+            end else begin
+              Fold(A+1,I-1);
+              Tokens[A].Kind:= tokVoid;
+            end;
             Tokens[I].Kind:= tokVoid;
           end else
             raise ESyntaxError.CreateFmt('Position %d: Closing [] never opened',[Tokens[i].Pos]);
@@ -663,7 +671,10 @@ var Tokens: TTokenList;
           Tokens[i].Kind:= tokExpression;
           tmp:= TE_Subcontext.Create(Tokens[i].Value);
           A:= NextR(i);
-          TE_Subcontext(tmp.GetObject).Arguments:= Tokens[A].Expr;
+          if Tokens[A].Kind=tokEmpty then
+            TE_Subcontext(tmp.GetObject).Arguments:= nil
+          else
+            TE_Subcontext(tmp.GetObject).Arguments:= Tokens[A].Expr;
           Tokens[A].Expr:= nil;
           Tokens[a].Kind:= tokVoid;
           Tokens[i].Expr:= tmp;
@@ -672,7 +683,10 @@ var Tokens: TTokenList;
           Tokens[i].Kind:= tokExpression;
           tmp:= TE_FunctionCall.Create(Tokens[i].Value);
           A:= NextR(i);
-          TE_FunctionCall(tmp.GetObject).Arguments:= Tokens[A].Expr;
+          if Tokens[A].Kind=tokEmpty then
+            TE_FunctionCall(tmp.GetObject).Arguments:= nil
+          else
+            TE_FunctionCall(tmp.GetObject).Arguments:= Tokens[A].Expr;
           Tokens[A].Expr:= nil;
           Tokens[a].Kind:= tokVoid;
           Tokens[i].Expr:= tmp;
@@ -1315,7 +1329,8 @@ var ctx: TContext;
 begin
   ctx:= TContext.Create(Context.System, Context);
   try
-    Arguments.Evaluate(ctx);
+    if Assigned(Arguments) then
+      Arguments.Evaluate(ctx);
     Result:= ctx.Value(FName);
   finally
     FreeAndNil(ctx);
@@ -1324,7 +1339,10 @@ end;
 
 function TE_Subcontext.StringForm: String;
 begin
-  Result:= FName+'['+Arguments.StringForm+']';
+  if Assigned(Arguments) then
+    Result:= FName+'['+Arguments.StringForm+']'
+  else
+    Result:= FName+'[]';
 end;
 
 { TE_Describe }
