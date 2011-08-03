@@ -550,7 +550,7 @@ var Tokens: TTokenList;
           inc(p);
         end;
         CharContextClose: begin
-          t.Kind:= tokContextClose;  
+          t.Kind:= tokContextClose;
           inc(p);
         end;
         'a'..'z','A'..'Z','_': ParseIdentifier(t);
@@ -565,6 +565,8 @@ var Tokens: TTokenList;
             break;
           end;
         end;
+        if t.Kind=tokVoid then 
+          raise ESyntaxError.CreateFmt('Position %d: Unexpected Character %s',[p, Expr[p]]);
       end;
 
       SetLength(Tokens, Length(Tokens)+1);
