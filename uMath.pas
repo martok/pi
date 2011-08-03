@@ -798,7 +798,7 @@ end;
 procedure TMathSystem.DropContext;
 var cont: TContext;
 begin
-  if FContext.Parent<>FContext then begin
+  if FContext.Parent<>FConstants then begin
     cont:= FContext.Parent;
     FContext.Free;
     FContext:= cont;
