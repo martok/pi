@@ -1098,7 +1098,10 @@ end;
 
 function TE_FunctionCall.StringForm: String;
 begin
-  Result:= FName+'('+Arguments.StringForm+')';
+  if Assigned(Arguments) then
+    Result:= FName+'('+Arguments.StringForm+')'
+  else
+    Result:= FName+'()';
 end;
 
 
