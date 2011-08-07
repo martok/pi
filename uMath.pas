@@ -81,6 +81,7 @@ type
     procedure DefineValue(const Name: string; Value: TValue);
     procedure Undefine(const Name: string);
     function Definition(const Name: string): IExpression;
+    function Defines(const Name: string): boolean;
     function Value(const Name: string): TValue;
 
     property Count: integer read GetCount;
@@ -975,6 +976,11 @@ begin
   end;
   if Assigned(expr) then
     Define(Name,expr);
+end;
+
+function TContext.Defines(const Name: string): boolean;
+begin
+  Result:= FExpressions.IndexOf(Name)>-1;
 end;
 
 { TExpression }
