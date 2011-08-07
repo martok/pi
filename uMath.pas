@@ -157,6 +157,8 @@ type
     constructor Create(Name: string);
     function Evaluate(Context: TContext): TValue; override;
     function StringForm: String; override;
+
+    class function CheckSysCalls(StringForm: string): Boolean;
   published
     function Abs_1(Context: TContext; args: TExprList): TValue;
     function Exp_1(Context: TContext; args: TExprList): TValue;
@@ -184,6 +186,11 @@ type
 
     function ToBase_2(Context: TContext; args: TExprList): TValue;
     function FromBase_2(Context: TContext; args: TExprList): TValue;
+
+    function Undef_1(Context: TContext; args: TExprList): TValue;
+    function New_0(Context: TContext; args: TExprList): TValue;
+    function New_1(Context: TContext; args: TExprList): TValue;
+    function Drop_0(Context: TContext; args: TExprList): TValue;
   end;
 
   TE_ArgList = class(TExpression)
@@ -763,11 +770,15 @@ end;
 
 function TMathSystem.Eval(const Expr: String): TValue;
 var ex: IExpression;
+    s: string;
 begin
   ex:= Parse(Expr);
   try
-    if Assigned(ex) then
-      Result:= ex.Evaluate(FContext)
+    if Assigned(ex) then begin
+      s:= ex.StringForm;
+      if TE_FunctionCall.CheckSysCalls(s) then
+        Result:= ex.Evaluate(FContext);
+    end
     else
       Result.SetNull;
   finally
@@ -1104,6 +1115,21 @@ begin
     Result:= FName+'()';
 end;
 
+class function TE_FunctionCall.CheckSysCalls(StringForm: string): Boolean;
+  // perform check on string form, so we could only encounter (new() or ,new()
+  // in non-toplevel calls. if we don't find that, it might be top level (pos 0)
+  // but that would evaluate to true anyway -> don't bother checking
+  function Chk(f: string): boolean;
+  begin
+    Result:= (pos(',' + f+'(',StringForm) = 0) and
+             (pos('(' + f+'(',StringForm) = 0);
+  end;
+begin
+  StringForm:= LowerCase(StringForm);
+  Result:= Chk('new') and Chk('drop');
+  if not Result then
+    raise EMathSysError.Create('System functions can only be used stand-alone');
+end;
 
 function TE_FunctionCall.Abs_1(Context: TContext; args: TExprList): TValue;
 begin
@@ -1269,6 +1295,29 @@ begin
     n:= BaseString[i + 1] + n;
   end;
   Result.SetString(n);
+end;
+
+function TE_FunctionCall.Undef_1(Context: TContext;
+  args: TExprList): TValue;
+begin
+  Context.Undefine(args[0].Evaluate(Context).GetString);
+end;
+
+function TE_FunctionCall.New_0(Context: TContext; args: TExprList): TValue;
+begin
+  Context.System.NewContext('');
+end;
+
+function TE_FunctionCall.New_1(Context: TContext;
+  args: TExprList): TValue;
+begin
+  Context.System.NewContext(args[0].Evaluate(Context).GetString);
+end;
+
+function TE_FunctionCall.Drop_0(Context: TContext;
+  args: TExprList): TValue;
+begin
+  Context.System.DropContext();
 end;
 
 { TE_ArgList }
