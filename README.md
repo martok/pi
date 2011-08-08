@@ -112,6 +112,18 @@ Variablen&Context-Management:
 *  `Undef(string)`
    Entfernt eine Variable aus dem aktuellen Kontext
 
+
+Konstanten:
+
+*  `Const(string)`
+   Fragt den Wert einer Konstante ab
+*  `ConstInfo()`
+   Listet verfügbare/bekannte Konstanten
+*  `ConstInfo(string)`
+   Gibt Information über eine Konstante zurück
+
+
+
 Beispiele
 ---------
 
