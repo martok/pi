@@ -1581,6 +1581,8 @@ end;
 function TE_AssignmentDynamic.Evaluate(Context: TContext): TValue;
 var name: string;
 begin
+  if not (LHS.GetObject is TE_ExprRef) then
+    raise ESyntaxError.Create('LHS of assignment needs to be a simple expression reference');
   name:= (LHS.GetObject as TE_ExprRef).FName;
   Context.Define(name, RHS);
 end;
@@ -1591,9 +1593,12 @@ function TE_AssignmentStatic.Evaluate(Context: TContext): TValue;
 var name: string;
     v: TValue;
 begin
+  if not (LHS.GetObject is TE_ExprRef) then
+    raise ESyntaxError.Create('LHS of assignment needs to be a simple expression reference');
   name:= (LHS.GetObject as TE_ExprRef).FName;
   v:= RHS.Evaluate(Context);
   Context.DefineValue(name, v);
+  Result:= v;
 end;
 
 
