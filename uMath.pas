@@ -121,20 +121,13 @@ type
     constructor Create;
   end;
 
-  TE_ConstantN = class(TExpression)
+  TE_Constant = class(TExpression)
   private
-    FValue: Number;
+    FValue: TValue;
   public
-    constructor Create(Val: Number);
-    function Evaluate(Context: TContext): TValue; override;
-    function StringForm: String; override;
-  end;
-
-  TE_ConstantS = class(TExpression)
-  private
-    FValue: String;
-  public
-    constructor Create(Val: String);
+    constructor Create(Val: TValue); overload;
+    constructor Create(Val: Number); overload;
+    constructor Create(Val: String); overload;
     function Evaluate(Context: TContext): TValue; override;
     function StringForm: String; override;
   end;
@@ -725,12 +718,12 @@ var Tokens: TTokenList;
       case Tokens[i].Kind of
         tokNumber: begin
           Tokens[i].Kind:= tokExpression;
-          Tokens[i].Expr:= TE_ConstantN.Create(StrToFloat(Tokens[i].Value, NeutralFormatSettings));
+          Tokens[i].Expr:= TE_Constant.Create(StrToFloat(Tokens[i].Value, NeutralFormatSettings));
         end;
         tokString: begin
           Tokens[i].Kind:= tokExpression;
           b:= PChar(Tokens[i].Value);
-          Tokens[i].Expr:= TE_ConstantS.Create(AnsiExtractQuotedStr(b,CharQuote));
+          Tokens[i].Expr:= TE_Constant.Create(AnsiExtractQuotedStr(b,CharQuote));
         end;
         tokExprRef: begin
           Tokens[i].Kind:= tokExpression;
@@ -1026,12 +1019,10 @@ end;
 procedure TContext.DefineValue(const Name: string; Value: TValue);
 var expr: IExpression;
 begin
-  expr:= nil;
   case Value.ValueType of
-    vtUnassigned,
-    vtNull:;
-    vtNumber: expr:= TE_ConstantN.Create(Value.GetNumber);
-    vtString: expr:= TE_ConstantS.Create(Value.GetString);
+    vtUnassigned: ;
+  else
+    expr:= TE_Constant.Create(Value);
   end;
   if Assigned(expr) then
     Define(Name,expr);
@@ -1089,40 +1080,38 @@ begin
     Result:= format('%s(%s,%s)',[Copy(ClassName,4,10000),LHS.StringForm,RHS.StringForm]);
 end;
 
-{ TE_ConstantN }
+{ TE_Constant }
 
-constructor TE_ConstantN.Create(Val: Number);
-begin                  
-  inherited Create;
-  FValue:= Val;
-end;
-
-function TE_ConstantN.Evaluate(Context: TContext): TValue;
-begin
-  Result.SetNumber(FValue);
-end;
-
-function TE_ConstantN.StringForm: String;
-begin
-  Result:= FloatToStrF(FValue,ffGeneral,18,12,NeutralFormatSettings);
-end;
-
-{ TE_ConstantS }
-
-constructor TE_ConstantS.Create(Val: String);
+constructor TE_Constant.Create(Val: TValue);
 begin
   inherited Create;
   FValue:= Val;
 end;
 
-function TE_ConstantS.Evaluate(Context: TContext): TValue;
+constructor TE_Constant.Create(Val: Number);
 begin
-  Result.SetString(FValue);
+  inherited Create;
+  FValue.SetNumber(Val);
 end;
 
-function TE_ConstantS.StringForm: String;
+constructor TE_Constant.Create(Val: String);
 begin
-  Result:= QuotedStr(FValue);
+  FValue.SetString(Val);
+end;
+
+function TE_Constant.Evaluate(Context: TContext): TValue;
+begin
+  Result:= FValue;
+end;
+
+function TE_Constant.StringForm: String;
+begin
+  case FValue.FType of
+    vtUnassigned: Result:= '<?>';
+    vtNull: Result:= 'null';
+    vtNumber: Result:= FValue.GetString;
+    vtString: Result:= QuotedStr(FValue.GetString);
+  end;
 end;
 
 { TE_ExprRef }

@@ -232,7 +232,7 @@ var cnst: IExpression;
 begin
   BeginGroup('Contexts');
   try
-    cnst:= TE_ConstantN.Create(42.000);
+    cnst:= TE_Constant.Create(42.000);
     BeginGroup('Define 1');
       Sys.Context.Define('test',cnst);
       Expect(Sys.Context.Definition('test')=cnst ,'Didn''t receive same object.');
