@@ -682,60 +682,43 @@ var Tokens: TTokenList;
           exit;
         end;
     end;
+
+    procedure ProcessBraces(const Open, Close: TTokenKind; const Str: string);
+    var i:integer;
+    begin
+      repeat
+        A:= -1;
+        for i:= L to R do begin
+          if Tokens[i].Kind=Open then
+            A:= i
+          else if Tokens[i].Kind=Close then begin
+            if A>=0 then begin
+              if A=I-1 then begin
+                Tokens[A].Kind:= tokEmpty;
+              end else begin
+                Fold(A+1,I-1);
+                Tokens[A].Kind:= tokVoid;
+              end;
+              Tokens[I].Kind:= tokVoid;
+            end else
+              raise ESyntaxError.CreateFmt('Position %d: Closing %s never opened',[Tokens[i].Pos, Str]);
+            A:= -2;
+            break;
+          end;
+        end;
+        if A>=0 then
+          raise ESyntaxError.CreateFmt('%s opened at position %d is never closed',[Str, Tokens[A].Pos]);
+      until A=-1;
+    end;
   begin
     //given stupid values?
     if R<L then
       exit;
 
     //collapse braces first
-    repeat
-      A:= -1;
-      for i:= L to R do begin
-        if Tokens[i].Kind=tokBraceOpen then
-          A:= i
-        else if Tokens[i].Kind=tokBraceClose then begin
-          if A>=0 then begin
-            if A=I-1 then begin
-              Tokens[A].Kind:= tokEmpty;
-            end else begin
-              Fold(A+1,I-1);
-              Tokens[A].Kind:= tokVoid;
-            end;
-            Tokens[I].Kind:= tokVoid;
-          end else
-            raise ESyntaxError.CreateFmt('Position %d: Closing () never opened',[Tokens[i].Pos]);
-          A:= -2;
-          break;
-        end;
-      end;
-      if A>=0 then
-        raise ESyntaxError.CreateFmt('() opened at position %d is never closed',[Tokens[A].Pos]);
-    until A=-1;
-
+    ProcessBraces(tokBraceOpen, tokBraceClose, '()');
     //then subcontexts
-    repeat
-      A:= -1;
-      for i:= L to R do begin
-        if Tokens[i].Kind=tokContextOpen then
-          A:= i
-        else if Tokens[i].Kind=tokContextClose then begin
-          if A>=0 then begin
-            if A=I-1 then begin
-              Tokens[A].Kind:= tokEmpty;
-            end else begin
-              Fold(A+1,I-1);
-              Tokens[A].Kind:= tokVoid;
-            end;
-            Tokens[I].Kind:= tokVoid;
-          end else
-            raise ESyntaxError.CreateFmt('Position %d: Closing [] never opened',[Tokens[i].Pos]);
-          A:= -2;
-          break;
-        end;
-      end;
-      if A>=0 then
-        raise ESyntaxError.CreateFmt('[] opened at position %d is never closed',[Tokens[A].Pos]);
-    until A=-1;
+    ProcessBraces(tokContextOpen, tokContextClose, '[]');
 
     // simple expressions
     for i:= L to R do
