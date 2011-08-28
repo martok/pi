@@ -99,7 +99,7 @@ end;
 procedure TfmPiMain.cbInputKeyPress(Sender: TObject; var Key: Char);
 begin
   case Key of
-    #13: begin
+    Chr(VK_RETURN): begin
       Key:= #0;
       acRunCmd.Execute;
     end;
@@ -119,7 +119,8 @@ begin
     f:= cbInput.Text;
     MathS.Output.Input(f);
     MathS.Run(f);
-    cbInput.Text:= '';
+    cbInput.Text:= 'ans';
+    cbInput.SelectAll;
     if cbInput.Items.IndexOf(f)>=0 then
       cbInput.Items.Delete(cbInput.Items.IndexOf(f));
     cbInput.Items.Insert(0,f);
