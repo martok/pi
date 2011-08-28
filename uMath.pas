@@ -478,6 +478,7 @@ begin
     vtNumber: Result:= GetString;
     vtString: Result:= QuotedStr(GetString);
     vtList: begin
+      Result:= '';
       for i:= 0 to Length-1 do
         Result:= Result + TValueList(FList)[i].OutputString + ',';
       Delete(Result, System.Length(Result),1);
