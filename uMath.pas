@@ -200,6 +200,8 @@ type
     function const_1(Context: TContext; args: TExprList): TValue;
     function constinfo_0(Context: TContext; args: TExprList): TValue;
     function constinfo_1(Context: TContext; args: TExprList): TValue;
+
+    function l_N(Context: TContext; args: TExprList): TValue;
   end;
 
   TE_ArgList = class(TExpression)
@@ -1208,12 +1210,14 @@ begin
     end;
   end else
     SetLength(ls,0);
+  meth.Data:= Self;
   meth.Code:= MethodAddress(FName+'_'+IntToStr(Length(ls)));
-  if Assigned(meth.Code) then begin
-    meth.Data:= Self;
-    Result:= TUDFHeader(meth)(Context, ls);
-  end else
-    raise EMathSysError.CreateFmt('Function %s has no version with %d parameters',[FName, Length(ls)]);
+  if not Assigned(meth.Code) then begin
+    meth.Code:= MethodAddress(FName+'_N');
+    if not Assigned(meth.Code) then
+      raise EMathSysError.CreateFmt('Function %s has no version with %d parameters',[FName, Length(ls)]);
+  end;
+  Result:= TUDFHeader(meth)(Context, ls);
 end;
 
 function TE_FunctionCall.StringForm: String;
@@ -1505,6 +1509,14 @@ begin
     Result.SetString(FormatConstInfo(res));
   end else
     raise EMathSysError.CreateFmt('Unknown Constant: %s',[nm]);
+end;
+
+function TE_FunctionCall.l_N(Context: TContext; args: TExprList): TValue;
+var i:integer;
+begin
+  Result.Length:= length(args);
+  for i:= 0 to Result.Length-1 do
+    Result.ListItem[i]:= args[i].Evaluate(Context); 
 end;
 
 { TE_ArgList }

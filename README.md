@@ -123,6 +123,11 @@ Konstanten:
    Gibt Information über eine Konstante zurück
 
 
+Listen/Daten:
+
+*  `l(p1,p2,p3...)`
+   Erzeugt eine neue Liste aus den Werten der Parameter
+
 
 Beispiele
 ---------
