@@ -98,9 +98,17 @@ end;
 
 procedure TfmPiMain.cbInputKeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key=#13 then begin
-    Key:= #0;
-    acRunCmd.Execute;
+  case Key of
+    #13: begin
+      Key:= #0;
+      acRunCmd.Execute;
+    end;
+    ',': begin
+      // has the numpad comma been the reason?
+      // better place would be KeyDown, but we can't change anything from there.
+      if GetKeyState(VK_DECIMAL) <> 0 then
+        Key:= NeutralFormatSettings.DecimalSeparator;
+    end;
   end;
 end;
 
