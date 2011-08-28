@@ -396,23 +396,29 @@ resourcestring
   sWork      = 'Work';
 
 function NumberToStr(const Value: Number; FS: TFormatSettings; ShowThousands: boolean):string;
-var p: integer;
+var p,e: integer;
 begin
   Result:= FloatToStrF(Value, ffGeneral, 22, 18, NeutralFormatSettings);
   if Showthousands then begin
+    e:= Pos('E', Result);
+    if e=0 then
+      e:= length(Result);
+
     p:= Pos(NeutralFormatSettings.DecimalSeparator, Result);
-    if p=0 then p:= Length(Result)+1;
+    if p=0 then p:= e+1;
     dec(p,3);
     while p>0 do begin
       Insert(NeutralFormatSettings.ThousandSeparator, Result, p);
       dec(p,3);
+      inc(e);
     end;
     p:= Pos(NeutralFormatSettings.DecimalSeparator, Result);
     if p>0 then begin
       inc(p,3);
-      while p<length(Result) do begin
+      while p<e do begin
         Insert(NeutralFormatSettings.ThousandSeparator, Result, p+1);
         inc(p,4);
+        inc(e);
       end;
     end;
   end;
