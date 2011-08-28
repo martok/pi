@@ -204,6 +204,8 @@ type
     function constinfo_1(Context: TContext; args: TExprList): TValue;
 
     function L_N(Context: TContext; args: TExprList): TValue;
+    function Range_3(Context: TContext; args: TExprList): TValue;
+    function Merge_2(Context: TContext; args: TExprList): TValue;
     function Each_3(Context: TContext; args: TExprList): TValue;
     function Aggregate_5(Context: TContext; args: TExprList): TValue;
   end;
@@ -1522,6 +1524,39 @@ begin
   Result.Length:= length(args);
   for i:= 0 to Result.Length-1 do
     Result.ListItem[i]:= args[i].Evaluate(Context); 
+end;
+
+function TE_FunctionCall.Range_3(Context: TContext; args: TExprList): TValue;
+var a,max,st: Number;
+    i:integer;
+    v: TValue;
+begin
+  a:= args[0].Evaluate(Context).GetNumber;
+  max:= args[1].Evaluate(Context).GetNumber;
+  st:= args[2].Evaluate(Context).GetNumber;
+  Result.Length:= 0;
+  repeat
+    i:= Result.Length;
+    Result.Length:= i+1;
+    v.SetNumber(a);
+    Result.SetItem(i, v);
+    a:= a + st;
+  until a > max;
+end;
+
+function TE_FunctionCall.Merge_2(Context: TContext; args: TExprList): TValue;
+var i:integer;
+    a,b: TValue;
+begin
+  a:= args[0].Evaluate(Context);
+  b:= args[1].Evaluate(Context);
+  if (a.ValueType<>vtList) or (b.ValueType<>vtList) then
+    raise EMathSysError.Create('Merge requires 2 lists.');
+  Result.Length:= a.Length + b.Length;
+  for i:= 0 to a.Length-1 do
+    Result.ListItem[i]:= a.ListItem[i];
+  for i:= 0 to b.Length-1 do
+    Result.ListItem[a.Length+i]:= b.ListItem[i];
 end;
 
 function TE_FunctionCall.Each_3(Context: TContext; args: TExprList): TValue;

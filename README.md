@@ -127,10 +127,15 @@ Listen/Daten:
 
 *  `L(p1,p2,p3...)`
    Erzeugt eine neue Liste aus den Werten der Parameter
+*  `Range(start,end,step)`
+   Erzeugt eine Liste mit start<=x<=end mit Schrittweite step
+*  `Merge(left, right)`
+   Verkettet zwei Listen zu einer neuen
 *  `Each(list, var, expr)`
    Führt `expr` in einem neuen Kontext auf jedem Element von `list` als Variable `var` aus
 *  `Aggregate(list, agg, init, var, expr)`
    Führt `expr` in einem neuen Kontext auf jedem Element von `list` als Variable `var` aus
+
 
 Beispiele
 ---------
