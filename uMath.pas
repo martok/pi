@@ -79,6 +79,7 @@ type
     FExpressions: THashedStringList;
     FParent: TContext;
     FSystem: TMathSystem;
+    FSilent: boolean;
     FContextName: string;
     function GetCount: integer;
     function GetName(index: integer): string;
@@ -88,6 +89,7 @@ type
     property Parent: TContext read FParent;
     property System : TMathSystem read FSystem;
     property ContextName: string read FContextName write FContextName;
+    property Silent: boolean read FSilent write FSilent;
     procedure Define(const Name: string; Expression: IExpression);
     procedure DefineValue(const Name: string; Value: TValue);
     procedure Undefine(const Name: string);
@@ -994,6 +996,7 @@ begin
   FExpressions:= THashedStringList.Create;
   FParent:= AParent;
   FSystem:= ASystem;
+  FSilent:= false;
 end;
 
 destructor TContext.Destroy;
@@ -1015,7 +1018,7 @@ begin
     intf._Release;
     FExpressions.Objects[i]:= TObject(Expression);
     // only warn on non-system variables
-    if not SameText(Name,'ans') then
+    if not FSilent and not SameText(Name,'ans') then
       FSystem.Output.Hint('Reassigned Variable: %s',[Name]);
   end else
     FExpressions.AddObject(Name,TObject(Expression));
