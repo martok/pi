@@ -125,9 +125,12 @@ Konstanten:
 
 Listen/Daten:
 
-*  `l(p1,p2,p3...)`
+*  `L(p1,p2,p3...)`
    Erzeugt eine neue Liste aus den Werten der Parameter
-
+*  `Each(list, var, expr)`
+   Führt `expr` in einem neuen Kontext auf jedem Element von `list` als Variable `var` aus
+*  `Aggregate(list, agg, init, var, expr)`
+   Führt `expr` in einem neuen Kontext auf jedem Element von `list` als Variable `var` aus
 
 Beispiele
 ---------
@@ -155,4 +158,9 @@ Beispiele
 
     > sum:= x+y+z, sum[x=2, y=3, z=7]
     = 12
+
+### Aggregate und Listen: Fakultät
+
+    > aggregate(l(1,2,3,4,5,6,7,8,9,10),f,1,x,f=f*x)
+    = 3628800
 

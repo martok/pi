@@ -203,7 +203,9 @@ type
     function constinfo_0(Context: TContext; args: TExprList): TValue;
     function constinfo_1(Context: TContext; args: TExprList): TValue;
 
-    function l_N(Context: TContext; args: TExprList): TValue;
+    function L_N(Context: TContext; args: TExprList): TValue;
+    function Each_3(Context: TContext; args: TExprList): TValue;
+    function Aggregate_5(Context: TContext; args: TExprList): TValue;
   end;
 
   TE_ArgList = class(TExpression)
@@ -1513,12 +1515,77 @@ begin
     raise EMathSysError.CreateFmt('Unknown Constant: %s',[nm]);
 end;
 
-function TE_FunctionCall.l_N(Context: TContext; args: TExprList): TValue;
+function TE_FunctionCall.L_N(Context: TContext; args: TExprList): TValue;
 var i:integer;
 begin
   Result.Length:= length(args);
   for i:= 0 to Result.Length-1 do
     Result.ListItem[i]:= args[i].Evaluate(Context); 
+end;
+
+function TE_FunctionCall.Each_3(Context: TContext; args: TExprList): TValue;
+var list:TValue;
+    v: IExpression; //TE_ExprRef
+    ex: IExpression;
+    i:integer;
+   ctx: TContext;
+begin
+  list:= args[0].Evaluate(Context);
+  if list.ValueType<>vtList then
+    raise EMathSysError.Create('Function Each requires a list to work on');
+  v:= args[1];
+  if v.GetClassType<>TE_ExprRef then
+    raise EMathSysError.Create('Function Each requires a variable reference');
+  ex:= args[2];
+
+  ctx:= TContext.Create(Context.System, Context);
+  try
+    ctx.Silent:= true;
+    Result.Length:= list.Length;
+    for i:= 0 to list.length-1 do begin
+      ctx.DefineValue(TE_ExprRef(v.GetObject).FName, list.ListItem[i]);
+      Result.ListItem[i]:= ex.Evaluate(ctx);
+    end;
+  finally
+    FreeAndNil(ctx);
+  end;
+end;
+
+function TE_FunctionCall.Aggregate_5(Context: TContext; args: TExprList): TValue;
+var list:TValue;
+    agg: IExpression; //TE_ExprRef
+    init: IExpression;
+    v: IExpression; //TE_ExprRef
+    ex: IExpression;
+    i:integer;
+   ctx: TContext;
+begin
+  list:= args[0].Evaluate(Context);
+  if list.ValueType<>vtList then
+    raise EMathSysError.Create('Function Aggregate requires a list to work on');
+  agg:= args[1];
+  if agg.GetClassType<>TE_ExprRef then
+    raise EMathSysError.Create('Function Aggregate requires a variable reference as aggregate');
+  init:= args[2];
+  v:= args[3];
+  if v.GetClassType<>TE_ExprRef then
+    raise EMathSysError.Create('Function Aggregate requires a variable reference');
+  ex:= args[4];
+
+  ctx:= TContext.Create(Context.System, Context);
+  try
+    ctx.Silent:= true;
+    ctx.DefineValue(TE_ExprRef(agg.GetObject).FName, init.Evaluate(ctx));
+
+    Result.Length:= list.Length;
+    for i:= 0 to list.length-1 do begin
+      ctx.DefineValue(TE_ExprRef(v.GetObject).FName, list.ListItem[i]);
+      ctx.DefineValue(TE_ExprRef(agg.GetObject).FName, ex.Evaluate(ctx));
+    end;
+    Result:= ctx.Value(TE_ExprRef(agg.GetObject).FName);
+  finally
+    FreeAndNil(ctx);
+  end;
 end;
 
 { TE_ArgList }
