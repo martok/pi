@@ -6,14 +6,20 @@ uses SysUtils, Classes, IniFiles, ComCtrls, Variants, Math, Windows, TypInfo,
      Messages, Graphics;
 
 type
-  TValueType = (vtUnassigned, vtNull, vtNumber, vtString);
+  TValueType = (vtUnassigned, vtNull, vtNumber, vtString, vtList);
   Number = Extended;
 
+  TValueListAlias = array of Boolean;
   TValue = object
   private
     FType: TValueType;
     FNum: Number;
     FStr: String;
+    FList: TValueListAlias;
+    function GetItem(Index: integer): TValue;
+    function GetLength: integer;
+    procedure SetItem(Index: integer; const Value: TValue);
+    procedure SetLength(const Value: integer);
   public
     function ValueType: TValueType;
     procedure SetNumber(const num: Number);
@@ -22,7 +28,12 @@ type
     function GetString: string;
     procedure SetNull;
     procedure SetUnassigned;
+
+    property Length: integer read GetLength write SetLength;
+    property ListItem[Index: integer]: TValue read GetItem write SetItem;
+    function OutputString: string;
   end;
+  TValueList = array of TValue;
 
   TContext = class;
   TOutput = class;
@@ -426,6 +437,50 @@ begin
   Result:= FType;
 end;
 
+function TValue.GetLength: integer;
+begin
+  if ValueType=vtList then
+    Result:= System.Length(TValueList(FList))
+  else
+    Result:= -1;
+end;
+
+procedure TValue.SetLength(const Value: integer);
+begin
+  FType:= vtList;
+  System.SetLength(TValueList(FList), Value);
+end;
+
+function TValue.GetItem(Index: integer): TValue;
+begin
+  if ValueType=vtList then
+    Result:= TValueList(FList)[Index]
+  else
+    Result.SetUnassigned;
+end;
+
+procedure TValue.SetItem(Index: integer; const Value: TValue);
+begin
+  if ValueType=vtList then
+    TValueList(FList)[Index]:= Value;
+end;
+
+function TValue.OutputString: string;
+var i:integer;
+begin
+  case ValueType of
+    vtNumber: Result:= GetString;
+    vtString: Result:= QuotedStr(GetString);
+    vtList: begin
+      Result:= '{';
+      for i:= 0 to Length-1 do
+        Result:= Result + TValueList(FList)[i].OutputString + ',';
+      Delete(Result, System.Length(Result),1);
+      Result:= Result + '}';
+    end;
+  end;
+end;
+
 { TMathSystem }
 
 constructor TMathSystem.Create;
@@ -466,7 +521,7 @@ const
   CharContextOpen = '[';
   CharContextClose = ']';
 type
-  TTokenKind = (tokVoid, tokExpression, tokEmpty, 
+  TTokenKind = (tokVoid, tokExpression, tokEmpty,
                 tokNumber, tokString, tokFuncRef, tokExprRef, tokExprContext,
                 tokBraceOpen, tokBraceClose, tokContextOpen, tokContextClose,
                 tokOperator);
@@ -849,7 +904,7 @@ begin
       vtNull: ;
     else
       begin
-        Output.Result(re.GetString);
+        Output.Result(re.OutputString);
         Context.DefineValue('ans',re);
       end;
     end;
@@ -1109,8 +1164,8 @@ begin
   case FValue.FType of
     vtUnassigned: Result:= '<?>';
     vtNull: Result:= 'null';
-    vtNumber: Result:= FValue.GetString;
-    vtString: Result:= QuotedStr(FValue.GetString);
+  else
+    Result:= FValue.OutputString;
   end;
 end;
 
@@ -1623,6 +1678,39 @@ begin
   Result.SetNumber(0 - RHS.Evaluate(Context).GetNumber);
 end;
 
+procedure FixFieldTable(TheRecord, Find, Replace: PTypeInfo);
+type
+  TFieldInfo = packed record
+    TypeInfo: PPTypeInfo;
+    Offset: Cardinal;
+  end;
+
+  PFieldTable = ^TFieldTable;
+  TFieldTable = packed record
+    X: Word;
+    Size: Cardinal;
+    Count: Cardinal;
+    Fields: array [0..0] of TFieldInfo;
+  end;
+var
+  FT: PFieldTable;
+  ppti: PPTypeInfo;
+  I, old, dummy: cardinal;
+begin
+  FT := Pointer(Integer(TheRecord) + Byte(TheRecord.Name[0]));
+  for I := FT.Count-1 downto 0 do begin
+    if FT.Fields[I].TypeInfo^ = Find then begin
+      ppti:= FT.Fields[I].TypeInfo;
+      VirtualProtect(ppti,SizeOf(ppti), PAGE_READWRITE, old);
+      try
+        ppti^:= Replace;
+      finally
+        VirtualProtect(ppti, sizeof(ppti), old, dummy);
+      end;
+    end;
+  end;
+end;
+
 initialization
   GetLocaleFormatSettings(GetThreadLocale, NeutralFormatSettings);
   with NeutralFormatSettings do
@@ -1634,4 +1722,6 @@ initialization
     LongDateFormat := 'mmmm d, yyyy';
     TimeSeparator := ':';
   end;
+
+  FixFieldTable(TypeInfo(TValue), TypeInfo(TValueListAlias), TypeInfo(TValueList));
 end.
