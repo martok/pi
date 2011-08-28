@@ -31,7 +31,8 @@ type
 
     property Length: integer read GetLength write SetLength;
     property ListItem[Index: integer]: TValue read GetItem write SetItem;
-    function OutputString: string;
+    function OutputForm: string;
+    function StringForm: string;
   end;
   TValueList = array of TValue;
 
@@ -394,6 +395,29 @@ resourcestring
   sConstants = 'Constants';
   sWork      = 'Work';
 
+function NumberToStr(const Value: Number; FS: TFormatSettings; ShowThousands: boolean):string;
+var p: integer;
+begin
+  Result:= FloatToStrF(Value, ffGeneral, 22, 18, NeutralFormatSettings);
+  if Showthousands then begin
+    p:= Pos(NeutralFormatSettings.DecimalSeparator, Result);
+    if p=0 then p:= Length(Result)+1;
+    dec(p,3);
+    while p>0 do begin
+      Insert(NeutralFormatSettings.ThousandSeparator, Result, p);
+      dec(p,3);
+    end;
+    p:= Pos(NeutralFormatSettings.DecimalSeparator, Result);
+    if p>0 then begin
+      inc(p,3);
+      while p<length(Result) do begin
+        Insert(NeutralFormatSettings.ThousandSeparator, Result, p+1);
+        inc(p,4);
+      end;
+    end;
+  end;
+end;
+
 { TValue }
 
 function TValue.GetNumber: Number;
@@ -411,7 +435,7 @@ end;
 function TValue.GetString: string;
 begin
   case FType of
-    vtNumber: Result:= FloatToStrF(FNum, ffGeneral, 22, 18, NeutralFormatSettings);
+    vtNumber: Result:= NumberToStr(FNum, NeutralFormatSettings, false);
     vtString: Result:= FStr;
   else
     Result:= '';
@@ -473,21 +497,38 @@ begin
     TValueList(FList)[Index]:= Value;
 end;
 
-function TValue.OutputString: string;
+function TValue.OutputForm: string;
 var i:integer;
 begin
   case ValueType of
-    vtNumber: Result:= GetString;
+    vtNumber: Result:= NumberToStr(FNum, NeutralFormatSettings, true);
     vtString: Result:= QuotedStr(GetString);
     vtList: begin
       Result:= '';
       for i:= 0 to Length-1 do
-        Result:= Result + TValueList(FList)[i].OutputString + ',';
+        Result:= Result + TValueList(FList)[i].OutputForm + ',';
       Delete(Result, System.Length(Result),1);
       Result:= '{' + Result + '}';
     end;
   end;
 end;
+
+function TValue.StringForm: string;
+var i:integer;
+begin
+  case ValueType of
+    vtNumber: Result:= NumberToStr(FNum, NeutralFormatSettings, false);
+    vtString: Result:= QuotedStr(GetString);
+    vtList: begin
+      Result:= '';
+      for i:= 0 to Length-1 do
+        Result:= Result + TValueList(FList)[i].StringForm + ',';
+      Delete(Result, System.Length(Result),1);
+      Result:= '{' + Result + '}';
+    end;
+  end;
+end;
+
 
 { TMathSystem }
 
@@ -912,7 +953,7 @@ begin
       vtNull: ;
     else
       begin
-        Output.Result(re.OutputString);
+        Output.Result(re.OutputForm);
         Context.DefineValue('ans',re);
       end;
     end;
@@ -950,6 +991,7 @@ begin
 end;
 
 procedure TOutput.LineOut(const Line: string; Indent: integer; Color: TColor; Style: TFontStyles);
+var p:integer;
 begin
   FRender.SelStart:= length(FRender.Text);
   FRender.SelLength:= 0;
@@ -963,9 +1005,17 @@ begin
     FRender.Paragraph.LeftIndent:= 0;
     FRender.Paragraph.TabCount:= 0;
   end;
-  FRender.SelAttributes.Color:= Color;   
+  FRender.SelAttributes.Color:= Color;
   FRender.SelAttributes.Style:= Style;
   FRender.Lines.Add(Line);
+  p:= Pos(NeutralFormatSettings.ThousandSeparator, FRender.Text);
+  while p>0 do begin
+    FRender.SelStart:= p-1;
+    FRender.SelLength:= 1;
+    FRender.SelAttributes.Name:= 'Arial';
+    FRender.SelText:= ' ';
+    p:= Pos(NeutralFormatSettings.ThousandSeparator, FRender.Text);
+  end;
   PostMessage(FRender.Handle, EM_SCROLLCARET, 0, 0);
 end;
 
@@ -1174,7 +1224,7 @@ begin
     vtUnassigned: Result:= '<?>';
     vtNull: Result:= 'null';
   else
-    Result:= FValue.OutputString;
+    Result:= FValue.StringForm;
   end;
 end;
 
@@ -1832,7 +1882,7 @@ initialization
   GetLocaleFormatSettings(GetThreadLocale, NeutralFormatSettings);
   with NeutralFormatSettings do
   begin
-    ThousandSeparator := #0;
+    ThousandSeparator := #160;
     DecimalSeparator := '.';
     DateSeparator := '-';
     ShortDateFormat := 'yy-mm-dd';
