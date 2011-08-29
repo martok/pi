@@ -32,7 +32,8 @@ Operatoren
 *  `:=`
    AssigmentDynamic. Weist der linken Seite *den Ausdruck* auf der rechten Seite zu
 *  `,`
-   ArgList. Stellt sowohl Parameterlisten als auch verkette Ausdrücke dar. Ergebnis ist immer das Ergebnis des letzten Ausdrucks. (Beispiele 4, 5)
+   ArgList. Stellt sowohl Parameterlisten als auch verkette Ausdrücke dar.
+   Ergebnis ist immer das Ergebnis des letzten Ausdrucks. (Beispiele 4, 5)
 
 
 
@@ -134,7 +135,8 @@ Listen/Daten:
 *  `Each(list, var, expr)`
    Führt `expr` in einem neuen Kontext auf jedem Element von `list` als Variable `var` aus
 *  `Aggregate(list, agg, init, var, expr)`
-   Führt `expr` in einem neuen Kontext auf jedem Element von `list` als Variable `var` aus
+   Wendet `expr` auf jedes Element in `list` als `var` an. Dabei kann `agg` (vorbelegt mit `init`) modifiziert werden.
+   Rückgabewert ist der Wert von `agg`.
 
 
 Beispiele
