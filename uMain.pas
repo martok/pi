@@ -106,7 +106,7 @@ begin
     ',': begin
       // has the numpad comma been the reason?
       // better place would be KeyDown, but we can't change anything from there.
-      if GetKeyState(VK_DECIMAL) <> 0 then
+      if GetKeyState(VK_DECIMAL) < 0 then
         Key:= NeutralFormatSettings.DecimalSeparator;
     end;
   end;
