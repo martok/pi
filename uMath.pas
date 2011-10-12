@@ -764,9 +764,10 @@ var Tokens: TTokenList;
   end;
 
   procedure Fold(L,R: integer);
-  var i,A,ll,rr:integer;
+  var i,A,eid,ll,rr:integer;
       tmp: IExpression;
       b: pchar;
+
     function NextR(k: integer): integer;
     var j:integer;
     begin
@@ -868,9 +869,12 @@ var Tokens: TTokenList;
       end;
 
     //finally, operators
+    // Note: this wastes some extra iterations per Prio-Class, just ignore that, okay?
     for A:= 0 to high(Expressions) do begin
       for i:= L to R do
-        if (Tokens[i].Kind=tokOperator) and (Tokens[i].OpIdx=A) then begin
+        if (Tokens[i].Kind=tokOperator) and
+           (Expressions[Tokens[i].OpIdx].P=Expressions[A].P) then begin
+          eid:= Tokens[i].OpIdx;
           rr:= NextR(i);
           ll:= NextL(i);
 
@@ -880,15 +884,15 @@ var Tokens: TTokenList;
           if Tokens[rr].Kind<>tokExpression then
             raise ESyntaxError.CreateFmt('Position %d: expected expression, found %s',[Tokens[rr].Pos, Tokens[rr].Value]);
 
-          if (Expressions[A].Cls = TE_Subtraction) and
+          if (Expressions[eid].Cls = TE_Subtraction) and
              ((ll<0) or (Tokens[ll].Kind<>tokExpression)) then begin
             tmp:= TE_Negation.Create;
             tmp.RHS:= Tokens[rr].Expr;
           end else begin
-            tmp:= Expressions[A].Cls.Create;
+            tmp:= Expressions[eid].Cls.Create;
 
             tmp.RHS:= Tokens[rr].Expr;
-            if not Expressions[A].Unary then begin
+            if not Expressions[eid].Unary then begin
               if ll<0 then
                 raise ESyntaxError.CreateFmt('Position %d: Operator has no LHS',[Tokens[i].Pos]);
               if Tokens[ll].Kind<>tokExpression then
@@ -899,7 +903,7 @@ var Tokens: TTokenList;
           end;
           Tokens[rr].Kind:= tokVoid;
           Tokens[i].Kind:= tokExpression;
-          Tokens[i].Expr:= tmp;    
+          Tokens[i].Expr:= tmp;
         end;
     end;
 
