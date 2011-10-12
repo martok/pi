@@ -112,6 +112,8 @@ Variablen&Context-Management:
    Löscht den aktuell obersten Kontext
 *  `Undef(string)`
    Entfernt eine Variable aus dem aktuellen Kontext
+*  `Clear()`
+   Leert die Ausgabe-Konsole
 
 
 Konstanten:

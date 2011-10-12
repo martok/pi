@@ -72,6 +72,7 @@ type
     procedure Hint(const Line: string; Params: array of const);
     procedure Error(const Line: string; Params: array of const);
     procedure Result(const Line: string);
+    procedure Clear;
     property Render : TRichEdit read FRender write FRender;
   end;
 
@@ -199,6 +200,7 @@ type
     function New_0(Context: TContext; args: TExprList): TValue;
     function New_1(Context: TContext; args: TExprList): TValue;
     function Drop_0(Context: TContext; args: TExprList): TValue;
+    function Clear_0(Context: TContext; args: TExprList): TValue;
 
     function const_1(Context: TContext; args: TExprList): TValue;
     function constinfo_0(Context: TContext; args: TExprList): TValue;
@@ -1049,6 +1051,11 @@ begin
   LineOut(s, -10, clDkGray,[]);
 end;
 
+procedure TOutput.Clear;
+begin
+  FRender.Clear;
+end;
+
 { TContext }
 
 constructor TContext.Create(ASystem: TMathSystem; AParent: TContext);
@@ -1678,6 +1685,13 @@ begin
   finally
     FreeAndNil(ctx);
   end;
+end;
+
+function TE_FunctionCall.Clear_0(Context: TContext;
+  args: TExprList): TValue;
+begin
+  Context.System.Output.Clear;
+  Result.SetUnassigned;
 end;
 
 { TE_ArgList }
