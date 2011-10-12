@@ -25,6 +25,8 @@ type
     ilButtons: TImageList;
     reOutput: TRichEdit;
     trContext: TTreeNT;
+    ToolButton5: TToolButton;
+    acHelp: TAction;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -34,6 +36,7 @@ type
     procedure acRunTestExecute(Sender: TObject);
     procedure trContextCollapsing(Sender: TObject; Node: TTreeNTNode;
       var AllowCollapse: Boolean);
+    procedure acHelpExecute(Sender: TObject);
   private
     { Private-Deklarationen }
     procedure UpdateContext;
@@ -151,6 +154,32 @@ procedure TfmPiMain.trContextCollapsing(Sender: TObject; Node: TTreeNTNode;
   var AllowCollapse: Boolean);
 begin
   AllowCollapse:= false;
+end;
+
+procedure TfmPiMain.acHelpExecute(Sender: TObject);
+var
+  ls: TStringList;
+  i: integer;
+  ol: integer;
+begin
+  ls:=TStringList.Create;
+  try
+    try
+      ls.LoadFromFile(ExtractFilePath(ParamStr(0))+'readme.md');
+    except
+      MessageDlg('Could not load "readme.md". Is it in the application''s folder?', mtError, [mbOK], 0);
+    end;
+    reOutput.Lines.Add(sLineBreak+sLineBreak+sLineBreak);
+    ol:= reOutput.SelStart;
+    for i:= 0 to ls.Count-1 do begin
+      reOutput.Lines.Add(Utf8ToAnsi(ls[i]));
+    end;
+    reOutput.Lines.Add(sLineBreak+sLineBreak+sLineBreak);
+    reOutput.SelStart:= ol;
+    PostMessage(reOutput.Handle, EM_SCROLLCARET, 0, 0);
+  finally
+    ls.Free;
+  end;
 end;
 
 end.
