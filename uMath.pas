@@ -175,6 +175,8 @@ type
     function Lg_1(Context: TContext; args: TExprList): TValue;
     function Ld_1(Context: TContext; args: TExprList): TValue;
     function Loga_2(Context: TContext; args: TExprList): TValue;
+    function Sqrt_1(Context: TContext; args: TExprList): TValue;
+    function NRt_2(Context: TContext; args: TExprList): TValue;
     function Fac_1(Context: TContext; args: TExprList): TValue;
 
     function Deg2Rad_1(Context: TContext; args: TExprList): TValue;
@@ -1346,6 +1348,16 @@ end;
 function TE_FunctionCall.Loga_2(Context: TContext; args: TExprList): TValue;
 begin
   Result.SetNumber(Math.LogN(args[0].Evaluate(Context).GetNumber,args[1].Evaluate(Context).GetNumber));
+end;
+
+function TE_FunctionCall.Sqrt_1(Context: TContext; args: TExprList): TValue;
+begin
+  Result.SetNumber(Sqrt(args[0].Evaluate(Context).GetNumber));
+end;
+
+function TE_FunctionCall.NRt_2(Context: TContext; args: TExprList): TValue;
+begin
+  Result.SetNumber(Math.Power(args[1].Evaluate(Context).GetNumber, 1/args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.Fac_1(Context: TContext; args: TExprList): TValue;
