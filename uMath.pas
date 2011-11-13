@@ -165,6 +165,42 @@ type
     function OutputForm: string; override;
   end;
 
+  TE_GenericList = class(TE_Constant, IValueList)
+  protected
+    function GetItem(Index: Integer): IValue; virtual; abstract;
+    function GetLength: Integer; virtual; abstract;
+    procedure SetItem(Index: Integer; const Value: IValue); virtual; abstract;
+    procedure SetLength(const Value: Integer); virtual; abstract;
+  public
+    constructor Create;
+    function StringForm: String; override;
+  end;
+
+  TE_FixedList = class(TE_GenericList)
+  private
+    FItems: array of IValue;
+  protected
+    function GetItem(Index: Integer): IValue; override;
+    function GetLength: Integer; override;
+    procedure SetItem(Index: Integer; const Value: IValue); override;
+    procedure SetLength(const Value: Integer); override;
+  public
+    function OutputForm: String; override;
+  end;
+
+  TE_RangeList = class(TE_GenericList)
+  private
+    FStart, FStep, FEnd: Number;
+  protected
+    function GetItem(Index: Integer): IValue; override;
+    function GetLength: Integer; override;
+    procedure SetItem(Index: Integer; const Value: IValue); override;
+    procedure SetLength(const Value: Integer); override;
+  public
+    constructor Create(Start, Step, Max: Number);
+    function OutputForm: String; override;
+  end;
+
   TE_ExprRef = class(TExpression)
   private
     FName: string;
@@ -224,12 +260,12 @@ type
     function constinfo_0(Context: TContext; args: TExprList): IValue;
     function constinfo_1(Context: TContext; args: TExprList): IValue;
 
-(*    function L_N(Context: TContext; args: TExprList): IValue;
+    function L_N(Context: TContext; args: TExprList): IValue;
     function Range_3(Context: TContext; args: TExprList): IValue;
-    function Merge_2(Context: TContext; args: TExprList): IValue;
     function Each_3(Context: TContext; args: TExprList): IValue;
     function Aggregate_5(Context: TContext; args: TExprList): IValue;
-*)  end;
+    function Merge_2(Context: TContext; args: TExprList): IValue;
+  end;
 
   TE_ArgList = class(TExpression)
   private
@@ -871,15 +907,10 @@ var re: IValue;
 begin
   try
     re:= Eval(Expr);
-    case re.ValueType of
-      vtUnassigned: ;
-      vtNull: ;
-    else
-      begin
-        if Supports(re, IStringConvertible, rs) then
-          Output.Result(rs.OutputForm);
-        Context.DefineValue('ans',re);
-      end;
+    if re.ValueType <> vtUnassigned then begin
+      if Supports(re, IStringConvertible, rs) then
+        Output.Result(rs.OutputForm);
+      Context.DefineValue('ans',re);
     end;
   except
     on e: EMathSysError do
@@ -1060,15 +1091,9 @@ end;
 
 
 procedure TContext.DefineValue(const Name: string; Value: IValue);
-var expr: IExpression;
 begin
-  case Value.ValueType of
-    vtUnassigned: ;
-  else
-    expr:= TE_Constant.Create(Value);
-  end;
-  if Assigned(expr) then
-    Define(Name,expr);
+  if Value.ValueType<>vtUnassigned then
+    Define(Name,Value as IExpression);
 end;
 
 function TContext.Defines(const Name: string): boolean;
@@ -1231,7 +1256,6 @@ begin
 end;
 
 function TE_Constant.OutputForm: string;
-var i:integer;
 begin
   case FValueType of
     vtNumber: Result:= NumberToStr(FNumber, NeutralFormatSettings, true);
@@ -1239,7 +1263,101 @@ begin
   end;
 end;
 
+{ TE_GenericList }
 
+constructor TE_GenericList.Create;
+begin
+  inherited Create;
+  FValueType:= vtNull;
+end;
+
+function TE_GenericList.StringForm: String;
+begin
+  Result:= OutputForm;
+end;
+
+{ TE_FixedList }
+
+function TE_FixedList.GetLength: Integer;
+begin
+  Result:= Length(FItems);
+end;
+
+procedure TE_FixedList.SetLength(const Value: Integer);
+begin
+  System.SetLength(FItems, Value);
+end;
+
+function TE_FixedList.GetItem(Index: Integer): IValue;
+begin
+  Result:= FItems[Index];
+end;
+
+procedure TE_FixedList.SetItem(Index: Integer; const Value: IValue);
+begin
+  FItems[Index]:= Value;
+end;
+
+function TE_FixedList.OutputForm: String;
+var i:integer;
+  function gets(index: integer):string;
+  var s: IStringConvertible;
+  begin
+    if Supports(GetItem(index), IStringConvertible, s) then
+      Result:= s.OutputForm
+    else
+      Result:= '<Unknown>';
+  end;
+begin
+  if GetLength=0 then
+    Result:= ''
+  else begin
+    Result:= gets(0);
+    for i:= 1 to GetLength-1 do begin
+      if Length(Result) > 200 then begin
+        Result:= Result + ', ... ('+IntToStr(GetLength-i+1)+')';
+        break;
+      end
+      else
+        Result:= Result + ', ' + gets(i);
+    end;
+  end;
+  Result:= '{' + Result + '}';
+end;
+
+{ TE_RangeList }
+
+function TE_RangeList.GetItem(Index: Integer): IValue;
+begin
+  Result:= TE_Constant.Create(FStart + Index * FStep);
+end;
+
+function TE_RangeList.GetLength: Integer;
+begin
+  Result:= Trunc(1 + (FEnd - FStart) / FStep);
+end;
+
+procedure TE_RangeList.SetItem(Index: Integer; const Value: IValue);
+begin
+end;
+
+procedure TE_RangeList.SetLength(const Value: Integer);
+begin
+end;
+
+function TE_RangeList.OutputForm: String;
+begin
+  Result:= Format('{%0:s->%2:s,%1:s}',[NumberToStr(FStart,NeutralFormatSettings,false),NumberToStr(FEnd,NeutralFormatSettings,false),NumberToStr(FEnd,NeutralFormatSettings,false)]);
+end;
+
+
+constructor TE_RangeList.Create(Start, Step, Max: Number);
+begin
+  inherited Create;
+  FStart:= Start;
+  FStep:= Step;
+  FEnd:= Max;
+end;
 
 { TE_ExprRef }
 
@@ -1480,8 +1598,7 @@ begin
   Result:= TE_Constant.Create(n);
 end;
 
-function TE_FunctionCall.Undef_1(Context: TContext;
-  args: TExprList): IValue;
+function TE_FunctionCall.Undef_1(Context: TContext; args: TExprList): IValue;
 begin
   Context.Undefine(args[0].Evaluate(Context).GetString);
 end;
@@ -1581,56 +1698,35 @@ begin
     raise EMathSysError.CreateFmt('Unknown Constant: %s',[nm]);
 end;
 
-(*function TE_FunctionCall.L_N(Context: TContext; args: TExprList): IValue;
+function TE_FunctionCall.L_N(Context: TContext; args: TExprList): IValue;
 var i:integer;
+    ls: IValueList;
 begin
-  Result.Length:= length(args);
-  for i:= 0 to Result.Length-1 do
-    Result.ListItem[i]:= args[i].Evaluate(Context);
+  ls:= TE_FixedList.Create;
+  ls.Length:= length(args);
+  for i:= 0 to ls.Length-1 do
+    ls.ListItem[i]:= args[i].Evaluate(Context);
+  ls.QueryInterface(IValue, Result);
 end;
 
 function TE_FunctionCall.Range_3(Context: TContext; args: TExprList): IValue;
 var a,max,st: Number;
-    i:integer;
-    v: IValue;
 begin
   a:= args[0].Evaluate(Context).GetNumber;
   max:= args[1].Evaluate(Context).GetNumber;
   st:= args[2].Evaluate(Context).GetNumber;
-  Result.Length:= 0;
-  repeat
-    i:= Result.Length;
-    Result.Length:= i+1;
-    v.SetNumber(a);
-    Result.SetItem(i, v);
-    a:= a + st;
-  until a > max;
-end;
-
-function TE_FunctionCall.Merge_2(Context: TContext; args: TExprList): IValue;
-var i:integer;
-    a,b: IValue;
-begin
-  a:= args[0].Evaluate(Context);
-  b:= args[1].Evaluate(Context);
-  if (a.ValueType<>vtList) or (b.ValueType<>vtList) then
-    raise EMathSysError.Create('Merge requires 2 lists.');
-  Result.Length:= a.Length + b.Length;
-  for i:= 0 to a.Length-1 do
-    Result.ListItem[i]:= a.ListItem[i];
-  for i:= 0 to b.Length-1 do
-    Result.ListItem[a.Length+i]:= b.ListItem[i];
+  Result:= TE_RangeList.Create(a,st,max);
 end;
 
 function TE_FunctionCall.Each_3(Context: TContext; args: TExprList): IValue;
-var list:IValue;
+var list:IValueList;
     v: IExpression; //TE_ExprRef
     ex: IExpression;
     i:integer;
-   ctx: TContext;
+    ctx: TContext;
+    res: IValueList;
 begin
-  list:= args[0].Evaluate(Context);
-  if list.ValueType<>vtList then
+  if not Supports(args[0].Evaluate(Context), IValueList, list) then
     raise EMathSysError.Create('Function Each requires a list to work on');
   v:= args[1];
   if v.GetClassType<>TE_ExprRef then
@@ -1640,27 +1736,28 @@ begin
   ctx:= TContext.Create(Context.System, Context);
   try
     ctx.Silent:= true;
-    Result.Length:= list.Length;
+    res:= TE_FixedList.Create;
+    res.Length:= list.Length;
     for i:= 0 to list.length-1 do begin
       ctx.DefineValue(TE_ExprRef(v.GetObject).FName, list.ListItem[i]);
-      Result.ListItem[i]:= ex.Evaluate(ctx);
+      res.ListItem[i]:= ex.Evaluate(ctx);
     end;
+    Result:= res as IValue;
   finally
     FreeAndNil(ctx);
   end;
 end;
 
 function TE_FunctionCall.Aggregate_5(Context: TContext; args: TExprList): IValue;
-var list:IValue;
+var list:IValueList;
     agg: IExpression; //TE_ExprRef
     init: IExpression;
     v: IExpression; //TE_ExprRef
     ex: IExpression;
     i:integer;
-   ctx: TContext;
+    ctx: TContext;
 begin
-  list:= args[0].Evaluate(Context);
-  if list.ValueType<>vtList then
+  if not Supports(args[0].Evaluate(Context), IValueList, list) then
     raise EMathSysError.Create('Function Aggregate requires a list to work on');
   agg:= args[1];
   if agg.GetClassType<>TE_ExprRef then
@@ -1676,7 +1773,6 @@ begin
     ctx.Silent:= true;
     ctx.DefineValue(TE_ExprRef(agg.GetObject).FName, init.Evaluate(ctx));
 
-    Result.Length:= list.Length;
     for i:= 0 to list.length-1 do begin
       ctx.DefineValue(TE_ExprRef(v.GetObject).FName, list.ListItem[i]);
       ctx.DefineValue(TE_ExprRef(agg.GetObject).FName, ex.Evaluate(ctx));
@@ -1685,7 +1781,24 @@ begin
   finally
     FreeAndNil(ctx);
   end;
-end;    *)
+end;
+
+function TE_FunctionCall.Merge_2(Context: TContext; args: TExprList): IValue;
+var i:integer;
+    a,b: IValueList;
+    res: IValueList;
+begin
+  if not Supports(args[0].Evaluate(Context), IValueList, a) or
+     not Supports(args[1].Evaluate(Context), IValueList, b) then
+    raise EMathSysError.Create('Merge requires 2 lists.');
+  res:= TE_FixedList.Create;
+  res.Length:= a.Length + b.Length;
+  for i:= 0 to a.Length-1 do
+    res.ListItem[i]:= a.ListItem[i];
+  for i:= 0 to b.Length-1 do
+    res.ListItem[a.Length+i]:= b.ListItem[i];
+  Result:= res as IValue;
+end;
 
 function TE_FunctionCall.Clear_0(Context: TContext;
   args: TExprList): IValue;
@@ -1693,6 +1806,7 @@ begin
   Context.System.Output.Clear;
   Result:= TE_Constant.CreateUnassigned;
 end;
+
 
 { TE_ArgList }
 
