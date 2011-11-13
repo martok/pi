@@ -190,8 +190,9 @@ begin
 end;
 
 procedure TMathSysTest.TestDatatypes;
-var result: TValue;
+var result: IValue;
 begin
+  Result:= TE_Constant.Create();
   BeginGroup('DataTypes');
   try
     BeginGroup('Num->Num');
