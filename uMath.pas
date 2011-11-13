@@ -263,6 +263,7 @@ type
     function L_N(Context: TContext; args: TExprList): IValue;
     function Range_3(Context: TContext; args: TExprList): IValue;
     function Each_3(Context: TContext; args: TExprList): IValue;
+    function Flatten_1(Context: TContext; args: TExprList): IValue;
     function Aggregate_5(Context: TContext; args: TExprList): IValue;
     function Merge_2(Context: TContext; args: TExprList): IValue;
   end;
@@ -1746,6 +1747,21 @@ begin
   finally
     FreeAndNil(ctx);
   end;
+end;
+
+function TE_FunctionCall.Flatten_1(Context: TContext; args: TExprList): IValue;
+var list:IValueList;
+    i:integer;
+    res: IValueList;
+begin
+  if not Supports(args[0].Evaluate(Context), IValueList, list) then
+    raise EMathSysError.Create('Function Flatten requires a list to work on');
+
+  res:= TE_FixedList.Create;
+  res.Length:= list.Length;
+  for i:= 0 to list.length-1 do
+    res.ListItem[i]:= list.ListItem[i];
+  Result:= res as IValue;
 end;
 
 function TE_FunctionCall.Aggregate_5(Context: TContext; args: TExprList): IValue;
