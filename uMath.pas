@@ -140,18 +140,16 @@ type
     constructor Create;
   end;
 
-  TE_Constant = class(TExpression, IValue)
+  TValue = class(TInterfacedObject, IValue, IStringConvertible)
   private
     FValueType: TValueType;
     FNumber: Number;
     FString: String;
   public
-    constructor Create(Val: IValue); overload;
     constructor Create(Val: Number); overload;
     constructor Create(Val: String); overload;
     constructor CreateUnassigned;
     constructor CreateNull;
-    function Evaluate(Context: TContext): IValue; override;
     //IValue
     function ValueType: TValueType;
     procedure SetNumber(const num: Number);
@@ -161,11 +159,20 @@ type
     procedure SetNull;
     procedure SetUnassigned;
     //IStringConvertible
-    function StringForm: String; override;
-    function OutputForm: string; override;
+    function StringForm: String; virtual;
+    function OutputForm: string; virtual;
   end;
 
-  TE_GenericList = class(TE_Constant, IValueList)
+  TE_Constant = class(TExpression)
+  private
+    FValue: IValue;
+  public
+    constructor Create(Val: IValue); overload;
+    function Evaluate(Context: TContext): IValue; override;
+    function StringForm: String; override;
+  end;
+
+  TValueGenericList = class(TValue, IValueList)
   protected
     function GetItem(Index: Integer): IValue; virtual; abstract;
     function GetLength: Integer; virtual; abstract;
@@ -176,7 +183,7 @@ type
     function StringForm: String; override;
   end;
 
-  TE_FixedList = class(TE_GenericList)
+  TValueFixedList = class(TValueGenericList)
   private
     FItems: array of IValue;
   protected
@@ -188,7 +195,7 @@ type
     function OutputForm: String; override;
   end;
 
-  TE_RangeList = class(TE_GenericList)
+  TValueRangeList = class(TValueGenericList)
   private
     FStart, FStep, FEnd: Number;
   protected
@@ -775,12 +782,12 @@ var Tokens: TTokenList;
       case Tokens[i].Kind of
         tokNumber: begin
           Tokens[i].Kind:= tokExpression;
-          Tokens[i].Expr:= TE_Constant.Create(StrToFloat(Tokens[i].Value, NeutralFormatSettings));
+          Tokens[i].Expr:= TE_Constant.Create(TValue.Create(StrToFloat(Tokens[i].Value, NeutralFormatSettings)));
         end;
         tokString: begin
           Tokens[i].Kind:= tokExpression;
           b:= PChar(Tokens[i].Value);
-          Tokens[i].Expr:= TE_Constant.Create(AnsiExtractQuotedStr(b,CharQuote));
+          Tokens[i].Expr:= TE_Constant.Create(TValue.Create(AnsiExtractQuotedStr(b,CharQuote)));
         end;
         tokExprRef: begin
           Tokens[i].Kind:= tokExpression;
@@ -892,11 +899,11 @@ begin
       if TE_FunctionCall.CheckSysCalls(s) then begin
         Result:= ex.Evaluate(FContext);
         if not Assigned(Result) then
-          Result:= TE_Constant.CreateUnassigned;
+          Result:= TValue.CreateUnassigned;
       end;
     end
     else
-      Result:= TE_Constant.CreateNull;
+      Result:= TValue.CreateNull;
   finally
     ex:= nil;
   end;
@@ -1075,7 +1082,7 @@ begin
   if Assigned(ex) then
     Result:= ex.Evaluate(Self)
   else begin
-    Result:= TE_Constant.CreateUnassigned;
+    Result:= TValue.CreateUnassigned;
     raise EMathSysError.CreateFmt('Expression unknown in current Context: %s',[Name]);
   end;
 end;
@@ -1094,7 +1101,7 @@ end;
 procedure TContext.DefineValue(const Name: string; Value: IValue);
 begin
   if Value.ValueType<>vtUnassigned then
-    Define(Name,Value as IExpression);
+    Define(Name,TE_Constant.Create(Value));
 end;
 
 function TContext.Defines(const Name: string): boolean;
@@ -1154,50 +1161,35 @@ begin
     Result:= format('%s(%s,%s)',[Copy(ClassName,4,10000),LHS.StringForm,RHS.StringForm]);
 end;
 
-{ TE_Constant }
+{ TValue }
 
-constructor TE_Constant.Create(Val: IValue);
-begin
-  inherited Create;
-  FValueType:= Val.ValueType;
-  case FValueType of
-    vtNumber: FNumber:= Val.GetNumber;
-    vtString: FString:= Val.GetString;
-  end;
-end;
-
-constructor TE_Constant.Create(Val: Number);
+constructor TValue.Create(Val: Number);
 begin
   inherited Create;
   FValueType:= vtNumber;
   FNumber:= Val;
 end;
 
-constructor TE_Constant.Create(Val: String);
+constructor TValue.Create(Val: String);
 begin
   inherited Create;
   FValueType:= vtString;
   FString:= Val;
 end;
 
-constructor TE_Constant.CreateUnassigned;
+constructor TValue.CreateUnassigned;
 begin
   inherited Create;
   FValueType:= vtUnassigned;
 end;
 
-constructor TE_Constant.CreateNull;
+constructor TValue.CreateNull;
 begin
   inherited Create;
   FValueType:= vtNull;
 end;
 
-function TE_Constant.Evaluate(Context: TContext): IValue;
-begin
-  QueryInterface(IValue, Result);
-end;
-
-function TE_Constant.StringForm: String;
+function TValue.StringForm: String;
 begin
   case FValueType of
     vtUnassigned: Result:= '<?>';
@@ -1207,7 +1199,7 @@ begin
   end;
 end;
 
-function TE_Constant.GetNumber: Number;
+function TValue.GetNumber: Number;
 begin
   {$WARNINGS OFF}
   case FValueType of
@@ -1219,7 +1211,7 @@ begin
   {$WARNINGS ON}
 end;
 
-function TE_Constant.GetString: string;
+function TValue.GetString: string;
 begin
   case FValueType of
     vtNumber: Result:= NumberToStr(FNumber, NeutralFormatSettings, false);
@@ -1229,34 +1221,34 @@ begin
   end;
 end;
 
-procedure TE_Constant.SetNumber(const num: Number);
+procedure TValue.SetNumber(const num: Number);
 begin
   FNumber:= num;
   FValueType:= vtNumber;
 end;
 
-procedure TE_Constant.SetString(const str: String);
+procedure TValue.SetString(const str: String);
 begin
   FString:= str;
   FValueType:= vtString;
 end;
 
-procedure TE_Constant.SetNull;
+procedure TValue.SetNull;
 begin
   FValueType:= vtNull;
 end;
 
-procedure TE_Constant.SetUnassigned;
+procedure TValue.SetUnassigned;
 begin
   FValueType:= vtUnassigned;
 end;
 
-function TE_Constant.ValueType: TValueType;
+function TValue.ValueType: TValueType;
 begin
   Result:= FValueType;
 end;
 
-function TE_Constant.OutputForm: string;
+function TValue.OutputForm: string;
 begin
   case FValueType of
     vtNumber: Result:= NumberToStr(FNumber, NeutralFormatSettings, true);
@@ -1264,42 +1256,62 @@ begin
   end;
 end;
 
-{ TE_GenericList }
 
-constructor TE_GenericList.Create;
+
+{ TE_Constant }
+
+constructor TE_Constant.Create(Val: IValue);
+begin
+  inherited Create;
+  FValue:= Val;
+end;
+
+function TE_Constant.Evaluate(Context: TContext): IValue;
+begin
+  Result:= FValue;
+end;
+
+function TE_Constant.StringForm: String;
+begin
+  Result:= (FValue as IStringConvertible).StringForm;
+end;
+
+{ TValueGenericList }
+
+constructor TValueGenericList.Create;
 begin
   inherited Create;
   FValueType:= vtNull;
 end;
 
-function TE_GenericList.StringForm: String;
+function TValueGenericList.StringForm: String;
 begin
   Result:= OutputForm;
 end;
 
-{ TE_FixedList }
+{ TValueFixedList }
 
-function TE_FixedList.GetLength: Integer;
+function TValueFixedList.GetLength: Integer;
 begin
   Result:= Length(FItems);
 end;
 
-procedure TE_FixedList.SetLength(const Value: Integer);
+procedure TValueFixedList.SetLength(const Value: Integer);
 begin
   System.SetLength(FItems, Value);
 end;
 
-function TE_FixedList.GetItem(Index: Integer): IValue;
+function TValueFixedList.GetItem(Index: Integer): IValue;
 begin
   Result:= FItems[Index];
 end;
 
-procedure TE_FixedList.SetItem(Index: Integer; const Value: IValue);
+procedure TValueFixedList.SetItem(Index: Integer; const Value: IValue);
 begin
   FItems[Index]:= Value;
 end;
 
-function TE_FixedList.OutputForm: String;
+function TValueFixedList.OutputForm: String;
 var i:integer;
   function gets(index: integer):string;
   var s: IStringConvertible;
@@ -1326,33 +1338,33 @@ begin
   Result:= '{' + Result + '}';
 end;
 
-{ TE_RangeList }
+{ TValueRangeList }
 
-function TE_RangeList.GetItem(Index: Integer): IValue;
+function TValueRangeList.GetItem(Index: Integer): IValue;
 begin
-  Result:= TE_Constant.Create(FStart + Index * FStep);
+  Result:= TValue.Create(FStart + Index * FStep);
 end;
 
-function TE_RangeList.GetLength: Integer;
+function TValueRangeList.GetLength: Integer;
 begin
   Result:= Trunc(1 + (FEnd - FStart) / FStep);
 end;
 
-procedure TE_RangeList.SetItem(Index: Integer; const Value: IValue);
+procedure TValueRangeList.SetItem(Index: Integer; const Value: IValue);
 begin
 end;
 
-procedure TE_RangeList.SetLength(const Value: Integer);
+procedure TValueRangeList.SetLength(const Value: Integer);
 begin
 end;
 
-function TE_RangeList.OutputForm: String;
+function TValueRangeList.OutputForm: String;
 begin
   Result:= Format('{%0:s->%2:s,%1:s}',[NumberToStr(FStart,NeutralFormatSettings,false),NumberToStr(FEnd,NeutralFormatSettings,false),NumberToStr(FEnd,NeutralFormatSettings,false)]);
 end;
 
 
-constructor TE_RangeList.Create(Start, Step, Max: Number);
+constructor TValueRangeList.Create(Start, Step, Max: Number);
 begin
   inherited Create;
   FStart:= Start;
@@ -1435,32 +1447,32 @@ end;
 
 function TE_FunctionCall.Abs_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(System.Abs(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(System.Abs(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.Exp_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(System.Exp(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(System.Exp(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.Ln_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(System.Ln(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(System.Ln(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.Lg_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(Math.Log10(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(Math.Log10(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.Ld_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(Math.Log2(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(Math.Log2(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.Loga_2(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(Math.LogN(args[0].Evaluate(Context).GetNumber,args[1].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(Math.LogN(args[0].Evaluate(Context).GetNumber,args[1].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.Fac_1(Context: TContext; args: TExprList): IValue;
@@ -1473,82 +1485,82 @@ begin
     accu := accu * k;
     k:= k+1;
   end;
-  Result:= TE_Constant.Create(accu);
+  Result:= TValue.Create(accu);
 end;
 
 function TE_FunctionCall.Deg2Rad_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(DegToRad(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(DegToRad(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.Rad2Deg_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(RadToDeg(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(RadToDeg(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.Sin_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(Sin(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(Sin(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.Cos_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(Cos(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(Cos(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.Tan_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(Tan(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(Tan(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.ArcSin_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(ArcSin(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(ArcSin(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.ArcCos_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(ArcCos(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(ArcCos(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.ArcTan_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(ArcTan(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(ArcTan(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.ArcTan_2(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(ArcTan2(args[0].Evaluate(Context).GetNumber,args[1].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(ArcTan2(args[0].Evaluate(Context).GetNumber,args[1].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.Sinh_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(Sinh(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(Sinh(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.Cosh_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(Cosh(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(Cosh(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.Tanh_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(Tanh(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(Tanh(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.ArSinh_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(ArcSinh(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(ArcSinh(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.ArCosh_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(ArcCosh(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(ArcCosh(args[0].Evaluate(Context).GetNumber));
 end;
 
 function TE_FunctionCall.ArTanh_1(Context: TContext; args: TExprList): IValue;
 begin
-  Result:= TE_Constant.Create(ArcTanh(args[0].Evaluate(Context).GetNumber));
+  Result:= TValue.Create(ArcTanh(args[0].Evaluate(Context).GetNumber));
 end;
 
 const
@@ -1570,7 +1582,7 @@ begin
       raise EMathSysError.CreateFmt('Invalid numeral in base %d: ''%s''',[base, n[i]]);
     v:= v * base + j;
   end;
-  Result:= TE_Constant.Create(v);
+  Result:= TValue.Create(v);
 end;
 
 function TE_FunctionCall.ToBase_2(Context: TContext; args: TExprList): IValue;
@@ -1582,7 +1594,7 @@ begin
   v:= Trunc(args[0].Evaluate(Context).GetNumber);
 
   if v = 0 then begin
-    Result:= TE_Constant.Create('0');
+    Result:= TValue.Create('0');
     exit;
   end;
 
@@ -1596,7 +1608,7 @@ begin
     v:= v div base;
     n:= BaseString[i + 1] + n;
   end;
-  Result:= TE_Constant.Create(n);
+  Result:= TValue.Create(n);
 end;
 
 function TE_FunctionCall.Undef_1(Context: TContext; args: TExprList): IValue;
@@ -1660,7 +1672,7 @@ var nm: string;
 begin
   nm:= args[0].Evaluate(Context).GetString;
   if FindConstant(nm, res) then
-    Result:= TE_Constant.Create(res.Value)
+    Result:= TValue.Create(res.Value)
   else
     raise EMathSysError.CreateFmt('Unknown Constant: %s',[nm]);
 end;
@@ -1684,7 +1696,7 @@ begin
   Count:= 0;
   ListIn(@MathematicalConstants, Low(MathematicalConstants), high(MathematicalConstants));
   ListIn(@PhysicalConstants, Low(PhysicalConstants), high(PhysicalConstants));
-  Result:= TE_Constant.Create(Count);
+  Result:= TValue.Create(Count);
 end;
 
 function TE_FunctionCall.constinfo_1(Context: TContext;
@@ -1694,7 +1706,7 @@ var nm: string;
 begin
   nm:= args[0].Evaluate(Context).GetString;
   if FindConstant(nm, res) then begin
-    Result:= TE_Constant.Create(FormatConstInfo(res));
+    Result:= TValue.Create(FormatConstInfo(res));
   end else
     raise EMathSysError.CreateFmt('Unknown Constant: %s',[nm]);
 end;
@@ -1703,7 +1715,7 @@ function TE_FunctionCall.L_N(Context: TContext; args: TExprList): IValue;
 var i:integer;
     ls: IValueList;
 begin
-  ls:= TE_FixedList.Create;
+  ls:= TValueFixedList.Create;
   ls.Length:= length(args);
   for i:= 0 to ls.Length-1 do
     ls.ListItem[i]:= args[i].Evaluate(Context);
@@ -1716,7 +1728,7 @@ begin
   a:= args[0].Evaluate(Context).GetNumber;
   max:= args[1].Evaluate(Context).GetNumber;
   st:= args[2].Evaluate(Context).GetNumber;
-  Result:= TE_RangeList.Create(a,st,max);
+  Result:= TValueRangeList.Create(a,st,max);
 end;
 
 function TE_FunctionCall.Each_3(Context: TContext; args: TExprList): IValue;
@@ -1737,7 +1749,7 @@ begin
   ctx:= TContext.Create(Context.System, Context);
   try
     ctx.Silent:= true;
-    res:= TE_FixedList.Create;
+    res:= TValueFixedList.Create;
     res.Length:= list.Length;
     for i:= 0 to list.length-1 do begin
       ctx.DefineValue(TE_ExprRef(v.GetObject).FName, list.ListItem[i]);
@@ -1757,7 +1769,7 @@ begin
   if not Supports(args[0].Evaluate(Context), IValueList, list) then
     raise EMathSysError.Create('Function Flatten requires a list to work on');
 
-  res:= TE_FixedList.Create;
+  res:= TValueFixedList.Create;
   res.Length:= list.Length;
   for i:= 0 to list.length-1 do
     res.ListItem[i]:= list.ListItem[i];
@@ -1807,7 +1819,7 @@ begin
   if not Supports(args[0].Evaluate(Context), IValueList, a) or
      not Supports(args[1].Evaluate(Context), IValueList, b) then
     raise EMathSysError.Create('Merge requires 2 lists.');
-  res:= TE_FixedList.Create;
+  res:= TValueFixedList.Create;
   res.Length:= a.Length + b.Length;
   for i:= 0 to a.Length-1 do
     res.ListItem[i]:= a.ListItem[i];
@@ -1820,7 +1832,7 @@ function TE_FunctionCall.Clear_0(Context: TContext;
   args: TExprList): IValue;
 begin
   Context.System.Output.Clear;
-  Result:= TE_Constant.CreateUnassigned;
+  Result:= TValue.CreateUnassigned;
 end;
 
 
@@ -1915,9 +1927,9 @@ begin
   end else
     e:= RHS;
   if Assigned(e) then
-    Result:= TE_Constant.Create(e.StringForm)
+    Result:= TValue.Create(e.StringForm)
   else
-    Result:= TE_Constant.Create('<Unknown>');
+    Result:= TValue.Create('<Unknown>');
 end;
 
 { TE_AssignmentDynamic }
@@ -1950,49 +1962,49 @@ end;
 
 function TE_Power.Evaluate(Context: TContext): IValue;
 begin
-  Result:= TE_Constant.Create(Power(LHS.Evaluate(Context).GetNumber, RHS.Evaluate(Context).GetNumber));
+  Result:= TValue.Create(Power(LHS.Evaluate(Context).GetNumber, RHS.Evaluate(Context).GetNumber));
 end;
 
 { TE_Multiplication }
 
 function TE_Multiplication.Evaluate(Context: TContext): IValue;
 begin
-  Result:= TE_Constant.Create(LHS.Evaluate(Context).GetNumber * RHS.Evaluate(Context).GetNumber);
+  Result:= TValue.Create(LHS.Evaluate(Context).GetNumber * RHS.Evaluate(Context).GetNumber);
 end;
 
 { TE_Division }
 
 function TE_Division.Evaluate(Context: TContext): IValue;
 begin
-  Result:= TE_Constant.Create(LHS.Evaluate(Context).GetNumber / RHS.Evaluate(Context).GetNumber);
+  Result:= TValue.Create(LHS.Evaluate(Context).GetNumber / RHS.Evaluate(Context).GetNumber);
 end;
 
 { TE_Modulus }
 
 function TE_Modulus.Evaluate(Context: TContext): IValue;
 begin
-  Result:= TE_Constant.Create(trunc(LHS.Evaluate(Context).GetNumber) mod trunc(RHS.Evaluate(Context).GetNumber));
+  Result:= TValue.Create(trunc(LHS.Evaluate(Context).GetNumber) mod trunc(RHS.Evaluate(Context).GetNumber));
 end;
 
 { TE_Addition }
 
 function TE_Addition.Evaluate(Context: TContext): IValue;
 begin
-  Result:= TE_Constant.Create(LHS.Evaluate(Context).GetNumber + RHS.Evaluate(Context).GetNumber);
+  Result:= TValue.Create(LHS.Evaluate(Context).GetNumber + RHS.Evaluate(Context).GetNumber);
 end;
 
 { TE_Subtraction }
 
 function TE_Subtraction.Evaluate(Context: TContext): IValue;
 begin
-  Result:= TE_Constant.Create(LHS.Evaluate(Context).GetNumber - RHS.Evaluate(Context).GetNumber);
+  Result:= TValue.Create(LHS.Evaluate(Context).GetNumber - RHS.Evaluate(Context).GetNumber);
 end;
 
 { TE_Negation }
 
 function TE_Negation.Evaluate(Context: TContext): IValue;
 begin
-  Result:= TE_Constant.Create(0 - RHS.Evaluate(Context).GetNumber);
+  Result:= TValue.Create(0 - RHS.Evaluate(Context).GetNumber);
 end;
 
 initialization
