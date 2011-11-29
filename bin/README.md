@@ -140,6 +140,8 @@ Listen/Daten:
    Verkettet zwei Listen zu einer neuen
 *  `Each(list, var, expr)`
    Führt `expr` in einem neuen Kontext auf jedem Element von `list` als Variable `var` aus
+*  `Flatten(list)`
+   Kopiert jedes Element von `list` in Ergebnis (zum Umwandeln von RangeList in FixedList)
 *  `Aggregate(list, agg, init, var, expr)`
    Wendet `expr` auf jedes Element in `list` als `var` an. Dabei kann `agg` (vorbelegt mit `init`) modifiziert werden.
    Rückgabewert ist der Wert von `agg`.
