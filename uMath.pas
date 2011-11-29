@@ -215,10 +215,22 @@ type
     constructor Create(Name: string);
     function Evaluate(Context: TContext): IValue; override;
     function StringForm: String; override;
+    property Name: String read FName;
   end;
 
   TExprList = array of IExpression;
   TUDFHeader = function(Context: TContext; args: TExprList) : IValue of object;
+  TUDFHelp = procedure (Output: TOutput) of object;
+  TFunctionPackageClass = class of TFunctionPackage;
+  TFunctionPackage = class
+  protected
+    class function RegisterPackageFirst(Package: TFunctionPackageClass): boolean;
+  public
+    class function FunctionExists(FunctionName: string; ParamCount: integer): boolean;
+    class function GetFunction(FunctionName: string; ParamCount: integer): TUDFHeader;
+    class function RegisterPackage(Package: TFunctionPackageClass): boolean;
+  end;
+
   TE_FunctionCall = class(TExpression)
   private
     FName: string;
@@ -229,50 +241,22 @@ type
     function StringForm: String; override;
 
     class function CheckSysCalls(StringForm: string): Boolean;
+  end;
+
+  TPackageCore = class(TFunctionPackage)
   published
-    function Abs_1(Context: TContext; args: TExprList): IValue;
-    function Exp_1(Context: TContext; args: TExprList): IValue;
-    function Ln_1(Context: TContext; args: TExprList): IValue;
-    function Lg_1(Context: TContext; args: TExprList): IValue;
-    function Ld_1(Context: TContext; args: TExprList): IValue;
-    function Loga_2(Context: TContext; args: TExprList): IValue;
-    function Fac_1(Context: TContext; args: TExprList): IValue;
+    class function Undef_1(Context: TContext; args: TExprList): IValue;
+    class function New_0(Context: TContext; args: TExprList): IValue;
+    class function New_1(Context: TContext; args: TExprList): IValue;
+    class function Drop_0(Context: TContext; args: TExprList): IValue;
+    class function Clear_0(Context: TContext; args: TExprList): IValue;
 
-    function Deg2Rad_1(Context: TContext; args: TExprList): IValue;
-    function Rad2Deg_1(Context: TContext; args: TExprList): IValue;
-    function Sin_1(Context: TContext; args: TExprList): IValue;
-    function Cos_1(Context: TContext; args: TExprList): IValue;
-    function Tan_1(Context: TContext; args: TExprList): IValue;
-    function ArcSin_1(Context: TContext; args: TExprList): IValue;
-    function ArcCos_1(Context: TContext; args: TExprList): IValue;
-    function ArcTan_1(Context: TContext; args: TExprList): IValue;
-    function ArcTan_2(Context: TContext; args: TExprList): IValue;
-    function Sinh_1(Context: TContext; args: TExprList): IValue;
-    function Cosh_1(Context: TContext; args: TExprList): IValue;
-    function Tanh_1(Context: TContext; args: TExprList): IValue;
-    function ArSinh_1(Context: TContext; args: TExprList): IValue;
-    function ArCosh_1(Context: TContext; args: TExprList): IValue;
-    function ArTanh_1(Context: TContext; args: TExprList): IValue;
+    class function const_1(Context: TContext; args: TExprList): IValue;
+    class function constinfo_0(Context: TContext; args: TExprList): IValue;
+    class function constinfo_1(Context: TContext; args: TExprList): IValue;
 
-    function ToBase_2(Context: TContext; args: TExprList): IValue;
-    function FromBase_2(Context: TContext; args: TExprList): IValue;
-
-    function Undef_1(Context: TContext; args: TExprList): IValue;
-    function New_0(Context: TContext; args: TExprList): IValue;
-    function New_1(Context: TContext; args: TExprList): IValue;
-    function Drop_0(Context: TContext; args: TExprList): IValue;
-    function Clear_0(Context: TContext; args: TExprList): IValue;
-
-    function const_1(Context: TContext; args: TExprList): IValue;
-    function constinfo_0(Context: TContext; args: TExprList): IValue;
-    function constinfo_1(Context: TContext; args: TExprList): IValue;
-
-    function L_N(Context: TContext; args: TExprList): IValue;
-    function Range_3(Context: TContext; args: TExprList): IValue;
-    function Each_3(Context: TContext; args: TExprList): IValue;
-    function Flatten_1(Context: TContext; args: TExprList): IValue;
-    function Aggregate_5(Context: TContext; args: TExprList): IValue;
-    function Merge_2(Context: TContext; args: TExprList): IValue;
+    class function help_0(Context: TContext; args: TExprList): IValue;
+    class function help_1(Context: TContext; args: TExprList): IValue;
   end;
 
   TE_ArgList = class(TExpression)
@@ -452,8 +436,14 @@ const
     (LongName: 'ProtonComptonWavelength';    Value: 1.321409898E-15;   Uni: 'm'; Comment: 'Planck/(ProtonMass*SpeedOfLight)'),
     (LongName: 'ProtonMass';           Value: 1.67262158E-27;  Uni: 'kg')
   );
+
+var
+  FunctionPackages: array of TFunctionPackageClass;
   
 implementation
+
+uses
+  uFunctions;
 
 resourcestring
   sConstants = 'Constants';
@@ -1390,6 +1380,54 @@ begin
   Result:= FName;
 end;
 
+{ TFunctionPackage }
+
+class function TFunctionPackage.FunctionExists(FunctionName: string;  ParamCount: integer): boolean;
+begin
+  Result:= Assigned(GetFunction(FunctionName, ParamCount));
+end;
+
+class function TFunctionPackage.GetFunction(FunctionName: string; ParamCount: integer): TUDFHeader;
+var meth: TMethod;
+begin
+  Result:= nil;
+  meth.Data:= Self;
+  meth.Code:= MethodAddress(Format('%s_%d',[FunctionName, ParamCount]));
+  if not Assigned(meth.Code) then begin
+    meth.Code:= MethodAddress(Format('%s_N',[FunctionName]));
+  end;
+  if Assigned(Meth.Code) then
+    Result:= TUDFHeader(Meth);
+end;
+
+class function TFunctionPackage.RegisterPackage(Package: TFunctionPackageClass): boolean;
+var j:integer;
+begin
+  Result:= false;
+  for j:= 0 to high(FunctionPackages) do
+    if FunctionPackages[j]=Package then
+      exit;
+  j:= length(FunctionPackages);
+  SetLength(FunctionPackages, j+1);
+  FunctionPackages[j]:= Package;
+  Result:= true;
+end;
+
+class function TFunctionPackage.RegisterPackageFirst(Package: TFunctionPackageClass): boolean;
+var j:integer;
+begin
+  Result:= false;
+  for j:= 0 to high(FunctionPackages) do
+    if FunctionPackages[j]=Package then
+      exit;
+  j:= length(FunctionPackages);
+  SetLength(FunctionPackages, j+1);
+  For j:= high(FunctionPackages) downto 1 do
+    FunctionPackages[j]:= FunctionPackages[j-1];
+  FunctionPackages[0]:= Package;
+  Result:= true;
+end;
+
 { TE_FunctionCall }
 
 constructor TE_FunctionCall.Create(Name: string);
@@ -1399,8 +1437,9 @@ begin
 end;
 
 function TE_FunctionCall.Evaluate(Context: TContext): IValue;
-var meth: TMethod;
+var u: TUDFHeader;
     ls: TExprList;
+    i: integer;
 begin
   if Assigned(Arguments) then begin
     if Arguments.GetObject is TE_ArgList then
@@ -1411,14 +1450,15 @@ begin
     end;
   end else
     SetLength(ls,0);
-  meth.Data:= Self;
-  meth.Code:= MethodAddress(FName+'_'+IntToStr(Length(ls)));
-  if not Assigned(meth.Code) then begin
-    meth.Code:= MethodAddress(FName+'_N');
-    if not Assigned(meth.Code) then
-      raise EMathSysError.CreateFmt('Function %s has no version with %d parameters',[FName, Length(ls)]);
+
+  for i:= 0 to high(FunctionPackages) do begin
+    if FunctionPackages[i].FunctionExists(FName, Length(ls)) then begin
+      u:= FunctionPackages[i].GetFunction(Fname, Length(ls));
+      Result:= u(Context, ls);
+      exit;
+    end;
   end;
-  Result:= TUDFHeader(meth)(Context, ls);
+  raise EMathSysError.CreateFmt('Function %s has no version with %d parameters',[FName, Length(ls)]);
 end;
 
 function TE_FunctionCall.StringForm: String;
@@ -1440,197 +1480,40 @@ class function TE_FunctionCall.CheckSysCalls(StringForm: string): Boolean;
   end;
 begin
   StringForm:= LowerCase(StringForm);
-  Result:= Chk('new') and Chk('drop');
+  Result:= Chk('new') and Chk('drop') and Chk('help');
   if not Result then
     raise EMathSysError.Create('System functions can only be used stand-alone');
 end;
 
-function TE_FunctionCall.Abs_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(System.Abs(args[0].Evaluate(Context).GetNumber));
-end;
 
-function TE_FunctionCall.Exp_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(System.Exp(args[0].Evaluate(Context).GetNumber));
-end;
+{ TPackageCore }
 
-function TE_FunctionCall.Ln_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(System.Ln(args[0].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.Lg_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(Math.Log10(args[0].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.Ld_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(Math.Log2(args[0].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.Loga_2(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(Math.LogN(args[0].Evaluate(Context).GetNumber,args[1].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.Fac_1(Context: TContext; args: TExprList): IValue;
-var accu,k,desiredFact: Number;
-begin
-  accu:= 1;
-  desiredFact:= args[0].Evaluate(Context).GetNumber;
-  k:= 2;
-  while k<=desiredFact do begin
-    accu := accu * k;
-    k:= k+1;
-  end;
-  Result:= TValue.Create(accu);
-end;
-
-function TE_FunctionCall.Deg2Rad_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(DegToRad(args[0].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.Rad2Deg_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(RadToDeg(args[0].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.Sin_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(Sin(args[0].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.Cos_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(Cos(args[0].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.Tan_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(Tan(args[0].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.ArcSin_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(ArcSin(args[0].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.ArcCos_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(ArcCos(args[0].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.ArcTan_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(ArcTan(args[0].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.ArcTan_2(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(ArcTan2(args[0].Evaluate(Context).GetNumber,args[1].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.Sinh_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(Sinh(args[0].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.Cosh_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(Cosh(args[0].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.Tanh_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(Tanh(args[0].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.ArSinh_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(ArcSinh(args[0].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.ArCosh_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(ArcCosh(args[0].Evaluate(Context).GetNumber));
-end;
-
-function TE_FunctionCall.ArTanh_1(Context: TContext; args: TExprList): IValue;
-begin
-  Result:= TValue.Create(ArcTanh(args[0].Evaluate(Context).GetNumber));
-end;
-
-const
-  BaseString = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-function TE_FunctionCall.FromBase_2(Context: TContext; args: TExprList): IValue;
-var base, i, j: integer;
-    v: int64;
-    n: string;
-begin
-  base:= Trunc(args[1].Evaluate(Context).GetNumber);
-  n:= args[0].Evaluate(Context).GetString;
-  if base > Length(BaseString) then
-    raise EMathSysError.CreateFmt('Base %d exceeds maximum allowed value of %d',[base, Length(BaseString)]);
-  v:= 0;
-  for i:= 1 to Length(n) do begin
-    j:= Pos(n[i], BaseString)-1;
-    if j>=base then
-      raise EMathSysError.CreateFmt('Invalid numeral in base %d: ''%s''',[base, n[i]]);
-    v:= v * base + j;
-  end;
-  Result:= TValue.Create(v);
-end;
-
-function TE_FunctionCall.ToBase_2(Context: TContext; args: TExprList): IValue;
-var base, i: integer;
-    n: string;
-    v: int64;
-begin
-  base:= Trunc(args[1].Evaluate(Context).GetNumber);
-  v:= Trunc(args[0].Evaluate(Context).GetNumber);
-
-  if v = 0 then begin
-    Result:= TValue.Create('0');
-    exit;
-  end;
-
-  if base > Length(BaseString) then
-    raise EMathSysError.CreateFmt('Base %d exceeds maximum allowed value of %d',[base, Length(BaseString)]);
-
-  n:= '';
-
-  while v <> 0 do begin
-    i:= v mod base;
-    v:= v div base;
-    n:= BaseString[i + 1] + n;
-  end;
-  Result:= TValue.Create(n);
-end;
-
-function TE_FunctionCall.Undef_1(Context: TContext; args: TExprList): IValue;
+class function TPackageCore.Undef_1(Context: TContext; args: TExprList): IValue;
 begin
   Context.Undefine(args[0].Evaluate(Context).GetString);
 end;
 
-function TE_FunctionCall.New_0(Context: TContext; args: TExprList): IValue;
+class function TPackageCore.New_0(Context: TContext; args: TExprList): IValue;
 begin
   Context.System.NewContext('');
 end;
 
-function TE_FunctionCall.New_1(Context: TContext;
+class function TPackageCore.New_1(Context: TContext;
   args: TExprList): IValue;
 begin
   Context.System.NewContext(args[0].Evaluate(Context).GetString);
 end;
 
-function TE_FunctionCall.Drop_0(Context: TContext;
+class function TPackageCore.Drop_0(Context: TContext;
   args: TExprList): IValue;
 begin
   Context.System.DropContext();
+end;
+
+class function TPackageCore.Clear_0(Context: TContext; args: TExprList): IValue;
+begin
+  Context.System.Output.Clear;
+  Result:= TValue.CreateUnassigned;
 end;
 
 function FindConstant(Name: string; out Definition: TConstantDef): boolean;
@@ -1666,7 +1549,7 @@ begin
     Result:= Format('%s (%s)',[Result, def.Comment]);
 end;
 
-function TE_FunctionCall.const_1(Context: TContext; args: TExprList): IValue;
+class function TPackageCore.const_1(Context: TContext; args: TExprList): IValue;
 var nm: string;
     res: TConstantDef;
 begin
@@ -1677,7 +1560,7 @@ begin
     raise EMathSysError.CreateFmt('Unknown Constant: %s',[nm]);
 end;
 
-function TE_FunctionCall.constinfo_0(Context: TContext;
+class function TPackageCore.constinfo_0(Context: TContext;
   args: TExprList): IValue;
 type
   TConstDefRef = array[0..0] of TConstantDef;
@@ -1699,7 +1582,7 @@ begin
   Result:= TValue.Create(Count);
 end;
 
-function TE_FunctionCall.constinfo_1(Context: TContext;
+class function TPackageCore.constinfo_1(Context: TContext;
   args: TExprList): IValue;
 var nm: string;
     res: TConstantDef;
@@ -1711,130 +1594,15 @@ begin
     raise EMathSysError.CreateFmt('Unknown Constant: %s',[nm]);
 end;
 
-function TE_FunctionCall.L_N(Context: TContext; args: TExprList): IValue;
-var i:integer;
-    ls: IValueList;
+class function TPackageCore.help_0(Context: TContext; args: TExprList): IValue;
 begin
-  ls:= TValueFixedList.Create;
-  ls.Length:= length(args);
-  for i:= 0 to ls.Length-1 do
-    ls.ListItem[i]:= args[i].Evaluate(Context);
-  ls.QueryInterface(IValue, Result);
+  Context.System.Output.Hint('TODO: Allgemeine Hilfe',[]);
 end;
 
-function TE_FunctionCall.Range_3(Context: TContext; args: TExprList): IValue;
-var a,max,st: Number;
+class function TPackageCore.help_1(Context: TContext; args: TExprList): IValue;
 begin
-  a:= args[0].Evaluate(Context).GetNumber;
-  max:= args[1].Evaluate(Context).GetNumber;
-  st:= args[2].Evaluate(Context).GetNumber;
-  Result:= TValueRangeList.Create(a,st,max);
+  Context.System.Output.Hint('TODO: Hilfe zu ''%s''',[Args[0].Evaluate(Context).GetString]);
 end;
-
-function TE_FunctionCall.Each_3(Context: TContext; args: TExprList): IValue;
-var list:IValueList;
-    v: IExpression; //TE_ExprRef
-    ex: IExpression;
-    i:integer;
-    ctx: TContext;
-    res: IValueList;
-begin
-  if not Supports(args[0].Evaluate(Context), IValueList, list) then
-    raise EMathSysError.Create('Function Each requires a list to work on');
-  v:= args[1];
-  if v.GetClassType<>TE_ExprRef then
-    raise EMathSysError.Create('Function Each requires a variable reference');
-  ex:= args[2];
-
-  ctx:= TContext.Create(Context.System, Context);
-  try
-    ctx.Silent:= true;
-    res:= TValueFixedList.Create;
-    res.Length:= list.Length;
-    for i:= 0 to list.length-1 do begin
-      ctx.DefineValue(TE_ExprRef(v.GetObject).FName, list.ListItem[i]);
-      res.ListItem[i]:= ex.Evaluate(ctx);
-    end;
-    Result:= res as IValue;
-  finally
-    FreeAndNil(ctx);
-  end;
-end;
-
-function TE_FunctionCall.Flatten_1(Context: TContext; args: TExprList): IValue;
-var list:IValueList;
-    i:integer;
-    res: IValueList;
-begin
-  if not Supports(args[0].Evaluate(Context), IValueList, list) then
-    raise EMathSysError.Create('Function Flatten requires a list to work on');
-
-  res:= TValueFixedList.Create;
-  res.Length:= list.Length;
-  for i:= 0 to list.length-1 do
-    res.ListItem[i]:= list.ListItem[i];
-  Result:= res as IValue;
-end;
-
-function TE_FunctionCall.Aggregate_5(Context: TContext; args: TExprList): IValue;
-var list:IValueList;
-    agg: IExpression; //TE_ExprRef
-    init: IExpression;
-    v: IExpression; //TE_ExprRef
-    ex: IExpression;
-    i:integer;
-    ctx: TContext;
-begin
-  if not Supports(args[0].Evaluate(Context), IValueList, list) then
-    raise EMathSysError.Create('Function Aggregate requires a list to work on');
-  agg:= args[1];
-  if agg.GetClassType<>TE_ExprRef then
-    raise EMathSysError.Create('Function Aggregate requires a variable reference as aggregate');
-  init:= args[2];
-  v:= args[3];
-  if v.GetClassType<>TE_ExprRef then
-    raise EMathSysError.Create('Function Aggregate requires a variable reference');
-  ex:= args[4];
-
-  ctx:= TContext.Create(Context.System, Context);
-  try
-    ctx.Silent:= true;
-    ctx.DefineValue(TE_ExprRef(agg.GetObject).FName, init.Evaluate(ctx));
-
-    for i:= 0 to list.length-1 do begin
-      ctx.DefineValue(TE_ExprRef(v.GetObject).FName, list.ListItem[i]);
-      ctx.DefineValue(TE_ExprRef(agg.GetObject).FName, ex.Evaluate(ctx));
-    end;
-    Result:= ctx.Value(TE_ExprRef(agg.GetObject).FName);
-  finally
-    FreeAndNil(ctx);
-  end;
-end;
-
-function TE_FunctionCall.Merge_2(Context: TContext; args: TExprList): IValue;
-var i:integer;
-    a,b: IValueList;
-    res: IValueList;
-begin
-  if not Supports(args[0].Evaluate(Context), IValueList, a) or
-     not Supports(args[1].Evaluate(Context), IValueList, b) then
-    raise EMathSysError.Create('Merge requires 2 lists.');
-  res:= TValueFixedList.Create;
-  res.Length:= a.Length + b.Length;
-  for i:= 0 to a.Length-1 do
-    res.ListItem[i]:= a.ListItem[i];
-  for i:= 0 to b.Length-1 do
-    res.ListItem[a.Length+i]:= b.ListItem[i];
-  Result:= res as IValue;
-end;
-
-function TE_FunctionCall.Clear_0(Context: TContext;
-  args: TExprList): IValue;
-begin
-  Context.System.Output.Clear;
-  Result:= TValue.CreateUnassigned;
-end;
-
 
 { TE_ArgList }
 
@@ -2018,4 +1786,5 @@ initialization
     LongDateFormat := 'mmmm d, yyyy';
     TimeSeparator := ':';
   end;
+  TFunctionPackage.RegisterPackageFirst(TPackageCore);
 end.

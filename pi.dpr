@@ -5,7 +5,8 @@ uses
   Forms,
   uMain in 'uMain.pas' {fmPiMain},
   uMath in 'uMath.pas',
-  uTests in 'uTests.pas';
+  uTests in 'uTests.pas',
+  uFunctions in 'uFunctions.pas';
 
 {$R *.res}
 
