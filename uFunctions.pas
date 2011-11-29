@@ -38,8 +38,8 @@ type
     function Abs_1(Context: TContext; args: TExprList): IValue;
     function Fac_1(Context: TContext; args: TExprList): IValue;
 
-    function ToBase_2(Context: TContext; args: TExprList): IValue;
-    function FromBase_2(Context: TContext; args: TExprList): IValue;
+    function AtoI_2(Context: TContext; args: TExprList): IValue;
+    function ItoA_2(Context: TContext; args: TExprList): IValue;
   end;
 
   TPackageLists = class(TFunctionPackage)
@@ -185,7 +185,7 @@ end;
 const
   BaseString = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-function TPackageNumerical.FromBase_2(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.AtoI_2(Context: TContext; args: TExprList): IValue;
 var base, i, j: integer;
     v: int64;
     n: string;
@@ -204,7 +204,7 @@ begin
   Result:= TValue.Create(v);
 end;
 
-function TPackageNumerical.ToBase_2(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.ItoA_2(Context: TContext; args: TExprList): IValue;
 var base, i: integer;
     n: string;
     v: int64;

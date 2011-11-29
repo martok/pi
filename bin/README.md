@@ -98,9 +98,9 @@ Winkelfunktionen:
 
 Integer-Basiskonvertierung:
 
-*  `ToBase(number, base)`
+*  `ItoA(number, base)`
    Konvertiert Ganzzahlen in String-Repräsentation in Basis
-*  `FromBase(string, base)`
+*  `AtoI(string, base)`
    Konvertiert String-Repräsentation aus Basis in Zahl (nur Ganzzahlen)
 
 
