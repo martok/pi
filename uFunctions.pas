@@ -31,6 +31,8 @@ type
     function Lg_1(Context: TContext; args: TExprList): IValue;
     function Ld_1(Context: TContext; args: TExprList): IValue;
     function Loga_2(Context: TContext; args: TExprList): IValue;
+    function Sqrt_1(Context: TContext; args: TExprList): IValue;
+    function NRt_2(Context: TContext; args: TExprList): IValue;
   end;
 
   TPackageNumerical = class(TFunctionPackage)
@@ -160,6 +162,16 @@ end;
 function TPackageElementary.Loga_2(Context: TContext; args: TExprList): IValue;
 begin
   Result:= TValue.Create(Math.LogN(args[0].Evaluate(Context).GetNumber,args[1].Evaluate(Context).GetNumber));
+end;
+
+function TPackageElementary.Sqrt_1(Context: TContext; args: TExprList): IValue;
+begin
+  Result:= TValue.Create(Sqrt(args[0].Evaluate(Context).GetNumber));
+end;
+
+function TPackageElementary.NRt_2(Context: TContext; args: TExprList): IValue;
+begin
+  Result:= TValue.Create(Math.Power(args[1].Evaluate(Context).GetNumber, 1/args[0].Evaluate(Context).GetNumber));
 end;
 
 { TPackageNumerical }

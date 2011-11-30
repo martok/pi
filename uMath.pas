@@ -1350,7 +1350,7 @@ end;
 
 function TValueRangeList.OutputForm: String;
 begin
-  Result:= Format('{%0:s->%2:s,%1:s}',[NumberToStr(FStart,NeutralFormatSettings,false),NumberToStr(FEnd,NeutralFormatSettings,false),NumberToStr(FEnd,NeutralFormatSettings,false)]);
+  Result:= Format('{%0:s->%2:s,%1:s}',[NumberToStr(FStart,NeutralFormatSettings,false),NumberToStr(FStep,NeutralFormatSettings,false),NumberToStr(FEnd,NeutralFormatSettings,false)]);
 end;
 
 

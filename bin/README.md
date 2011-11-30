@@ -54,6 +54,10 @@ Numerisch:
    Logarithmus zur Basis 2
 *  `Loga(base, number)`
    Logarithmus zu beliebiger Basis
+*  `Sqrt(number)`
+   Quadratwurzel
+*  `NRt(base, number)`
+   N-te Wurzel
 *  `Fac(number)`
    Fakultät
 
