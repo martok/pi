@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, uMath, StdCtrls, ExtCtrls, ActnList, ToolWin, ComCtrls, ImgList,
-  TreeNT;
+  TreeNT, ShellAPI;
 
 type
   TfmPiMain = class(TForm)
@@ -158,28 +158,16 @@ end;
 
 procedure TfmPiMain.acHelpExecute(Sender: TObject);
 var
-  ls: TStringList;
-  i: integer;
-  ol: integer;
+  fn: string;
 begin
-  ls:=TStringList.Create;
-  try
-    try
-      ls.LoadFromFile(ExtractFilePath(ParamStr(0))+'readme.md');
-    except
-      MessageDlg('Could not load "readme.md". Is it in the application''s folder?', mtError, [mbOK], 0);
-    end;
-    reOutput.Lines.Add(sLineBreak+sLineBreak+sLineBreak);
-    ol:= reOutput.SelStart;
-    for i:= 0 to ls.Count-1 do begin
-      reOutput.Lines.Add(Utf8ToAnsi(ls[i]));
-    end;
-    reOutput.Lines.Add(sLineBreak+sLineBreak+sLineBreak);
-    reOutput.SelStart:= ol;
-    PostMessage(reOutput.Handle, EM_SCROLLCARET, 0, 0);
-  finally
-    ls.Free;
+  fn:= ExtractFilePath(ParamStr(0))+'documentation.html';
+  if not FileExists(fn) then begin
+    if MessageDlg('Could not load "documentation.html". Launch from Web?', mtConfirmation, [mbYes, mbNo], 0) = mrYes then
+      fn:= 'https://raw.github.com/martok/pi/master/bin/documentation.html'
+    else
+      exit;
   end;
+  ShellExecute(Handle, 'open',PAnsiChar(fn),nil,nil, SW_SHOWNORMAL);
 end;
 
 end.

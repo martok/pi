@@ -254,9 +254,6 @@ type
     class function const_1(Context: TContext; args: TExprList): IValue;
     class function constinfo_0(Context: TContext; args: TExprList): IValue;
     class function constinfo_1(Context: TContext; args: TExprList): IValue;
-
-    class function help_0(Context: TContext; args: TExprList): IValue;
-    class function help_1(Context: TContext; args: TExprList): IValue;
   end;
 
   TE_ArgList = class(TExpression)
@@ -1592,16 +1589,6 @@ begin
     Result:= TValue.Create(FormatConstInfo(res));
   end else
     raise EMathSysError.CreateFmt('Unknown Constant: %s',[nm]);
-end;
-
-class function TPackageCore.help_0(Context: TContext; args: TExprList): IValue;
-begin
-  Context.System.Output.Hint('TODO: Allgemeine Hilfe',[]);
-end;
-
-class function TPackageCore.help_1(Context: TContext; args: TExprList): IValue;
-begin
-  Context.System.Output.Hint('TODO: Hilfe zu ''%s''',[Args[0].Evaluate(Context).GetString]);
 end;
 
 { TE_ArgList }

@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="de-DE" lang="de-DE">
+<head>
+	<title>pi - Matheparser/Taschenrechner</title>
+	<style type="text/css">
+body {
+    background-color: #ffffe0;
+    margin: 0;
+    padding: 5px;
+    line-height: 1.5;
+    font-family: Verdana,Arial,sans-serif;
+    font-size: 14px;
+}
+
+a,a:visited,a:active {
+	color: #555;
+	border-top:1px solid #555;
+	border-bottom:1px solid #555;
+	text-decoration:none;
+}
+
+code {
+	border: 1px solid silver;
+	padding: 2px;
+	margin: 1px;
+}
+h3 code,
+pre code {
+	border: none;
+	padding: 2px;
+}
+pre {
+	margin-left: 20px;
+	padding-left: 1ex;
+	border-left: 5px double blue;
+}
+
+li {
+	margin-bottom: 10px;
+}
+	</style>
+</head>
+<body>
+<h1>Über das Projekt &Pi;</h1>
+<p>
+Offizielles Repository: <a href="https://github.com/martok/pi">GitHub</a>.<br/>
+Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.php?t=106298">pi - Matheparsertaschenrechner</a>
+</p>
+
+<h1>Hilfe</h1>
+	<h2 id="syntax">Syntax</h2>
+		<p>Gleichungen eben ;)</p>
+
+		<p>Eine Besonderheit ist, dass mit dem DynamicAssignment-Operator (<code>:=</code>) Ausdrücke
+		direkt ohne Auswertung gespeichert werden können. Diese kann man dann durch eine
+		spezielle Art des Funktionsaufrufs verwenden: Eckige Klammern führen eine Expression
+		mit neuem Kontext aus, der durch die Ausdrücke in der Klammer vorbereitet werden
+		kann (siehe <a href="#samp-gen-3">Beispiel 3</a> und Abschnitt
+		<a href="#expressions">Ausdrücke, Werte und Variablen</a>).</p>
+
+	<h2 id="operators">Operatoren</h2>
+		<ul>
+			<li id="operator-describe">
+				<code>?</code>
+				Describe. Gibt die StringForm seines Arguments aus
+			</li>
+			<li id="operator-power">
+				<code>^</code>
+				Power. Berechnet x^y
+			</li>
+			<li id="operator-muldiv">
+				<code>* / %</code>
+				Multiplication, Division, Modulus
+			</li>
+			<li id="operator-addsub">
+				<code>+ -</code>
+				Addition, Subtraktion
+			</li>
+			<li id="operator-assignstat">
+				<code>=</code>
+				AssigmentStatic. Weist der linken Seite <b>den Wert</b> der rechten Seite zu
+			</li>
+			<li id="operator-assigndyn">
+				<code>:=</code>
+				AssigmentDynamic. Weist der linken Seite <b>den Ausdruck</b> auf der rechten Seite zu
+			</li>
+			<li id="operator-arglist">
+				<code>,</code>
+				ArgList. Stellt sowohl Parameterlisten als auch verkette Ausdrücke dar.
+					Ergebnis ist immer das Ergebnis des letzten Ausdrucks. (Beispiele
+					<a href="#samp-gen-4">4</a>, <a href="#samp-gen-5">5</a>)
+				</li>
+		</ul>
+	<h2 id="datatypes">Datentypen</h2>
+		<p><code>Number</code><br/>
+		80bit Extended (long double)<br>
+		3.6 x 10^-4951 bis 1.1 x 10^4932 bei 19–20 stelliger Genauigkeit</p>
+		<p><code>String</code><br/>
+		Ansi-String
+		</p>
+		<p><code>Unassigned</code><br/>
+		Kein Wert zugewiesen (wird intern verwendet; Darstellung: &lt;?&gt;)
+		</p>
+		<p><code>Null</code><br/>
+		Nullwert
+		</p>
+		<p><code>RangeList</code><br/>
+		Bereich, Darstellung: {Enfang->Ende, Schrittweite}
+		</p>
+		<p><code>FixedList</code><br/>
+		Liste mehrerer Werte, Darstellung: {el1,el2,el3}
+		</p>
+	<h2 id="expressions">Ausdrücke, Werte und Variablen</h2>
+		<p>Alles, was (syntaktisch korrekt) eingegeben werden kann wird als Ausdruck
+		bezeichnet. Das Umfasst sowohl mathematische Ausdrücke ("Formeln") als auch
+		Funktionsaufrufe, Listen etc. Um herauszufinden, wie ein Ausdruck definiert
+		ist kann der <a href="#operator-describe">Describe-Operator</a> <code>?</code> verwendet
+		werden. Dieser verwendet die StringForm der Ausdrücke, die den Ausdruck
+		als Baum der beteiligten Funktionen beschreibt.</p>
+		<p>In &Pi; ist es möglich, Ausdrücke ohne vorherige Zuweisung an eine
+		Variable zu verwenden (<a href="#samp-gen-1">Beispiel</a>). Darüber hinaus
+		sind weitergehende Zuweisungen möglich.</p>
+		<p>Statische Zuweisungen mit <code>=</code> legen den Wert der sich bei der
+		Auswertung des Ausdrucks auf der rechten Seite in der Variable im aktuellen
+		Kontext ab. Dies kann also z.B. ein Zahlenwert sein.</p>
+		<p>Dynamische Zuweisungen mit <code>:=</code> werten den Ausdruck nicht aus
+		sondern speichern den Ausdruck selbst. Dieser kann dann später ausgewertet
+		oder in weiteren dynamischen Zuweisungen verwendet werden. Das ermöglicht es,
+		eine Funktion zu definieren und wiederholt für verschiedene Parameter
+		aufzurufen (<a href="#samp-gen-3">Beispiel</a>).</p>
+
+	<h2 id="functions">Funktionen</h2>
+		<p>Funktionen sind in sogenannten Packages organisiert. Jedes dieser Packages
+		stellt eine Einheit von Funktionen ähnlicher Kategorie dar.</p>
+		<h3 id="package-core">Package <code>Core</code></h3>
+			<p>Das Package stellt System-Funktionen zur Verfügung.</p>
+			<ul>
+				<li id="function-core-undef">
+					<code>Undef(string)</code><br />
+					Entfernt eine Variable aus dem aktuellen Kontext
+				</li>
+				<li id="function-core-new">
+					<code>New()</code><br />
+					<code>New(string)</code><br />
+					Erzeugt einen neuen (optional benannten) Kontext
+				</li>
+				<li id="function-core-drop">
+					<code>Drop()</code><br />
+					Löscht den aktuell obersten Kontext
+				</li>
+				<li id="function-core-clear">
+					<code>Undef(string)</code><br />
+					Leert die Ausgabe-Konsole
+				</li>
+				<li id="function-core-const">
+					<code>Const(string)</code><br />
+					Fragt den Wert einer Konstante ab
+				</li>
+				<li id="function-core-constinfo">
+					<code>ConstInfo()</code><br />
+					Listet verfügbare/bekannte Konstanten<br/>
+					<code>ConstInfo(string)</code><br />
+					Gibt Information über eine Konstante zurück
+				</li>
+				<li id="function-core-help">
+					<code>Undef(string)</code><br />
+					Entfernt eine Variable aus dem aktuellen Kontext
+				</li>
+			</ul>
+		<h3 id="package-trig">Package <code>Trig</code></h3>
+			<p>Das Package stellt trigonometrische und hyperbolische Funktionen zur Verfügung.</p>
+			<ul>
+				<li id="function-trig-deg2rad">
+					<code>Deg2Rad(number)</code><br/>
+					Grad in Radiant
+				</li>
+				<li id="function-trig-rad2deg">
+					<code>Rad2Deg(number)</code><br/>
+					Radiant in Grad
+				</li>
+				<li id="function-trig-sin">
+					<code>Sin(number)</code><br/>
+					Sinus
+				</li>
+				<li id="function-trig-cos">
+					<code>Cos(number)</code><br/>
+					Cosinus
+				</li>
+				<li id="function-trig-tan">
+					<code>Tan(number)</code><br/>
+					Tangens
+				</li>
+				<li id="function-trig-arcsin">
+					<code>ArcSin(number)</code><br/>
+					Inverse zu Sin
+				</li>
+				<li id="function-trig-arccos">
+					<code>ArcCos(number)</code><br/>
+					Inverse zu Cos
+				</li>
+				<li id="function-trig-arctan">
+					<code>ArcTan(number)</code><br/>
+					Inverse zu Tan<br/>
+					<code>ArcTan(Y, X)</code><br/>
+					Delphi's <a href="http://docwiki.embarcadero.com/VCL/en/Math.ArcTan2">ArcTan2</a>: ArcTan im korrekten Quadranten
+				</li>
+				<li id="function-trig-sinh">
+					<code>Sinh(number)</code><br/>
+					Sinus Hyperbolicus
+				</li>
+				<li id="function-trig-cosh">
+					<code>Cosh(number)</code><br/>
+					Cosinus Hyperbolicus
+				</li>
+				<li id="function-trig-tanh">
+					<code>Tanh(number)</code><br/>
+					Tangens Hyperbolicus
+				</li>
+				<li id="function-trig-arsinh">
+					<code>ArSinh(number)</code><br/>
+					Inverse zu SinH
+				</li>
+				<li id="function-trig-arcosh">
+					<code>ArCosh(number)</code><br/>
+					Inverse zu CosH
+				</li>
+				<li id="function-trig-artanh">
+					<code>ArTanh(number)</code><br/>
+					Inverse zu TanH
+				</li>
+			</ul>
+
+		<h3 id="package-elementary">Package <code>Elementary</code></h3>
+			<p>Das Package stellt grundlegende mathematische Funktionen zur Verfügung.</p>
+			<ul>
+				<li id="function-elementary-exp">
+					<code>Exp(number)</code><br/>
+					Exponential
+				</li>
+				<li id="function-elementary-ln">
+					<code>Ln(number)</code><br/>
+					Logarithmus zur Basis e (natürlicher Logarithmus)
+				</li>
+				<li id="function-elementary-lg">
+					<code>Lg(number)</code><br/>
+					Logarithmus zur Basis 10 (dekadischer Logarithmus)
+				</li>
+				<li id="function-elementary-ld">
+					<code>Ld(number)</code><br/>
+					Logarithmus zur Basis 2 (dualer Logarithmus)
+				</li>
+				<li id="function-elementary-loga">
+					<code>Loga(base, number)</code><br/>
+					Logarithmus zu beliebiger Basis
+				</li>
+				<li id="function-elementary-sqrt">
+					<code>Sqrt(number)</code><br/>
+					Quadratwurzel
+				</li>
+				<li id="function-elementary-nrt">
+					<code>NRt(base, number)</code><br/>
+					N-te Wurzel
+				</li>
+			</ul>
+
+		<h3 id="package-numerical">Package <code>Numerical</code></h3>
+			<p>Das Package stellt Funktionen zum Umgang mit Zahlenwerten und Zahlsystemen zur Verfügung.</p>
+			<ul>
+				<li id="function-numerical-abs">
+					<code>Abs(number)</code><br/>
+					Betrag
+				</li>
+				<li id="function-numerical-fac">
+					<code>Fac(number)</code><br/>
+					Fakultät
+				</li>
+				<li id="function-numerical-itoa">
+					<code>ItoA(number,base)</code><br/>
+					Konvertiert Ganzzahlen in String-Repräsentation in Basis
+				</li>
+				<li id="function-numerical-atoi">
+					<code>AtoI(string,base)</code><br/>
+					Konvertiert String-Repräsentation aus Basis in Zahl (nur Ganzzahlen)
+				</li>
+			</ul>
+
+		<h3 id="package-lists">Package <code>Lists</code></h3>
+			<p>Das Package stellt Funktionen zur Listen-Verarbeitung zur Verfügung.</p>
+			<ul>
+				<li id="function-lists-l">
+					<code>L(p1,p2,p3...)</code><br/>
+					Erzeugt eine neue FixedList aus den Werten der Parameter
+				</li>
+				<li id="function-lists-range">
+					<code>Range(start,end,step)</code><br/>
+					Erzeugt eine RangeList mit <i>start</i>&gt;=<i>x</i>&gt;=<i>end</i> mit Schrittweite <i>step</i>
+				</li>
+				<li id="function-lists-merge">
+					<code>Merge(left, right)</code><br/>
+					Verkettet zwei Listen zu einer neuen
+				</li>
+				<li id="function-lists-each">
+					<code>Each(list, var, expr)</code><br/>
+					Führt <i>expr</i> in einem neuen Kontext auf jedem Element von <i>list</i>
+					als Variable <i>var</i> aus
+				</li>
+				<li id="function-lists-flatten">
+					<code>Flatten(list)</code><br/>
+					Kopiert jedes Element von <i>list</i> in Ergebnis (zum Umwandeln von RangeList in FixedList)
+				</li>
+				<li id="function-lists-">
+					<code>Aggregate(list, agg, init, var, expr)</code><br/>
+					Wendet <i>expr</i> auf jedes Element in <i>list</i> als <i>var</i> an.
+					Dabei kann <i>agg</i> (vorbelegt mit <i>init</i>) modifiziert werden.
+					Rückgabewert ist der Wert von <i>agg</i> nach dem letzten Durchlauf
+				</li>
+			</ul>
+	<h2>Beispiele</h2>
+		<h3 id="samp-gen-1">Einfache Berechnung</h3>
+			<pre><code>&gt; 1+2*3+4/5
+= 7.8</code></pre>
+		<h3 id="samp-gen-2">Definition einer Expression</h3>
+			<pre><code>&gt; sinc:= sin(x)/x</code></pre>
+		<h3 id="samp-gen-3">Aufruf dieser Expression</h3>
+			<pre><code>&gt; sinc[x=pi/3]
+= 0.826993343132688074</code></pre>
+		<h3 id="samp-gen-4">Mehrere Berechnungen verketten</h3>
+			<pre><code>&gt; z=1,y=3*z,y+1
+= 4</code></pre>
+		<h3 id="samp-gen-5">Subkontexte verwenden</h3>
+			<pre><code>&gt; sum:= x+y+z, sum[x=2, y=3, z=7]
+= 12</code></pre>
+		<h3 id="samp-gen-6">Aggregate und Listen: Fakultät</h3>
+			<pre><code>&gt; aggregate(range(1,10,1),f,1,x,f=f*x)
+= 3628800</code></pre>
+</body>
+</html>
