@@ -1538,7 +1538,7 @@ function FormatConstInfo(def: TConstantDef): string;
 var
   val: IValue;
 begin
-  val.SetNumber(def.Value);
+  val:= TValue.Create(def.Value);
   Result:= Format('%s = %s',[def.LongName, val.GetString]);
   if def.Uni>'' then
     Result:= Format('%s [%s]',[Result, def.Uni]);
