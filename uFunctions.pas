@@ -204,6 +204,7 @@ var base, i, j: integer;
 begin
   base:= Trunc(args[1].Evaluate(Context).GetNumber);
   n:= args[0].Evaluate(Context).GetString;
+  n:= UpperCase(n);
   if base > Length(BaseString) then
     raise EMathSysError.CreateFmt('Base %d exceeds maximum allowed value of %d',[base, Length(BaseString)]);
   v:= 0;
