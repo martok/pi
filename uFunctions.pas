@@ -52,6 +52,9 @@ type
     function Flatten_1(Context: TContext; args: TExprList): IValue;
     function Aggregate_5(Context: TContext; args: TExprList): IValue;
     function Merge_2(Context: TContext; args: TExprList): IValue;
+    function Part_3(Context: TContext; args: TExprList): IValue;
+    function LGet_2(Context: TContext; args: TExprList): IValue;
+    function Count_1(Context: TContext; args: TExprList): IValue;
   end;
 
 implementation
@@ -360,6 +363,48 @@ begin
   for i:= 0 to b.Length-1 do
     res.ListItem[a.Length+i]:= b.ListItem[i];
   Result:= res as IValue;
+end;
+
+function TPackageLists.Part_3(Context: TContext; args: TExprList): IValue;
+var i,f,l:integer;
+    a: IValueList;
+    res: IValueList;
+begin
+  if not Supports(args[0].Evaluate(Context), IValueList, a) then
+    raise EMathSysError.Create('Part requires a list.');
+  f:= trunc(args[1].Evaluate(Context).GetNumber);
+  l:= trunc(args[2].Evaluate(Context).GetNumber);
+  if f>=a.Length then f:= a.Length-1;
+  if l>=a.Length then l:= a.Length-1;
+  if f<0 then f:= a.Length+f;
+  if f<0 then f:= 0;
+  if l<0 then l:= a.Length+l;
+  if l<0 then l:= 0;
+  res:= TValueFixedList.Create;
+  res.Length:= l-f+1;
+  for i:= f to l do
+    res.ListItem[i-f]:= a.ListItem[i];
+  Result:= res as IValue;
+end;
+
+function TPackageLists.LGet_2(Context: TContext; args: TExprList): IValue;
+var a: IValueList;
+    f: integer;
+begin
+  if not Supports(args[0].Evaluate(Context), IValueList, a) then
+    raise EMathSysError.Create('LGet requires a list.');
+  f:= trunc(args[1].Evaluate(Context).GetNumber);
+  if f<0 then f:= a.Length+f;
+  if f<0 then f:= 0;
+  Result:= a.ListItem[f].AsNative;
+end;
+
+function TPackageLists.Count_1(Context: TContext; args: TExprList): IValue;
+var a: IValueList;
+begin
+  if not Supports(args[0].Evaluate(Context), IValueList, a) then
+    raise EMathSysError.Create('Count requires a list.');
+  Result:= TValue.Create(a.Length);
 end;
 
 initialization

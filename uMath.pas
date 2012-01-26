@@ -86,6 +86,7 @@ type
     function GetString: string;
     procedure SetNull;
     procedure SetUnassigned;
+    function AsNative: IValue;
   end;
 
   IStringConvertible = interface
@@ -156,6 +157,7 @@ type
     procedure SetString(const str: String);
     function GetNumber: Number;
     function GetString: string;
+    function AsNative: IValue;
     procedure SetNull;
     procedure SetUnassigned;
     //IStringConvertible
@@ -1220,6 +1222,20 @@ begin
   FValueType:= vtString;
 end;
 
+function TValue.AsNative: IValue;
+var f: Number;
+begin
+  case ValueType of
+    vtUnassigned,
+    vtNull: Result:= self;
+    vtNumber: Result:= self;
+    vtString:
+      if TryStrToFloat(FString, f, NeutralFormatSettings) then
+        Result:= TValue.Create(f)
+      else Result:= self;
+  end;
+end;
+
 procedure TValue.SetNull;
 begin
   FValueType:= vtNull;
@@ -1242,8 +1258,6 @@ begin
     vtString: Result:= QuotedStr(GetString);
   end;
 end;
-
-
 
 { TE_Constant }
 

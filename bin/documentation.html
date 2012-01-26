@@ -305,18 +305,35 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 				<li id="function-lists-each">
 					<code>Each(list, var, expr)</code><br/>
 					Führt <i>expr</i> in einem neuen Kontext auf jedem Element von <i>list</i>
-					als Variable <i>var</i> aus
+					als Variable <i>var</i> aus und gibt die Ergebnisse als eine neue Liste zurück
 				</li>
 				<li id="function-lists-flatten">
 					<code>Flatten(list)</code><br/>
 					Kopiert jedes Element von <i>list</i> in Ergebnis (zum Umwandeln von RangeList in FixedList)
 				</li>
-				<li id="function-lists-">
+				<li id="function-lists-aggregate">
 					<code>Aggregate(list, agg, init, var, expr)</code><br/>
 					Wendet <i>expr</i> auf jedes Element in <i>list</i> als <i>var</i> an.
 					Dabei kann <i>agg</i> (vorbelegt mit <i>init</i>) modifiziert werden.
 					Rückgabewert ist der Wert von <i>agg</i> nach dem letzten Durchlauf
 				</li>
+				<li id="function-lists-part">
+					<code>Part(list, first, last)</code><br/>
+					Erzeugt eine List aus den Unterelementen <i>first</i> bis <i>last</i>. Der erste Eintrag hat
+					den Index 0.
+					Werden negative Indizes angegeben, wird von hinten gezählt, -1 bezeichnet das letzte
+					Element, -2 das vorletzte etc.<br/>
+					<a href="#samp-list-part-1">Beispiel</a>
+				</li>
+				<li id="function-lists-lget">
+					<code>LGet(list, item)</code><br/>
+					Gibt das Element item aus <i>list</i> zurück. Zählung wie bei <a href="function-lists-part">Part</a>.
+				</li>
+				<li id="function-lists-count">
+					<code>Count(list)</code><br/>
+					Gibt die Anzahl der Elemente in <i>list</i> zurück.
+				</li>
+			</ul>
 			</ul>
 	<h2>Beispiele</h2>
 		<h3 id="samp-gen-1">Einfache Berechnung</h3>
@@ -336,5 +353,11 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 		<h3 id="samp-gen-6">Aggregate und Listen: Fakultät</h3>
 			<pre><code>&gt; aggregate(range(1,10,1),f,1,x,f=f*x)
 = 3628800</code></pre>
+		<h3 id="samp-list-part-1">Listen: Eintrag löschen</h3>
+			<pre><code>&gt; list = range(1,5,1)
+= {1->5,1}
+&gt; merge(part(list,0,1),part(list,-2,-1))
+= {1, 2, 4, 5}
+</code></pre>
 </body>
 </html>
