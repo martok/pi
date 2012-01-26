@@ -2,7 +2,7 @@ unit uFunctions;
 
 interface
 
-uses SysUtils, uMath;
+uses SysUtils, Classes, uMath;
 
 type
   TPackageTrig = class(TFunctionPackage)
@@ -56,6 +56,14 @@ type
     function LGet_2(Context: TContext; args: TExprList): IValue;
     function Count_1(Context: TContext; args: TExprList): IValue;
   end;
+
+  TPackageData = class(TFunctionPackage)
+  published
+    function PWD_0(Context: TContext; args: TExprList): IValue;
+    function CWD_1(Context: TContext; args: TExprList): IValue;
+    function CSVLoad_N(Context: TContext; args: TExprList): IValue;
+  end;
+
 
 implementation
 
@@ -407,9 +415,56 @@ begin
   Result:= TValue.Create(a.Length);
 end;
 
+{ TPackageData }
+
+function TPackageData.CWD_1(Context: TContext; args: TExprList): IValue;
+begin
+  SetCurrentDir(args[0].Evaluate(Context).GetString);
+end;
+
+function TPackageData.PWD_0(Context: TContext; args: TExprList): IValue;
+begin
+  Result:= TValue.Create(GetCurrentDir);
+end;
+
+function TPackageData.CSVLoad_N(Context: TContext; args: TExprList): IValue;
+var
+  list, line: TStringList;
+  i, j: integer;
+  res, row: IValueList;
+  cn: IValue;
+begin
+  list:= TStringList.Create;
+  line:= TStringList.Create;
+  try
+    line.Delimiter:= ';';
+    line.QuoteChar:= '"';
+    list.LoadFromFile(args[0].Evaluate(Context).GetString);
+
+    res:= TValueFixedList.Create;
+    res.Length:= list.Count;
+    for i:= 0 to res.Length-1 do begin
+      line.DelimitedText:= list[i];
+      row:= TValueFixedList.Create;
+      row.Length:= line.Count;
+      for j:= 0 to row.Length-1 do begin
+        cn:= TValue.Create(line[j]);
+        row.ListItem[j]:= cn.AsNative;
+      end;
+      res.ListItem[i]:= row as IValue;
+    end;
+
+    Result:= res as IValue;
+  finally
+    FreeAndNil(list);
+    FreeAndNil(line);
+  end;
+end;
+
 initialization
   TFunctionPackage.RegisterPackage(TPackageTrig);
   TFunctionPackage.RegisterPackage(TPackageElementary);
   TFunctionPackage.RegisterPackage(TPackageNumerical);
   TFunctionPackage.RegisterPackage(TPackageLists);
+  TFunctionPackage.RegisterPackage(TPackageData);
 end.
