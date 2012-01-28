@@ -67,7 +67,7 @@ type
 
 implementation
 
-uses Math;
+uses Math, uCCSVList;
 
 
 { TPackageTrig }
@@ -429,35 +429,53 @@ end;
 
 function TPackageData.CSVLoad_N(Context: TContext; args: TExprList): IValue;
 var
-  list, line: TStringList;
+  list, line: TCSVStringList;
   i, j: integer;
   res, row: IValueList;
   cn: IValue;
+  conf: TDynamicArguments;
+  o_fs: TFormatSettings;
 begin
-  list:= TStringList.Create;
-  line:= TStringList.Create;
+  conf:= TDynamicArguments.Create(args,1,Context);
   try
-    line.Delimiter:= ';';
-    line.QuoteChar:= '"';
-    list.LoadFromFile(args[0].Evaluate(Context).GetString);
+    list:= TCSVStringList.Create;
+    line:= TCSVStringList.Create;
+    o_fs:= NeutralFormatSettings;
+    try
+      if conf.IsSet('Delimiter') and (conf['Delimiter'].GetString>'') then
+        line.Delimiter:= conf['Delimiter'].GetString[1]
+      else
+        line.Delimiter:= ';';
+      if conf.IsSet('QuoteChar') and (conf['QuoteChar'].GetString>'') then
+        line.QuoteChar:= conf['QuoteChar'].GetString[1]
+      else
+        line.QuoteChar:= '"';
+      if conf.IsSet('Decimal') and (conf['Decimal'].GetString>'') then
+        NeutralFormatSettings.DecimalSeparator:= conf['Decimal'].GetString[1];
 
-    res:= TValueFixedList.Create;
-    res.Length:= list.Count;
-    for i:= 0 to res.Length-1 do begin
-      line.DelimitedText:= list[i];
-      row:= TValueFixedList.Create;
-      row.Length:= line.Count;
-      for j:= 0 to row.Length-1 do begin
-        cn:= TValue.Create(line[j]);
-        row.ListItem[j]:= cn.AsNative;
+      list.LoadFromFile(args[0].Evaluate(Context).GetString);
+
+      res:= TValueFixedList.Create;
+      res.Length:= list.Count;
+      for i:= 0 to res.Length-1 do begin
+        line.StrictDelimitedText:= list[i];
+        row:= TValueFixedList.Create;
+        row.Length:= line.Count;
+        for j:= 0 to row.Length-1 do begin
+          cn:= TValue.Create(line[j]);
+          row.ListItem[j]:= cn.AsNative;
+        end;
+        res.ListItem[i]:= row as IValue;
       end;
-      res.ListItem[i]:= row as IValue;
-    end;
 
-    Result:= res as IValue;
+      Result:= res as IValue;
+    finally
+      NeutralFormatSettings:= o_fs;
+      FreeAndNil(list);
+      FreeAndNil(line);
+    end;
   finally
-    FreeAndNil(list);
-    FreeAndNil(line);
+    FreeAndNil(conf);
   end;
 end;
 

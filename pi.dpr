@@ -6,7 +6,8 @@ uses
   uMain in 'uMain.pas' {fmPiMain},
   uMath in 'uMath.pas',
   uTests in 'uTests.pas',
-  uFunctions in 'uFunctions.pas';
+  uFunctions in 'uFunctions.pas',
+  uCCSVList in 'uCCSVList.pas';
 
 {$R *.res}
 

@@ -41,6 +41,11 @@ pre {
 li {
 	margin-bottom: 10px;
 }
+
+
+dl.opt dt {
+	font-family: monospace;
+}
 	</style>
 </head>
 <body>
@@ -352,8 +357,14 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 					Wechselt in <i>path</i> (kann auch eine relative Angabe sein)
 				</li>
 				<li id="function-data-csvload">
-					<code>csvload(file)</code><br/>
-					Lädt eine CSV-Datei in eine Liste von Listen
+					<code>csvload(file[,options])</code><br/>
+					Lädt eine CSV-Datei in eine Liste von Listen<br/>
+					Optionen:
+					<dl class="opt">
+						<dt>Delimiter=';'</dt><dd>Feldtrenner</dd>
+						<dt>QuoteChar='"'</dt><dd>Gruppierungszeichen</dd>
+						<dt>Decimal='.'</dt><dd>Dezimaltrenner</dd>
+					</dl>
 				</li>
 			</ul>
 	<h2>Beispiele</h2>
