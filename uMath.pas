@@ -262,6 +262,23 @@ type
     class function constinfo_1(Context: TContext; args: TExprList): IValue;
   end;
 
+  TDynamicArgument = record
+    Name: string;
+    Value: IValue;
+  end;
+
+  TDynamicArguments = class
+  private
+    FItems: array of TDynamicArgument;
+    function GetValue(Name: string): IValue;
+  protected
+    procedure Add(Name: String; Value: IValue);
+  public
+    constructor Create(Args: TExprList; FromIndex: integer; Context: TContext);
+    function IsSet(Name: string): boolean;
+    property Value[Name: string]: IValue read GetValue; default;
+  end;
+
   TE_ArgList = class(TExpression)
   private
     function CollectAll: TExprList;
@@ -1643,6 +1660,59 @@ begin
     Result:= TValue.Create(FormatConstInfo(res));
   end else
     raise EMathSysError.CreateFmt('Unknown Constant: %s',[nm]);
+end;
+
+{ TDynamicArguments }
+
+constructor TDynamicArguments.Create(Args: TExprList; FromIndex: integer; Context: TContext);
+var
+  i: integer;
+  ex: IExpression;
+begin
+  for i:= FromIndex to High(Args) do begin
+    if Args[i].GetObject is TE_ExprRef then
+      Add((Args[i].GetObject as TE_ExprRef).Name, TValue.CreateNull)
+    else
+    if Args[i].GetObject is TE_AssignmentStatic then begin
+      ex:= args[i].LHS;
+      if ex.GetObject is TE_ExprRef then
+        Add((ex.GetObject as TE_ExprRef).Name, Args[i].RHS.Evaluate(Context));
+    end;
+  end;
+end;
+
+procedure TDynamicArguments.Add(Name: String; Value: IValue);
+var
+  i: integer;
+begin
+  i:= length(FItems);
+  SetLength(FItems, i+1);
+  FItems[i].Name:= Name;
+  FItems[i].Value:= Value;
+end;
+
+function TDynamicArguments.IsSet(Name: string): boolean;
+var
+  i: integer;
+begin
+  Result:= false;
+  For i:= 0 to high(FItems) do
+    if AnsiSameText(FItems[i].Name, Name) then begin
+      Result:= true;
+      exit;
+    end;
+end;
+
+function TDynamicArguments.GetValue(Name: string): IValue;
+var
+  i: integer;
+begin
+  For i:= 0 to high(FItems) do
+    if AnsiSameText(FItems[i].Name, Name) then begin
+      Result:= FItems[i].Value;
+      exit;
+    end;
+  Result:= TValue.CreateUnassigned;
 end;
 
 { TE_ArgList }
