@@ -286,6 +286,12 @@ type
     function Evaluate(Context: TContext): IValue; override;
   end;
 
+  TE_Character = class(TExpression)
+  private
+  public
+    function Evaluate(Context: TContext): IValue; override;
+  end;
+
   TE_AssignmentDynamic = class(TExpression)
   private
   public
@@ -334,6 +340,12 @@ type
     function Evaluate(Context: TContext): IValue; override;
   end;
 
+  TE_Concatenation = class(TExpression)
+  private
+  public
+    function Evaluate(Context: TContext): IValue; override;
+  end;
+
   TE_Negation = class(TExpression)
   private
   public
@@ -349,8 +361,9 @@ type
   end;
 
 const
-  Expressions : array[0..9] of TExpressionDef = (
+  Expressions : array[0..11] of TExpressionDef = (
     (P: 10; Infix: '?'; Unary: true; Cls: TE_Describe),
+    (P: 15; Infix: '#'; Unary: true; Cls: TE_Character),
 
 //    (P: 15; Infix: '-'; Unary: True; Cls: TE_Negation), // Done by Parse/Fold if it finds a Subtraction with no LHS 
 
@@ -361,6 +374,7 @@ const
 
     (P: 30; Infix: '+'; Unary: False; Cls: TE_Addition),
     (P: 30; Infix: '-'; Unary: False; Cls: TE_Subtraction),
+    (P: 30; Infix: '||'; Unary: False; Cls: TE_Concatenation),
     
     (P:100; Infix: '='; Unary: False; Cls: TE_AssignmentStatic),
     (P:105; Infix: ':='; Unary: False; Cls: TE_AssignmentDynamic),
@@ -1727,6 +1741,16 @@ begin
     Result:= TValue.Create('<Unknown>');
 end;
 
+{ TE_Character }
+
+function TE_Character.Evaluate(Context: TContext): IValue;
+var
+  c: Integer;
+begin
+  c:= trunc(RHS.Evaluate(Context).GetNumber);
+  Result:= TValue.Create(chr(c));
+end;
+
 { TE_AssignmentDynamic }
 
 function TE_AssignmentDynamic.Evaluate(Context: TContext): IValue;
@@ -1795,12 +1819,20 @@ begin
   Result:= TValue.Create(LHS.Evaluate(Context).GetNumber - RHS.Evaluate(Context).GetNumber);
 end;
 
+{ TE_Concatenation }
+
+function TE_Concatenation.Evaluate(Context: TContext): IValue;
+begin
+  Result:= TValue.Create(LHS.Evaluate(Context).GetString + RHS.Evaluate(Context).GetString);
+end;
+
 { TE_Negation }
 
 function TE_Negation.Evaluate(Context: TContext): IValue;
 begin
   Result:= TValue.Create(0 - RHS.Evaluate(Context).GetNumber);
 end;
+
 
 initialization
   GetLocaleFormatSettings(GetThreadLocale, NeutralFormatSettings);
