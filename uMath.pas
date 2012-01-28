@@ -21,6 +21,10 @@ type
     FContext: TContext;
     FOutput: TOutput;
     FConstants: TContext;
+  protected
+    FEvaluationStack: TStringList;
+    procedure EvaluationBegin(varname:string);
+    procedure EvaluationEnd;
   public
     constructor Create;
     destructor Destroy; override;
@@ -487,6 +491,7 @@ constructor TMathSystem.Create;
   end;
 begin
   inherited;
+  FEvaluationStack:= TStringList.Create;
   FContext:= TContext.Create(Self, nil);
   FContext.ContextName:= sConstants;
   FConstants:= FContext;
@@ -506,6 +511,7 @@ begin
     fr:= ctx;
   end;
   FreeAndNil(FOutput);
+  FreeAndNil(FEvaluationStack);
   inherited;
 end;
 
@@ -884,6 +890,7 @@ begin
   ex:= Parse(Expr);
   try
     if Assigned(ex) then begin
+      FEvaluationStack.Clear;
       s:= ex.StringForm;
       if TE_FunctionCall.CheckSysCalls(s) then begin
         Result:= ex.Evaluate(FContext);
@@ -932,6 +939,19 @@ begin
   cont:= TContext.Create(Self, FContext);
   cont.ContextName:= Name;
   FContext:= cont;
+end;
+
+procedure TMathSystem.EvaluationBegin(varname:string);
+begin
+  if FEvaluationStack.IndexOf(varname) > -1 then
+    raise EMathSysError.CreateFmt('Evaluation aborted at maximum depth: cyclic reference found for "%s".',[varname])
+  else
+    FEvaluationStack.Add(varname);
+end;
+
+procedure TMathSystem.EvaluationEnd;
+begin
+  FEvaluationStack.Delete(FEvaluationStack.Count-1);
 end;
 
 { TOutput }
@@ -1068,8 +1088,14 @@ function TContext.Value(const Name: string): IValue;
 var ex: IExpression;
 begin
   ex:= Definition(Name);
-  if Assigned(ex) then
-    Result:= ex.Evaluate(Self)
+  if Assigned(ex) then begin
+    FSystem.EvaluationBegin(Name);
+    try
+      Result:= ex.Evaluate(Self)
+    finally
+      FSystem.EvaluationEnd;
+    end;
+  end
   else begin
     Result:= TValue.CreateUnassigned;
     raise EMathSysError.CreateFmt('Expression unknown in current Context: %s',[Name]);
