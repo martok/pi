@@ -1871,8 +1871,18 @@ end;
 { TE_Modulus }
 
 function TE_Modulus.Evaluate(Context: TContext): IValue;
+var
+  a, b, c, f: Extended;
 begin
-  Result:= TValue.Create(trunc(LHS.Evaluate(Context).GetNumber) mod trunc(RHS.Evaluate(Context).GetNumber));
+  a:= LHS.Evaluate(Context).GetNumber;
+  b:= RHS.Evaluate(Context).GetNumber;
+  c:= a / b;
+  if c > 1000000 then begin
+    c:= Int(c);
+    f:= a - b * c;
+  end else
+    f:= frac(c) * b;
+  Result:= TValue.Create(round(f));
 end;
 
 { TE_Addition }
