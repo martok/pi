@@ -33,6 +33,7 @@ type
     function Loga_2(Context: TContext; args: TExprList): IValue;
     function Sqrt_1(Context: TContext; args: TExprList): IValue;
     function NRt_2(Context: TContext; args: TExprList): IValue;
+    function Random_0(Context: TContext; args: TExprList): IValue;
   end;
 
   TPackageNumerical = class(TFunctionPackage)
@@ -62,6 +63,8 @@ type
     function PWD_0(Context: TContext; args: TExprList): IValue;
     function CWD_1(Context: TContext; args: TExprList): IValue;
     function CSVLoad_N(Context: TContext; args: TExprList): IValue;
+    function Table_1(Context: TContext; args: TExprList): IValue;
+    function Bucket_4(Context: TContext; args: TExprList): IValue;
   end;
 
 
@@ -183,6 +186,11 @@ end;
 function TPackageElementary.NRt_2(Context: TContext; args: TExprList): IValue;
 begin
   Result:= TValue.Create(Math.Power(args[1].Evaluate(Context).GetNumber, 1/args[0].Evaluate(Context).GetNumber));
+end;
+
+function TPackageElementary.Random_0(Context: TContext; args: TExprList): IValue;
+begin
+  Result:= TValue.Create(Random);
 end;
 
 { TPackageNumerical }
@@ -479,10 +487,80 @@ begin
   end;
 end;
 
+function TPackageData.Table_1(Context: TContext; args: TExprList): IValue;
+var
+  a, b: IValueList;
+  s: IStringConvertible;
+  i, j, total: integer;
+  l: string;
+begin
+  if not Supports(args[0].Evaluate(Context), IValueList, a) then
+    raise EMathSysError.Create('Table requires a list.');
+  total:= 0;
+  for i:= 0 to a.Length - 1 do begin
+    if Supports(a.ListItem[i], IValueList, b) then begin
+      l:= '';
+      for j:= 0 to b.Length - 1 do begin
+        if l > '' then
+          l:= l + #9;
+        if Supports(b.ListItem[j], IStringConvertible, s) then
+          l:= l + s.OutputForm
+        else
+          l:= l + b.ListItem[j].GetString;
+        inc(total);
+      end;
+    end else begin
+      l:= a.ListItem[i].GetString;
+      inc(total);
+    end;
+    Context.System.Output.Hint(l, []);
+  end;
+  Result:= TValue.Create(total);
+end;
+
+function TPackageData.Bucket_4(Context: TContext; args: TExprList): IValue;
+var
+  a,r,e: IValueList;
+  mi, mx, count, width: Number;
+  Counter: array of Int64;
+  nn: Number;
+  i: integer;
+begin
+  if not Supports(args[0].Evaluate(Context), IValueList, a) then
+    raise EMathSysError.Create('Bucket requires a list.');
+  mi:= args[1].Evaluate(Context).GetNumber;
+  mx:= args[2].Evaluate(Context).GetNumber;
+  count:= args[3].Evaluate(Context).GetNumber;
+  SetLength(Counter, trunc(count));
+  for i:= 0 to high(Counter) do
+    Counter[i]:= 0;
+  width:= (mx-mi) / count;
+  Context.System.Output.Hint('Bucket Width: %n',[width]);
+  for i:= 0 to a.Length-1 do begin
+    nn:= a.ListItem[i].GetNumber;
+    if IsNan(nn) or (nn<mi) or (nn>mx) then
+      continue;
+    Inc(Counter[trunc((nn-mi) / width)]);
+  end;
+  r:= TValueFixedList.Create;
+  r.Length:= length(counter);
+  for i:= 0 to high(Counter) do begin
+    e:= TValueFixedList.Create;
+    e.Length:= 2;
+    e.ListItem[0]:= TValue.Create(mi+width*(i+0.5));
+    e.ListItem[1]:= TValue.Create(Counter[i]);
+
+    r.ListItem[i]:= e as IValue;
+  end;
+  Result:= r as IValue;
+end;
+
 initialization
+  Randomize;
   TFunctionPackage.RegisterPackage(TPackageTrig);
   TFunctionPackage.RegisterPackage(TPackageElementary);
   TFunctionPackage.RegisterPackage(TPackageNumerical);
   TFunctionPackage.RegisterPackage(TPackageLists);
   TFunctionPackage.RegisterPackage(TPackageData);
 end.
+
