@@ -3,7 +3,7 @@ unit uMath;
 interface
 
 uses SysUtils, Classes, IniFiles, ComCtrls, Variants, Math, Windows, TypInfo,
-     Messages, Graphics;
+  Messages, Graphics;
 
 type
   Number = Extended;
@@ -23,14 +23,14 @@ type
     FConstants: TContext;
   protected
     FEvaluationStack: TStringList;
-    procedure EvaluationBegin(varname:string);
+    procedure EvaluationBegin(varname: string);
     procedure EvaluationEnd;
   public
     constructor Create;
     destructor Destroy; override;
-    function Parse(const Expr: String): IExpression;
-    function Eval(const Expr: String): IValue;
-    procedure Run(const Expr: String);
+    function Parse(const Expr: string): IExpression;
+    function Eval(const Expr: string): IValue;
+    procedure Run(const Expr: string);
     property Output: TOutput read FOutput;
     property Context: TContext read FContext;
     property Constants: TContext read FConstants;
@@ -50,7 +50,7 @@ type
     procedure Error(const Line: string; Params: array of const);
     procedure Result(const Line: string);
     procedure Clear;
-    property Render : TRichEdit read FRender write FRender;
+    property Render: TRichEdit read FRender write FRender;
   end;
 
   TContext = class
@@ -66,7 +66,8 @@ type
     constructor Create(ASystem: TMathSystem; AParent: TContext);
     destructor Destroy; override;
     property Parent: TContext read FParent;
-    property System : TMathSystem read FSystem;
+    function Bake: TContext;
+    property System: TMathSystem read FSystem;
     property ContextName: string read FContextName write FContextName;
     property Silent: boolean read FSilent write FSilent;
     procedure Define(const Name: string; Expression: IExpression);
@@ -85,7 +86,7 @@ type
     ['{6E37EAE1-DD73-4825-893D-970D168165EE}']
     function ValueType: TValueType;
     procedure SetNumber(const num: Number);
-    procedure SetString(const str: String);
+    procedure SetString(const str: string);
     function GetNumber: Number;
     function GetString: string;
     procedure SetNull;
@@ -102,12 +103,18 @@ type
   IValueList = interface
     ['{5A1493DB-DD9F-42EA-9054-A4BC1BDAC9B9}']
     function GetLength: integer;
-    procedure SetLength(const Value: Integer);  
+    procedure SetLength(const Value: Integer);
     function GetItem(Index: Integer): IValue;
     procedure SetItem(Index: Integer; const Value: IValue);
 
     property Length: integer read GetLength write SetLength;
     property ListItem[Index: integer]: IValue read GetItem write SetItem;
+  end;
+
+  IValueObject = interface
+    ['{D7CDF405-E960-4DDE-A0B8-2E5B5B6BF768}']
+    function GetObject: TObject;
+    function GetClass: TClass;
   end;
 
   TExpressionClass = class of TExpression;
@@ -131,7 +138,7 @@ type
 
   TExpression = class(TInterfacedObject, IExpression, IStringConvertible)
   private
-    LHS,RHS: IExpression;
+    LHS, RHS: IExpression;
     function GetLHS: IExpression;
     function GetRHS: IExpression;
     procedure SetLHS(const Value: IExpression);
@@ -141,7 +148,7 @@ type
     function GetClassType: TClass;
     function GetObject: TExpression;
     function OutputForm: string; virtual;
-    function StringForm: String; virtual;
+    function StringForm: string; virtual;
     constructor Create;
   end;
 
@@ -149,23 +156,23 @@ type
   private
     FValueType: TValueType;
     FNumber: Number;
-    FString: String;
+    FString: string;
   public
     constructor Create(Val: Number); overload;
-    constructor Create(Val: String); overload;
+    constructor Create(Val: string); overload;
     constructor CreateUnassigned;
     constructor CreateNull;
     //IValue
     function ValueType: TValueType;
     procedure SetNumber(const num: Number);
-    procedure SetString(const str: String);
+    procedure SetString(const str: string);
     function GetNumber: Number;
     function GetString: string;
     function AsNative: IValue;
     procedure SetNull;
     procedure SetUnassigned;
     //IStringConvertible
-    function StringForm: String; virtual;
+    function StringForm: string; virtual;
     function OutputForm: string; virtual;
   end;
 
@@ -175,7 +182,20 @@ type
   public
     constructor Create(Val: IValue); overload;
     function Evaluate(Context: TContext): IValue; override;
-    function StringForm: String; override;
+    function StringForm: string; override;
+  end;
+
+  TValueObject = class(TValue, IValueObject)
+  private
+    FObject: TObject;
+  public
+    constructor Create(Obj: TObject);
+    destructor Destroy; override;
+    function StringForm: string; override;
+    function OutputForm: string; override;
+    // IValueObject
+    function GetClass: TClass;
+    function GetObject: TObject;
   end;
 
   TValueGenericList = class(TValue, IValueList)
@@ -186,7 +206,7 @@ type
     procedure SetLength(const Value: Integer); virtual; abstract;
   public
     constructor Create;
-    function StringForm: String; override;
+    function StringForm: string; override;
   end;
 
   TValueFixedList = class(TValueGenericList)
@@ -198,7 +218,7 @@ type
     procedure SetItem(Index: Integer; const Value: IValue); override;
     procedure SetLength(const Value: Integer); override;
   public
-    function OutputForm: String; override;
+    function OutputForm: string; override;
   end;
 
   TValueRangeList = class(TValueGenericList)
@@ -211,7 +231,7 @@ type
     procedure SetLength(const Value: Integer); override;
   public
     constructor Create(Start, Step, Max: Number);
-    function OutputForm: String; override;
+    function OutputForm: string; override;
   end;
 
   TE_ExprRef = class(TExpression)
@@ -220,13 +240,13 @@ type
   public
     constructor Create(Name: string);
     function Evaluate(Context: TContext): IValue; override;
-    function StringForm: String; override;
-    property Name: String read FName;
+    function StringForm: string; override;
+    property Name: string read FName;
   end;
 
   TExprList = array of IExpression;
-  TUDFHeader = function(Context: TContext; args: TExprList) : IValue of object;
-  TUDFHelp = procedure (Output: TOutput) of object;
+  TUDFHeader = function(Context: TContext; args: TExprList): IValue of object;
+  TUDFHelp = procedure(Output: TOutput) of object;
   TFunctionPackageClass = class of TFunctionPackage;
   TFunctionPackage = class
   protected
@@ -244,7 +264,7 @@ type
   public
     constructor Create(Name: string);
     function Evaluate(Context: TContext): IValue; override;
-    function StringForm: String; override;
+    function StringForm: string; override;
 
     class function CheckSysCalls(StringForm: string): Boolean;
   end;
@@ -272,10 +292,11 @@ type
     FItems: array of TDynamicArgument;
     function GetValue(Name: string): IValue;
   protected
-    procedure Add(Name: String; Value: IValue);
+    procedure Add(Name: string; Value: IValue);
   public
     constructor Create(Args: TExprList; FromIndex: integer; Context: TContext);
     function IsSet(Name: string): boolean;
+    function GetDefault(Name: string; Default: IValue): IValue;
     property Value[Name: string]: IValue read GetValue; default;
   end;
 
@@ -284,7 +305,7 @@ type
     function CollectAll: TExprList;
   public
     function Evaluate(Context: TContext): IValue; override;
-    function StringForm: String; override;
+    function StringForm: string; override;
   end;
 
   TE_Subcontext = class(TExpression)
@@ -294,7 +315,7 @@ type
   public
     constructor Create(Name: string);
     function Evaluate(Context: TContext): IValue; override;
-    function StringForm: String; override;
+    function StringForm: string; override;
   end;
 
   TE_Describe = class(TExpression)
@@ -326,7 +347,7 @@ type
   public
     function Evaluate(Context: TContext): IValue; override;
   end;
-  
+
   TE_Multiplication = class(TExpression)
   private
   public
@@ -369,20 +390,19 @@ type
     function Evaluate(Context: TContext): IValue; override;
   end;
 
-
   TExpressionDef = record
     P: integer;
-    Infix: String;
+    Infix: string;
     Unary: boolean;
     Cls: TExpressionClass;
   end;
 
 const
-  Expressions : array[0..11] of TExpressionDef = (
+  Expressions: array[0..11] of TExpressionDef = (
     (P: 10; Infix: '?'; Unary: true; Cls: TE_Describe),
     (P: 15; Infix: '#'; Unary: true; Cls: TE_Character),
 
-//    (P: 15; Infix: '-'; Unary: True; Cls: TE_Negation), // Done by Parse/Fold if it finds a Subtraction with no LHS 
+    //    (P: 15; Infix: '-'; Unary: True; Cls: TE_Negation), // Done by Parse/Fold if it finds a Subtraction with no LHS
 
     (P: 19; Infix: '^'; Unary: False; Cls: TE_Power),
     (P: 20; Infix: '*'; Unary: False; Cls: TE_Multiplication),
@@ -392,11 +412,11 @@ const
     (P: 30; Infix: '+'; Unary: False; Cls: TE_Addition),
     (P: 30; Infix: '-'; Unary: False; Cls: TE_Subtraction),
     (P: 30; Infix: '||'; Unary: False; Cls: TE_Concatenation),
-    
-    (P:100; Infix: '='; Unary: False; Cls: TE_AssignmentStatic),
-    (P:105; Infix: ':='; Unary: False; Cls: TE_AssignmentDynamic),
-    (P:110; Infix: ','; Unary: False; Cls: TE_ArgList)
-  );
+
+    (P: 100; Infix: '='; Unary: False; Cls: TE_AssignmentStatic),
+    (P: 105; Infix: ':='; Unary: False; Cls: TE_AssignmentDynamic),
+    (P: 110; Infix: ','; Unary: False; Cls: TE_ArgList)
+    );
 
 var
   NeutralFormatSettings: TFormatSettings;
@@ -406,119 +426,120 @@ type
     LongName: string;
     Value: Number;
     Uni,
-    Comment: string;
+      Comment: string;
   end;
 
 const
-  cPi : Number = 3.1415926535897932384626433832795028841972; // required for tests
+  cPi: Number = 3.1415926535897932384626433832795028841972; // required for tests
   MathematicalConstants: array[0..7] of TConstantDef = (
-    (LongName:             'Pi'; Value: 3.1415926535897932384626433832795028841972),
-    (LongName:              'E'; Value: 2.7182818284590452353602874713526624977572),
-    (LongName:         'Degree'; Value: 0.0174532925199432957692369076848861271344),
-    (LongName:    'GoldenRatio'; Value: 1.6180339887498948482045868343656381177203),
-    (LongName:     'EulerGamma'; Value: 0.57721566490153286060651209008240243104216),
-    (LongName:        'Catalan'; Value: 0.91596559417721901505460351493238411077415),
-    (LongName:       'Glaisher'; Value: 1.2824271291006226368753425688697917277677),
-    (LongName:       'Khinchin'; Value: 2.6854520010653064453097148354817956938204)
-  );
+    (LongName: 'Pi'; Value: 3.1415926535897932384626433832795028841972),
+    (LongName: 'E'; Value: 2.7182818284590452353602874713526624977572),
+    (LongName: 'Degree'; Value: 0.0174532925199432957692369076848861271344),
+    (LongName: 'GoldenRatio'; Value: 1.6180339887498948482045868343656381177203),
+    (LongName: 'EulerGamma'; Value: 0.57721566490153286060651209008240243104216),
+    (LongName: 'Catalan'; Value: 0.91596559417721901505460351493238411077415),
+    (LongName: 'Glaisher'; Value: 1.2824271291006226368753425688697917277677),
+    (LongName: 'Khinchin'; Value: 2.6854520010653064453097148354817956938204)
+    );
   PhysicalConstants: array[0..37] of TConstantDef = (
-  //Auswahl nach: Formelsammlung, PAETEC. 4. Auflage, Berlin, 2004
-  //Quelle dort: CODATA
-  //Erweitert: Wolfram Research Mathematica, PhysicalConstants package (Auswahl)
-    //Measurement
-    (LongName: 'AbsoluteZero';         Value: -273.15;         Uni: '°C';         Comment: 'for conversion purposes'),
-    (LongName: 'AtomicUnit';           Value: 1.660540E-21;    Uni: 'kg'),
-    (LongName: 'SpeedOfLight';         Value: 2.99792458E8;    Uni: 'm/s'),
-    (LongName: 'SpeedOfSound';         Value: 343.051;         Uni: 'm/s'),
-    (LongName: 'Planck';               Value: 6.626069E-34;    Uni: 'J/s'),
-    (LongName: 'PlanckMass';           Value: 2.177E-8;        Uni: 'kg'),
-    (LongName: 'Rydberg';              Value: 1.097373E7;      Uni: 'm^-1'),
+    //Auswahl nach: Formelsammlung, PAETEC. 4. Auflage, Berlin, 2004
+    //Quelle dort: CODATA
+    //Erweitert: Wolfram Research Mathematica, PhysicalConstants package (Auswahl)
+      //Measurement
+    (LongName: 'AbsoluteZero'; Value: - 273.15; Uni: '°C'; Comment: 'for conversion purposes'),
+    (LongName: 'AtomicUnit'; Value: 1.660540E-21; Uni: 'kg'),
+    (LongName: 'SpeedOfLight'; Value: 2.99792458E8; Uni: 'm/s'),
+    (LongName: 'SpeedOfSound'; Value: 343.051; Uni: 'm/s'),
+    (LongName: 'Planck'; Value: 6.626069E-34; Uni: 'J/s'),
+    (LongName: 'PlanckMass'; Value: 2.177E-8; Uni: 'kg'),
+    (LongName: 'Rydberg'; Value: 1.097373E7; Uni: 'm^-1'),
     //Electromagnetics
     (LongName: 'ElectricalFieldConstant'; Value: 8.854187818E-12; Uni: 'A s/V m'),
-    (LongName: 'MagneticFieldConstant';   Value: 1.256637061E-6;  Uni: 'V s/A m'),
+    (LongName: 'MagneticFieldConstant'; Value: 1.256637061E-6; Uni: 'V s/A m'),
     //Thermodynamics
-    (LongName: 'TriplePointWater';     Value: 273.16;          Uni: 'K'),
-    (LongName: 'StefanBoltzmann';      Value: 5.670400E-8;     Uni: 'W/m^2 K^4'),
-    (LongName: 'MolarGasConstant';     Value: 8.314472;        Uni: 'J/K mol'),
-    (LongName: 'WiensDisplacement';    Value: 2.8977685E-3;    Uni: 'm K'),
+    (LongName: 'TriplePointWater'; Value: 273.16; Uni: 'K'),
+    (LongName: 'StefanBoltzmann'; Value: 5.670400E-8; Uni: 'W/m^2 K^4'),
+    (LongName: 'MolarGasConstant'; Value: 8.314472; Uni: 'J/K mol'),
+    (LongName: 'WiensDisplacement'; Value: 2.8977685E-3; Uni: 'm K'),
     //Astronomy
-    (LongName: 'GravitationConstant';  Value: 6.673E-11;       Uni: 'm^3 / kg s^2'),
-    (LongName: 'EarthSolarConstant';   Value: 1.366E3;         Uni: 'W/m^2'),
-    (LongName: 'EarthApparentGravity'; Value: 9.80665;         Uni: 'm/s^2'),
-    (LongName: 'EarthRadius';          Value: 6.371E6;         Uni: 'm'),
-    (LongName: 'EarthMass';            Value: 5.9742E24;       Uni: 'kg'),
-    (LongName: 'SolRadius';            Value: 6.955E8;         Uni: 'm'),
-    (LongName: 'SolMass';              Value: 1.988435E30;     Uni: 'kg'),   
-    (LongName: 'SolLuminosity';        Value: 3.846E26;        Uni: 'W'),
-    (LongName: 'AstronomicalUnit';     Value: 149.6E9;         Uni: 'm'),
-    (LongName: 'Lightyear';            Value: 9.4605E15;       Uni: 'm'),
-    (LongName: 'Parsec';               Value: 3.08568E16;      Uni: 'm'),
+    (LongName: 'GravitationConstant'; Value: 6.673E-11; Uni: 'm^3 / kg s^2'),
+    (LongName: 'EarthSolarConstant'; Value: 1.366E3; Uni: 'W/m^2'),
+    (LongName: 'EarthApparentGravity'; Value: 9.80665; Uni: 'm/s^2'),
+    (LongName: 'EarthRadius'; Value: 6.371E6; Uni: 'm'),
+    (LongName: 'EarthMass'; Value: 5.9742E24; Uni: 'kg'),
+    (LongName: 'SolRadius'; Value: 6.955E8; Uni: 'm'),
+    (LongName: 'SolMass'; Value: 1.988435E30; Uni: 'kg'),
+    (LongName: 'SolLuminosity'; Value: 3.846E26; Uni: 'W'),
+    (LongName: 'AstronomicalUnit'; Value: 149.6E9; Uni: 'm'),
+    (LongName: 'Lightyear'; Value: 9.4605E15; Uni: 'm'),
+    (LongName: 'Parsec'; Value: 3.08568E16; Uni: 'm'),
     //Chemistry
-    (LongName: 'Avogadro';             Value: 6.022142E32;     Uni: 'mol^-1'),
-    (LongName: 'Boltzmann';            Value: 1.380650E-23;    Uni: 'J/K';        Comment:'MolarGasConstant/Avogadro'),
-    (LongName: 'MolarVolume';          Value: 22.414E-3;       Uni: 'm^3/mol'),
-    (LongName: 'Faraday';              Value: 9.648534E4;      Uni: 'A s/mol';    Comment:'Avogadro*ElectronCharge'),
-    (LongName: 'Loschmidt';            Value: 2.686778E25;     Uni: 'm^-3';       Comment:'Avogadro/MolarVolume'),
-    (LongName: 'StandardPressure';     Value: 101325;          Uni: 'Pa'),
-    (LongName: 'StandardTemperature';  Value: 273.15;          Uni: 'K'),
+    (LongName: 'Avogadro'; Value: 6.022142E32; Uni: 'mol^-1'),
+    (LongName: 'Boltzmann'; Value: 1.380650E-23; Uni: 'J/K'; Comment: 'MolarGasConstant/Avogadro'),
+    (LongName: 'MolarVolume'; Value: 22.414E-3; Uni: 'm^3/mol'),
+    (LongName: 'Faraday'; Value: 9.648534E4; Uni: 'A s/mol'; Comment: 'Avogadro*ElectronCharge'),
+    (LongName: 'Loschmidt'; Value: 2.686778E25; Uni: 'm^-3'; Comment: 'Avogadro/MolarVolume'),
+    (LongName: 'StandardPressure'; Value: 101325; Uni: 'Pa'),
+    (LongName: 'StandardTemperature'; Value: 273.15; Uni: 'K'),
     //Paricles
-    (LongName: 'ElectronComptonWavelength';  Value: 2.426310303E-12;   Uni: 'm'; Comment: 'Planck/(ElectronMass*SpeedOfLight)'),
-    (LongName: 'ElectronCharge';       Value: 1.60217646E-19;  Uni: 'C'),
-    (LongName: 'ElectronMass';         Value: 9.10938188E-31;  Uni: 'kg'),
-    (LongName: 'NeutronComptonWavelength';   Value: 1.319590943E-15;   Uni: 'm'; Comment: 'Planck/(NeutronMass*SpeedOfLight)'),
-    (LongName: 'NeutronMass';          Value: 1.67492716E-27;  Uni: 'kg'),
-    (LongName: 'ProtonComptonWavelength';    Value: 1.321409898E-15;   Uni: 'm'; Comment: 'Planck/(ProtonMass*SpeedOfLight)'),
-    (LongName: 'ProtonMass';           Value: 1.67262158E-27;  Uni: 'kg')
-  );
+    (LongName: 'ElectronComptonWavelength'; Value: 2.426310303E-12; Uni: 'm'; Comment: 'Planck/(ElectronMass*SpeedOfLight)'),
+    (LongName: 'ElectronCharge'; Value: 1.60217646E-19; Uni: 'C'),
+    (LongName: 'ElectronMass'; Value: 9.10938188E-31; Uni: 'kg'),
+    (LongName: 'NeutronComptonWavelength'; Value: 1.319590943E-15; Uni: 'm'; Comment: 'Planck/(NeutronMass*SpeedOfLight)'),
+    (LongName: 'NeutronMass'; Value: 1.67492716E-27; Uni: 'kg'),
+    (LongName: 'ProtonComptonWavelength'; Value: 1.321409898E-15; Uni: 'm'; Comment: 'Planck/(ProtonMass*SpeedOfLight)'),
+    (LongName: 'ProtonMass'; Value: 1.67262158E-27; Uni: 'kg')
+    );
 
 var
   FunctionPackages: array of TFunctionPackageClass;
-  
+
 implementation
 
 uses
-  uFunctions;
+  uFunctions, uFunctionsGraphing;
 
 resourcestring
   sConstants = 'Constants';
-  sWork      = 'Work';
+  sWork = 'Work';
 
-function NumberToStr(const Value: Number; FS: TFormatSettings; ShowThousands: boolean):string;
-var p,e: integer;
+function NumberToStr(const Value: Number; FS: TFormatSettings; ShowThousands: boolean): string;
+var
+  p, e: integer;
 begin
   Result:= FloatToStrF(Value, ffGeneral, 22, 18, NeutralFormatSettings);
   if Showthousands then begin
     e:= Pos('E', Result);
-    if e=0 then
+    if e = 0 then
       e:= length(Result);
 
     p:= Pos(NeutralFormatSettings.DecimalSeparator, Result);
-    if p=0 then p:= e+1;
-    dec(p,3);
-    while p>0 do begin
+    if p = 0 then
+      p:= e + 1;
+    dec(p, 3);
+    while p > 0 do begin
       Insert(NeutralFormatSettings.ThousandSeparator, Result, p);
-      dec(p,3);
+      dec(p, 3);
       inc(e);
     end;
     p:= Pos(NeutralFormatSettings.DecimalSeparator, Result);
-    if p>0 then begin
-      inc(p,3);
-      while p<e do begin
-        Insert(NeutralFormatSettings.ThousandSeparator, Result, p+1);
-        inc(p,4);
+    if p > 0 then begin
+      inc(p, 3);
+      while p < e do begin
+        Insert(NeutralFormatSettings.ThousandSeparator, Result, p + 1);
+        inc(p, 4);
         inc(e);
       end;
     end;
   end;
 end;
 
-
 { TMathSystem }
 
 constructor TMathSystem.Create;
   procedure imp(sn, ln: string);
   begin
-    Parse(sn+'=const('''+ln+''')').Evaluate(FConstants);
+    Parse(sn + '=const(''' + ln + ''')').Evaluate(FConstants);
   end;
 begin
   inherited;
@@ -528,12 +549,13 @@ begin
   FConstants:= FContext;
   NewContext(sWork);
   FOutput:= TOutput.Create;
-  imp('pi','Pi');
+  imp('pi', 'Pi');
   imp('e', 'E');
 end;
 
 destructor TMathSystem.Destroy;
-var ctx, fr: TContext;
+var
+  ctx, fr: TContext;
 begin
   fr:= FContext;
   while Assigned(fr) do begin
@@ -546,7 +568,7 @@ begin
   inherited;
 end;
 
-function TMathSystem.Parse(const Expr: String): IExpression;
+function TMathSystem.Parse(const Expr: string): IExpression;
 const
   CharQuote = '''';
 
@@ -556,12 +578,12 @@ const
   CharContextClose = ']';
 type
   TTokenKind = (tokVoid, tokExpression, tokEmpty,
-                tokNumber, tokString, tokFuncRef, tokExprRef, tokExprContext,
-                tokBraceOpen, tokBraceClose, tokContextOpen, tokContextClose,
-                tokOperator);
-  TToken= record
+    tokNumber, tokString, tokFuncRef, tokExprRef, tokExprContext,
+    tokBraceOpen, tokBraceClose, tokContextOpen, tokContextClose,
+    tokOperator);
+  TToken = record
     Pos: integer;
-    Value: String;
+    Value: string;
     Expr: IExpression;
     case Kind: TTokenKind of
       tokVoid: ();
@@ -571,18 +593,21 @@ type
       tokFuncRef: ();
       tokExprRef: ();
       tokExprContext: ();
-  //  tokBraceOpen, tokBraceClose, tokContextOpen, tokContextClose
+      //  tokBraceOpen, tokBraceClose, tokContextOpen, tokContextClose
       tokOperator: (OpIdx: integer);
   end;
-  TTokenList= array of TToken;
-var Tokens: TTokenList;
+  TTokenList = array of TToken;
+var
+  Tokens: TTokenList;
 
   procedure Tokenize;
-  var p, i:integer;
-      t: TToken;
+  var
+    p, i: integer;
+    t: TToken;
     procedure ParseNumber(var Nr: TToken);
-    var mode: (tmNumberSign, tmNumber, tmNumberDecimals, tmNumberExponentSign, tmNumberExponent);
-        data: string;
+    var
+      mode: (tmNumberSign, tmNumber, tmNumberDecimals, tmNumberExponentSign, tmNumberExponent);
+      data: string;
     begin
       case Expr[p] of
         '0'..'9': mode:= tmNumber;
@@ -594,7 +619,7 @@ var Tokens: TTokenList;
       data:= Expr[p];
       inc(p);
 
-      while p<=Length(Expr) do begin
+      while p <= Length(Expr) do begin
         case mode of
           tmNumberSign:
             if Expr[p] in ['0'..'9'] then begin
@@ -605,12 +630,10 @@ var Tokens: TTokenList;
           tmNumber:
             if Expr[p] in ['0'..'9'] then
               data:= data + Expr[p]
-            else
-            if Expr[p]=NeutralFormatSettings.DecimalSeparator then begin
+            else if Expr[p] = NeutralFormatSettings.DecimalSeparator then begin
               data:= data + Expr[p];
               mode:= tmNumberDecimals;
-            end else
-            if Expr[p] in ['e','E'] then begin
+            end else if Expr[p] in ['e', 'E'] then begin
               data:= data + Expr[p];
               mode:= tmNumberExponentSign;
             end else
@@ -618,18 +641,17 @@ var Tokens: TTokenList;
           tmNumberDecimals:
             if Expr[p] in ['0'..'9'] then
               data:= data + Expr[p]
-            else
-            if Expr[p] in ['e','E'] then begin
+            else if Expr[p] in ['e', 'E'] then begin
               data:= data + Expr[p];
               mode:= tmNumberExponentSign;
             end else
               break;
           tmNumberExponentSign: begin
-            if Expr[p] in ['0'..'9','-'] then begin
-              data:= data + Expr[p];
-              mode:= tmNumberExponent;
-            end else
-              break;
+              if Expr[p] in ['0'..'9', '-'] then begin
+                data:= data + Expr[p];
+                mode:= tmNumberExponent;
+              end else
+                break;
             end;
           tmNumberExponent:
             if Expr[p] in ['0'..'9'] then
@@ -645,17 +667,17 @@ var Tokens: TTokenList;
 
     procedure ParseString(var Str: TToken);
     var
-        data: string;
+      data: string;
     begin
       data:= Expr[p];
       inc(p);
-      while p<=Length(Expr) do begin
-        if (Expr[p]<>CharQuote) then
+      while p <= Length(Expr) do begin
+        if (Expr[p] <> CharQuote) then
           data:= data + Expr[p]
         else begin
           data:= data + Expr[p];
           inc(p);
-          if (p<=length(Expr)) and (Expr[p]=CharQuote) then
+          if (p <= length(Expr)) and (Expr[p] = CharQuote) then
             data:= data + Expr[p]
           else
             break;
@@ -668,18 +690,18 @@ var Tokens: TTokenList;
 
     procedure ParseIdentifier(var Id: TToken);
     var
-        data: string;
+      data: string;
     begin
       data:= Expr[p];
       inc(p);
-      while p<=Length(Expr) do begin
-       if Expr[p] in ['a'..'z','A'..'Z','_','0'..'9'] then
+      while p <= Length(Expr) do begin
+        if Expr[p] in ['a'..'z', 'A'..'Z', '_', '0'..'9'] then
           data:= data + Expr[p]
         else
           Break;
         inc(p);
       end;
-      case  Expr[p] of
+      case Expr[p] of
         CharBraceOpen: Id.Kind:= tokFuncRef;
         CharContextOpen: Id.Kind:= tokExprContext;
       else
@@ -690,40 +712,40 @@ var Tokens: TTokenList;
 
   begin
     p:= 1;
-    while p<=length(expr) do begin
+    while p <= length(expr) do begin
       t.Value:= '';
-      FillChar(t,sizeof(t),0);
+      FillChar(t, sizeof(t), 0);
       t.Pos:= p;
       case Expr[p] of
         ' ': begin
-          inc(p);
-          continue;
-        end;
+            inc(p);
+            continue;
+          end;
         '0'..'9',
-//        '-',
+          //        '-',
         '.': ParseNumber(t);
         CharQuote: ParseString(t);
         CharBraceOpen: begin
-          t.Kind:= tokBraceOpen;
-          inc(p);
-        end;
+            t.Kind:= tokBraceOpen;
+            inc(p);
+          end;
         CharBraceClose: begin
-          t.Kind:= tokBraceClose;
-          inc(p);
-        end;
+            t.Kind:= tokBraceClose;
+            inc(p);
+          end;
         CharContextOpen: begin
-          t.Kind:= tokContextOpen;
-          inc(p);
-        end;
+            t.Kind:= tokContextOpen;
+            inc(p);
+          end;
         CharContextClose: begin
-          t.Kind:= tokContextClose;
-          inc(p);
-        end;
-        'a'..'z','A'..'Z','_': ParseIdentifier(t);
+            t.Kind:= tokContextClose;
+            inc(p);
+          end;
+        'a'..'z', 'A'..'Z', '_': ParseIdentifier(t);
       else
         for i:= 0 to high(Expressions) do begin
-          if (Expressions[i].Infix>'') and
-             SameText(Expressions[i].Infix, Copy(Expr, p, length(Expressions[i].Infix))) then begin
+          if (Expressions[i].Infix > '') and
+            SameText(Expressions[i].Infix, Copy(Expr, p, length(Expressions[i].Infix))) then begin
             t.Kind:= tokOperator;
             t.Value:= expressions[i].Infix;
             t.OpIdx:= i;
@@ -731,71 +753,75 @@ var Tokens: TTokenList;
             break;
           end;
         end;
-        if t.Kind=tokVoid then 
-          raise ESyntaxError.CreateFmt('Position %d: Unexpected Character %s',[p, Expr[p]]);
+        if t.Kind = tokVoid then
+          raise ESyntaxError.CreateFmt('Position %d: Unexpected Character %s', [p, Expr[p]]);
       end;
 
-      SetLength(Tokens, Length(Tokens)+1);
+      SetLength(Tokens, Length(Tokens) + 1);
       Tokens[high(Tokens)]:= t;
     end;
   end;
 
-  procedure Fold(L,R: integer);
-  var i,A,eid,ll,rr:integer;
-      tmp: IExpression;
-      b: pchar;
+  procedure Fold(L, R: integer);
+  var
+    i, A, eid, ll, rr: integer;
+    tmp: IExpression;
+    b: pchar;
 
     function NextR(k: integer): integer;
-    var j:integer;
+    var
+      j: integer;
     begin
       Result:= -1;
-      for j:= k+1 to R do
-        if Tokens[j].Kind<>tokVoid then begin
+      for j:= k + 1 to R do
+        if Tokens[j].Kind <> tokVoid then begin
           Result:= j;
           exit;
         end;
     end;
     function NextL(k: integer): integer;
-    var j:integer;
+    var
+      j: integer;
     begin
       Result:= -1;
-      for j:= k-1 downto L do
-        if Tokens[j].Kind<>tokVoid then begin
+      for j:= k - 1 downto L do
+        if Tokens[j].Kind <> tokVoid then begin
           Result:= j;
           exit;
         end;
     end;
 
     procedure ProcessBraces(const Open, Close: TTokenKind; const Str: string);
-    var i:integer;
+    var
+      i: integer;
     begin
       repeat
         A:= -1;
         for i:= L to R do begin
-          if Tokens[i].Kind=Open then
+          if Tokens[i].Kind = Open then
             A:= i
-          else if Tokens[i].Kind=Close then begin
-            if A>=0 then begin
-              if A=I-1 then begin
+          else if Tokens[i].Kind = Close then begin
+            if A >= 0 then begin
+              if A = I - 1 then begin
                 Tokens[A].Kind:= tokEmpty;
               end else begin
-                Fold(A+1,I-1);
+                Fold(A + 1, I - 1);
                 Tokens[A].Kind:= tokVoid;
               end;
               Tokens[I].Kind:= tokVoid;
             end else
-              raise ESyntaxError.CreateFmt('Position %d: Closing %s never opened',[Tokens[i].Pos, Str]);
+              raise ESyntaxError.CreateFmt('Position %d: Closing %s never opened', [Tokens[i].Pos, Str]);
             A:= -2;
             break;
           end;
         end;
-        if A>=0 then
-          raise ESyntaxError.CreateFmt('%s opened at position %d is never closed',[Str, Tokens[A].Pos]);
-      until A=-1;
+        if A >= 0 then
+          raise ESyntaxError.CreateFmt('%s opened at position %d is never closed', [Str, Tokens[A].Pos]);
+      until A = -1;
     end;
   begin
     //given stupid values?
-    if R<L then
+    if R < L then
       exit;
 
     //collapse braces first
@@ -807,62 +833,62 @@ var Tokens: TTokenList;
     for i:= L to R do
       case Tokens[i].Kind of
         tokNumber: begin
-          Tokens[i].Kind:= tokExpression;
-          Tokens[i].Expr:= TE_Constant.Create(TValue.Create(StrToFloat(Tokens[i].Value, NeutralFormatSettings)));
-        end;
+            Tokens[i].Kind:= tokExpression;
+            Tokens[i].Expr:= TE_Constant.Create(TValue.Create(StrToFloat(Tokens[i].Value, NeutralFormatSettings)));
+          end;
         tokString: begin
-          Tokens[i].Kind:= tokExpression;
-          b:= PChar(Tokens[i].Value);
-          Tokens[i].Expr:= TE_Constant.Create(TValue.Create(AnsiExtractQuotedStr(b,CharQuote)));
-        end;
+            Tokens[i].Kind:= tokExpression;
+            b:= PChar(Tokens[i].Value);
+            Tokens[i].Expr:= TE_Constant.Create(TValue.Create(AnsiExtractQuotedStr(b, CharQuote)));
+          end;
         tokExprRef: begin
-          Tokens[i].Kind:= tokExpression;
-          Tokens[i].Expr:= TE_ExprRef.Create(Tokens[i].Value);
-        end;
+            Tokens[i].Kind:= tokExpression;
+            Tokens[i].Expr:= TE_ExprRef.Create(Tokens[i].Value);
+          end;
         tokExprContext: begin
-          Tokens[i].Kind:= tokExpression;
-          tmp:= TE_Subcontext.Create(Tokens[i].Value);
-          A:= NextR(i);
-          if Tokens[A].Kind=tokEmpty then
-            TE_Subcontext(tmp.GetObject).Arguments:= nil
-          else
-            TE_Subcontext(tmp.GetObject).Arguments:= Tokens[A].Expr;
-          Tokens[A].Expr:= nil;
-          Tokens[a].Kind:= tokVoid;
-          Tokens[i].Expr:= tmp;
-        end;
+            Tokens[i].Kind:= tokExpression;
+            tmp:= TE_Subcontext.Create(Tokens[i].Value);
+            A:= NextR(i);
+            if Tokens[A].Kind = tokEmpty then
+              TE_Subcontext(tmp.GetObject).Arguments:= nil
+            else
+              TE_Subcontext(tmp.GetObject).Arguments:= Tokens[A].Expr;
+            Tokens[A].Expr:= nil;
+            Tokens[a].Kind:= tokVoid;
+            Tokens[i].Expr:= tmp;
+          end;
         tokFuncRef: begin
-          Tokens[i].Kind:= tokExpression;
-          tmp:= TE_FunctionCall.Create(Tokens[i].Value);
-          A:= NextR(i);
-          if Tokens[A].Kind=tokEmpty then
-            TE_FunctionCall(tmp.GetObject).Arguments:= nil
-          else
-            TE_FunctionCall(tmp.GetObject).Arguments:= Tokens[A].Expr;
-          Tokens[A].Expr:= nil;
-          Tokens[a].Kind:= tokVoid;
-          Tokens[i].Expr:= tmp;
-        end;
+            Tokens[i].Kind:= tokExpression;
+            tmp:= TE_FunctionCall.Create(Tokens[i].Value);
+            A:= NextR(i);
+            if Tokens[A].Kind = tokEmpty then
+              TE_FunctionCall(tmp.GetObject).Arguments:= nil
+            else
+              TE_FunctionCall(tmp.GetObject).Arguments:= Tokens[A].Expr;
+            Tokens[A].Expr:= nil;
+            Tokens[a].Kind:= tokVoid;
+            Tokens[i].Expr:= tmp;
+          end;
       end;
 
     //finally, operators
     // Note: this wastes some extra iterations per Prio-Class, just ignore that, okay?
     for A:= 0 to high(Expressions) do begin
       for i:= L to R do
-        if (Tokens[i].Kind=tokOperator) and
-           (Expressions[Tokens[i].OpIdx].P=Expressions[A].P) then begin
+        if (Tokens[i].Kind = tokOperator) and
+          (Expressions[Tokens[i].OpIdx].P = Expressions[A].P) then begin
           eid:= Tokens[i].OpIdx;
           rr:= NextR(i);
           ll:= NextL(i);
 
-          if rr<0 then
-            raise ESyntaxError.CreateFmt('Position %d: Operator has no RHS',[Tokens[i].Pos]);
+          if rr < 0 then
+            raise ESyntaxError.CreateFmt('Position %d: Operator has no RHS', [Tokens[i].Pos]);
 
-          if Tokens[rr].Kind<>tokExpression then
-            raise ESyntaxError.CreateFmt('Position %d: expected expression, found %s',[Tokens[rr].Pos, Tokens[rr].Value]);
+          if Tokens[rr].Kind <> tokExpression then
+            raise ESyntaxError.CreateFmt('Position %d: expected expression, found %s', [Tokens[rr].Pos, Tokens[rr].Value]);
 
           if (Expressions[eid].Cls = TE_Subtraction) and
-             ((ll<0) or (Tokens[ll].Kind<>tokExpression)) then begin
+            ((ll < 0) or (Tokens[ll].Kind <> tokExpression)) then begin
             tmp:= TE_Negation.Create;
             tmp.RHS:= Tokens[rr].Expr;
           end else begin
@@ -870,10 +896,10 @@ var Tokens: TTokenList;
 
             tmp.RHS:= Tokens[rr].Expr;
             if not Expressions[eid].Unary then begin
-              if ll<0 then
-                raise ESyntaxError.CreateFmt('Position %d: Operator has no LHS',[Tokens[i].Pos]);
-              if Tokens[ll].Kind<>tokExpression then
-                raise ESyntaxError.CreateFmt('Position %d: expected expression, found %s',[Tokens[ll].Pos, Tokens[ll].Value]);
+              if ll < 0 then
+                raise ESyntaxError.CreateFmt('Position %d: Operator has no LHS', [Tokens[i].Pos]);
+              if Tokens[ll].Kind <> tokExpression then
+                raise ESyntaxError.CreateFmt('Position %d: expected expression, found %s', [Tokens[ll].Pos, Tokens[ll].Value]);
               tmp.LHS:= Tokens[ll].Expr;
               Tokens[ll].Kind:= tokVoid;
             end;
@@ -884,28 +910,28 @@ var Tokens: TTokenList;
         end;
     end;
 
-
     //shift to L position if neccessary
-    i:= NextR(L-1);
-    if i<>L then begin
+    i:= NextR(L - 1);
+    if i <> L then begin
       Tokens[L]:= Tokens[i];
       Tokens[i].Kind:= tokVoid;
     end;
   end;
 
   function CheckResults: boolean;
-  var i:integer;
+  var
+    i: integer;
   begin
-    Result:= length(Tokens)>0;
+    Result:= length(Tokens) > 0;
     if not Result then
       exit;
     for i:= 1 to high(Tokens) do
-      if Tokens[i].Kind<>tokVoid then
+      if Tokens[i].Kind <> tokVoid then
         raise ESyntaxError.CreateFmt('Position %d: Leftover token', [Tokens[i].Pos]);
     Result:= true;
   end;
 begin
-  Result:= nil; 
+  Result:= nil;
   SetLength(Tokens, 0);
   Tokenize;
   Fold(0, high(Tokens));
@@ -914,9 +940,10 @@ begin
   end;
 end;
 
-function TMathSystem.Eval(const Expr: String): IValue;
-var ex: IExpression;
-    s: string;
+function TMathSystem.Eval(const Expr: string): IValue;
+var
+  ex: IExpression;
+  s: string;
 begin
   ex:= Parse(Expr);
   try
@@ -928,35 +955,36 @@ begin
         if not Assigned(Result) then
           Result:= TValue.CreateUnassigned;
       end;
-    end
-    else
+    end else
       Result:= TValue.CreateNull;
   finally
     ex:= nil;
   end;
 end;
 
-procedure TMathSystem.Run(const Expr: String);
-var re: IValue;
-    rs: IStringConvertible;
+procedure TMathSystem.Run(const Expr: string);
+var
+  re: IValue;
+  rs: IStringConvertible;
 begin
   try
     re:= Eval(Expr);
     if re.ValueType <> vtUnassigned then begin
       if Supports(re, IStringConvertible, rs) then
         Output.Result(rs.OutputForm);
-      Context.DefineValue('ans',re);
+      Context.DefineValue('ans', re);
     end;
   except
     on e: EMathSysError do
-      Output.Error(E.Message,[]);
+      Output.Error(E.Message, []);
   end;
 end;
 
 procedure TMathSystem.DropContext;
-var cont: TContext;
+var
+  cont: TContext;
 begin
-  if FContext.Parent<>FConstants then begin
+  if FContext.Parent <> FConstants then begin
     cont:= FContext.Parent;
     FContext.Free;
     FContext:= cont;
@@ -965,24 +993,25 @@ begin
 end;
 
 procedure TMathSystem.NewContext(const Name: string);
-var cont: TContext;
+var
+  cont: TContext;
 begin
   cont:= TContext.Create(Self, FContext);
   cont.ContextName:= Name;
   FContext:= cont;
 end;
 
-procedure TMathSystem.EvaluationBegin(varname:string);
+procedure TMathSystem.EvaluationBegin(varname: string);
 begin
   if FEvaluationStack.IndexOf(varname) > -1 then
-    raise EMathSysError.CreateFmt('Evaluation aborted at maximum depth: cyclic reference found for "%s".',[varname])
+    raise EMathSysError.CreateFmt('Evaluation aborted at maximum depth: cyclic reference found for "%s".', [varname])
   else
     FEvaluationStack.Add(varname);
 end;
 
 procedure TMathSystem.EvaluationEnd;
 begin
-  FEvaluationStack.Delete(FEvaluationStack.Count-1);
+  FEvaluationStack.Delete(FEvaluationStack.Count - 1);
 end;
 
 { TOutput }
@@ -994,11 +1023,12 @@ begin
 end;
 
 procedure TOutput.LineOut(const Line: string; Indent: integer; Color: TColor; Style: TFontStyles);
-var p:integer;
+var
+  p: integer;
 begin
   FRender.SelStart:= length(FRender.Text);
   FRender.SelLength:= 0;
-  if Indent<0 then begin
+  if Indent < 0 then begin
     FRender.Paragraph.FirstIndent:= 0;
     FRender.Paragraph.LeftIndent:= -Indent;
     FRender.Paragraph.TabCount:= 1;
@@ -1012,8 +1042,8 @@ begin
   FRender.SelAttributes.Style:= Style;
   FRender.Lines.Add(Line);
   p:= Pos(NeutralFormatSettings.ThousandSeparator, FRender.Text);
-  while p>0 do begin
-    FRender.SelStart:= p-1;
+  while p > 0 do begin
+    FRender.SelStart:= p - 1;
     FRender.SelLength:= 1;
     FRender.SelAttributes.Name:= 'Arial';
     FRender.SelText:= ' ';
@@ -1024,26 +1054,27 @@ end;
 
 procedure TOutput.Hint(const Line: string; Params: array of const);
 begin
-  LineOut(Format(Line, Params), 10, clNavy,[fsItalic]);
+  LineOut(Format(Line, Params), 10, clNavy, [fsItalic]);
 end;
 
 procedure TOutput.Error(const Line: string; Params: array of const);
 begin
-  LineOut(Format(Line, Params), 10, $009eff,[]);
+  LineOut(Format(Line, Params), 10, $009EFF, []);
 end;
 
 procedure TOutput.Result(const Line: string);
 begin
-  LineOut('='#9+Line, -10, FRender.Font.Color,[]);
+  LineOut('='#9 + Line, -10, FRender.Font.Color, []);
 end;
 
 procedure TOutput.Input(const Line: string);
-var s: string;
+var
+  s: string;
 begin
-  s:= '>'#9+Line;
-  if FRender.Lines.Count>0 then
-    s:= #13#10+s;
-  LineOut(s, -10, clDkGray,[]);
+  s:= '>'#9 + Line;
+  if FRender.Lines.Count > 0 then
+    s:= #13#10 + s;
+  LineOut(s, -10, clDkGray, []);
 end;
 
 procedure TOutput.Clear;
@@ -1063,37 +1094,40 @@ begin
 end;
 
 destructor TContext.Destroy;
-var i:Integer;
+var
+  i: Integer;
 begin
-  for i:= FExpressions.Count-1 downto 0 do
+  for i:= FExpressions.Count - 1 downto 0 do
     Undefine(FExpressions[i]);
   FreeAndNil(FExpressions);
   inherited;
 end;
 
 procedure TContext.Define(const Name: string; Expression: IExpression);
-var intf: IExpression;
-    i: integer;
+var
+  intf: IExpression;
+  i: integer;
 begin
   i:= FExpressions.IndexOf(Name);
-  if i>=0 then begin
+  if i >= 0 then begin
     intf:= IExpression(Pointer(FExpressions.Objects[i]));
     intf._Release;
     FExpressions.Objects[i]:= TObject(Expression);
     // only warn on non-system variables
-    if not FSilent and not SameText(Name,'ans') then
-      FSystem.Output.Hint('Reassigned Variable: %s',[Name]);
+    if not FSilent and not SameText(Name, 'ans') then
+      FSystem.Output.Hint('Reassigned Variable: %s', [Name]);
   end else
-    FExpressions.AddObject(Name,TObject(Expression));
+    FExpressions.AddObject(Name, TObject(Expression));
   Expression._AddRef;
 end;
 
 procedure TContext.Undefine(const Name: string);
-var intf: IExpression;
-    i:Integer;
+var
+  intf: IExpression;
+  i: Integer;
 begin
   i:= FExpressions.IndexOf(Name);
-  if i>=0 then begin
+  if i >= 0 then begin
     intf:= IExpression(Pointer(FExpressions.Objects[i]));
     intf._Release;
     FExpressions.Delete(i);
@@ -1101,13 +1135,13 @@ begin
 end;
 
 function TContext.Definition(const Name: string): IExpression;
-var i: integer;
+var
+  i: integer;
 begin
   i:= FExpressions.IndexOf(Name);
-  if i>=0 then begin
+  if i >= 0 then begin
     Result:= IExpression(Pointer(FExpressions.Objects[i]));
-  end
-  else begin
+  end else begin
     if Assigned(FParent) then
       Result:= FParent.Definition(Name)
     else
@@ -1116,7 +1150,8 @@ begin
 end;
 
 function TContext.Value(const Name: string): IValue;
-var ex: IExpression;
+var
+  ex: IExpression;
 begin
   ex:= Definition(Name);
   if Assigned(ex) then begin
@@ -1126,10 +1161,9 @@ begin
     finally
       FSystem.EvaluationEnd;
     end;
-  end
-  else begin
+  end else begin
     Result:= TValue.CreateUnassigned;
-    raise EMathSysError.CreateFmt('Expression unknown in current Context: %s',[Name]);
+    raise EMathSysError.CreateFmt('Expression unknown in current Context: %s', [Name]);
   end;
 end;
 
@@ -1143,16 +1177,37 @@ begin
   Result:= FExpressions[Index];
 end;
 
-
 procedure TContext.DefineValue(const Name: string; Value: IValue);
 begin
-  if Value.ValueType<>vtUnassigned then
-    Define(Name,TE_Constant.Create(Value));
+  if Value.ValueType <> vtUnassigned then
+    Define(Name, TE_Constant.Create(Value));
 end;
 
 function TContext.Defines(const Name: string): boolean;
 begin
-  Result:= FExpressions.IndexOf(Name)>-1;
+  Result:= FExpressions.IndexOf(Name) > -1;
+end;
+
+function TContext.Bake: TContext;
+  procedure Cook(C: TContext);
+  var
+    i: integer;
+    n: string;
+  begin
+    if Assigned(C.Parent) then
+      Cook(C.Parent);
+    for i:= 0 to C.Count - 1 do begin
+      n:= C.Name[i];
+      Result.Define(n, C.Definition(n));
+    end;
+  end;
+begin
+  Result:= TContext.Create(FSystem, nil);
+  try
+    Cook(Self);
+  except
+    FreeAndNil(Result);
+  end;
 end;
 
 { TExpression }
@@ -1199,12 +1254,12 @@ begin
   Result:= StringForm;
 end;
 
-function TExpression.StringForm: String;
+function TExpression.StringForm: string;
 begin
   if LHS = nil then
-    Result:= format('%s(%s)',[Copy(ClassName,4,10000),RHS.StringForm])
+    Result:= format('%s(%s)', [Copy(ClassName, 4, 10000), RHS.StringForm])
   else
-    Result:= format('%s(%s,%s)',[Copy(ClassName,4,10000),LHS.StringForm,RHS.StringForm]);
+    Result:= format('%s(%s,%s)', [Copy(ClassName, 4, 10000), LHS.StringForm, RHS.StringForm]);
 end;
 
 { TValue }
@@ -1216,7 +1271,7 @@ begin
   FNumber:= Val;
 end;
 
-constructor TValue.Create(Val: String);
+constructor TValue.Create(Val: string);
 begin
   inherited Create;
   FValueType:= vtString;
@@ -1235,7 +1290,7 @@ begin
   FValueType:= vtNull;
 end;
 
-function TValue.StringForm: String;
+function TValue.StringForm: string;
 begin
   case FValueType of
     vtUnassigned: Result:= '<?>';
@@ -1247,14 +1302,14 @@ end;
 
 function TValue.GetNumber: Number;
 begin
-  {$WARNINGS OFF}
+{$WARNINGS OFF}
   case FValueType of
     vtNumber: Result:= FNumber;
     vtString: Result:= StrToFloat(FString, NeutralFormatSettings);
   else
     Result:= NAN;
   end;
-  {$WARNINGS ON}
+{$WARNINGS ON}
 end;
 
 function TValue.GetString: string;
@@ -1273,23 +1328,25 @@ begin
   FValueType:= vtNumber;
 end;
 
-procedure TValue.SetString(const str: String);
+procedure TValue.SetString(const str: string);
 begin
   FString:= str;
   FValueType:= vtString;
 end;
 
 function TValue.AsNative: IValue;
-var f: Number;
+var
+  f: Number;
 begin
   case ValueType of
     vtUnassigned,
-    vtNull: Result:= self;
+      vtNull: Result:= self;
     vtNumber: Result:= self;
     vtString:
       if TryStrToFloat(FString, f, NeutralFormatSettings) then
         Result:= TValue.Create(f)
-      else Result:= self;
+      else
+        Result:= self;
   end;
 end;
 
@@ -1329,7 +1386,7 @@ begin
   Result:= FValue;
 end;
 
-function TE_Constant.StringForm: String;
+function TE_Constant.StringForm: string;
 begin
   Result:= (FValue as IStringConvertible).StringForm;
 end;
@@ -1342,7 +1399,7 @@ begin
   FValueType:= vtNull;
 end;
 
-function TValueGenericList.StringForm: String;
+function TValueGenericList.StringForm: string;
 begin
   Result:= OutputForm;
 end;
@@ -1369,10 +1426,12 @@ begin
   FItems[Index]:= Value;
 end;
 
-function TValueFixedList.OutputForm: String;
-var i:integer;
-  function gets(index: integer):string;
-  var s: IStringConvertible;
+function TValueFixedList.OutputForm: string;
+var
+  i: integer;
+  function gets(index: integer): string;
+  var
+    s: IStringConvertible;
   begin
     if Supports(GetItem(index), IStringConvertible, s) then
       Result:= s.OutputForm
@@ -1380,16 +1439,15 @@ var i:integer;
       Result:= '<Unknown>';
   end;
 begin
-  if GetLength=0 then
+  if GetLength = 0 then
     Result:= ''
   else begin
     Result:= gets(0);
-    for i:= 1 to GetLength-1 do begin
+    for i:= 1 to GetLength - 1 do begin
       if Length(Result) > 200 then begin
-        Result:= Result + ', ... ('+IntToStr(GetLength-i+1)+')';
+        Result:= Result + ', ... (' + IntToStr(GetLength - i + 1) + ')';
         break;
-      end
-      else
+      end else
         Result:= Result + ', ' + gets(i);
     end;
   end;
@@ -1416,11 +1474,11 @@ procedure TValueRangeList.SetLength(const Value: Integer);
 begin
 end;
 
-function TValueRangeList.OutputForm: String;
+function TValueRangeList.OutputForm: string;
 begin
-  Result:= Format('{%0:s->%2:s,%1:s}',[NumberToStr(FStart,NeutralFormatSettings,false),NumberToStr(FStep,NeutralFormatSettings,false),NumberToStr(FEnd,NeutralFormatSettings,false)]);
+  Result:= Format('{%0:s->%2:s,%1:s}', [NumberToStr(FStart, NeutralFormatSettings, false), NumberToStr(FStep, NeutralFormatSettings, false), NumberToStr(FEnd,
+      NeutralFormatSettings, false)]);
 end;
-
 
 constructor TValueRangeList.Create(Start, Step, Max: Number);
 begin
@@ -1443,55 +1501,58 @@ begin
   Result:= Context.Value(FName);
 end;
 
-function TE_ExprRef.StringForm: String;
+function TE_ExprRef.StringForm: string;
 begin
   Result:= FName;
 end;
 
 { TFunctionPackage }
 
-class function TFunctionPackage.FunctionExists(FunctionName: string;  ParamCount: integer): boolean;
+class function TFunctionPackage.FunctionExists(FunctionName: string; ParamCount: integer): boolean;
 begin
   Result:= Assigned(GetFunction(FunctionName, ParamCount));
 end;
 
 class function TFunctionPackage.GetFunction(FunctionName: string; ParamCount: integer): TUDFHeader;
-var meth: TMethod;
+var
+  meth: TMethod;
 begin
   Result:= nil;
   meth.Data:= Self;
-  meth.Code:= MethodAddress(Format('%s_%d',[FunctionName, ParamCount]));
+  meth.Code:= MethodAddress(Format('%s_%d', [FunctionName, ParamCount]));
   if not Assigned(meth.Code) then begin
-    meth.Code:= MethodAddress(Format('%s_N',[FunctionName]));
+    meth.Code:= MethodAddress(Format('%s_N', [FunctionName]));
   end;
   if Assigned(Meth.Code) then
     Result:= TUDFHeader(Meth);
 end;
 
 class function TFunctionPackage.RegisterPackage(Package: TFunctionPackageClass): boolean;
-var j:integer;
+var
+  j: integer;
 begin
   Result:= false;
   for j:= 0 to high(FunctionPackages) do
-    if FunctionPackages[j]=Package then
+    if FunctionPackages[j] = Package then
       exit;
   j:= length(FunctionPackages);
-  SetLength(FunctionPackages, j+1);
+  SetLength(FunctionPackages, j + 1);
   FunctionPackages[j]:= Package;
   Result:= true;
 end;
 
 class function TFunctionPackage.RegisterPackageFirst(Package: TFunctionPackageClass): boolean;
-var j:integer;
+var
+  j: integer;
 begin
   Result:= false;
   for j:= 0 to high(FunctionPackages) do
-    if FunctionPackages[j]=Package then
+    if FunctionPackages[j] = Package then
       exit;
   j:= length(FunctionPackages);
-  SetLength(FunctionPackages, j+1);
-  For j:= high(FunctionPackages) downto 1 do
-    FunctionPackages[j]:= FunctionPackages[j-1];
+  SetLength(FunctionPackages, j + 1);
+  for j:= high(FunctionPackages) downto 1 do
+    FunctionPackages[j]:= FunctionPackages[j - 1];
   FunctionPackages[0]:= Package;
   Result:= true;
 end;
@@ -1505,19 +1566,20 @@ begin
 end;
 
 function TE_FunctionCall.Evaluate(Context: TContext): IValue;
-var u: TUDFHeader;
-    ls: TExprList;
-    i: integer;
+var
+  u: TUDFHeader;
+  ls: TExprList;
+  i: integer;
 begin
   if Assigned(Arguments) then begin
     if Arguments.GetObject is TE_ArgList then
       ls:= TE_ArgList(Arguments.GetObject).CollectAll
     else begin
-      SetLength(ls,1);
+      SetLength(ls, 1);
       ls[0]:= Arguments;
     end;
   end else
-    SetLength(ls,0);
+    SetLength(ls, 0);
 
   for i:= 0 to high(FunctionPackages) do begin
     if FunctionPackages[i].FunctionExists(FName, Length(ls)) then begin
@@ -1526,25 +1588,25 @@ begin
       exit;
     end;
   end;
-  raise EMathSysError.CreateFmt('Function %s has no version with %d parameters',[FName, Length(ls)]);
+  raise EMathSysError.CreateFmt('Function %s has no version with %d parameters', [FName, Length(ls)]);
 end;
 
-function TE_FunctionCall.StringForm: String;
+function TE_FunctionCall.StringForm: string;
 begin
   if Assigned(Arguments) then
-    Result:= FName+'('+Arguments.StringForm+')'
+    Result:= FName + '(' + Arguments.StringForm + ')'
   else
-    Result:= FName+'()';
+    Result:= FName + '()';
 end;
 
 class function TE_FunctionCall.CheckSysCalls(StringForm: string): Boolean;
-  // perform check on string form, so we could only encounter (new() or ,new()
-  // in non-toplevel calls. if we don't find that, it might be top level (pos 0)
-  // but that would evaluate to true anyway -> don't bother checking
+// perform check on string form, so we could only encounter (new() or ,new()
+// in non-toplevel calls. if we don't find that, it might be top level (pos 0)
+// but that would evaluate to true anyway -> don't bother checking
   function Chk(f: string): boolean;
   begin
-    Result:= (pos(',' + f+'(',StringForm) = 0) and
-             (pos('(' + f+'(',StringForm) = 0);
+    Result:= (pos(',' + f + '(', StringForm) = 0) and
+      (pos('(' + f + '(', StringForm) = 0);
   end;
 begin
   StringForm:= LowerCase(StringForm);
@@ -1552,7 +1614,6 @@ begin
   if not Result then
     raise EMathSysError.Create('System functions can only be used stand-alone');
 end;
-
 
 { TPackageCore }
 
@@ -1589,7 +1650,8 @@ type
   TConstDefRef = array[0..0] of TConstantDef;
   PConstDef = ^TConstDefRef;
   function FindIn(List: PConstDef; Lo, Hi: integer): Boolean;
-  var i:integer;
+  var
+    i: integer;
   begin
     Result:= false;
     for i:= lo to hi do begin
@@ -1602,7 +1664,7 @@ type
   end;
 begin
   Result:= FindIn(@MathematicalConstants, Low(MathematicalConstants), high(MathematicalConstants)) or
-  FindIn(@PhysicalConstants, Low(PhysicalConstants), high(PhysicalConstants));
+    FindIn(@PhysicalConstants, Low(PhysicalConstants), high(PhysicalConstants));
 end;
 
 function FormatConstInfo(def: TConstantDef): string;
@@ -1610,22 +1672,23 @@ var
   val: IValue;
 begin
   val:= TValue.Create(def.Value);
-  Result:= Format('%s = %s',[def.LongName, val.GetString]);
-  if def.Uni>'' then
-    Result:= Format('%s [%s]',[Result, def.Uni]);
-  if def.Comment>'' then
-    Result:= Format('%s (%s)',[Result, def.Comment]);
+  Result:= Format('%s = %s', [def.LongName, val.GetString]);
+  if def.Uni > '' then
+    Result:= Format('%s [%s]', [Result, def.Uni]);
+  if def.Comment > '' then
+    Result:= Format('%s (%s)', [Result, def.Comment]);
 end;
 
 class function TPackageCore.const_1(Context: TContext; args: TExprList): IValue;
-var nm: string;
-    res: TConstantDef;
+var
+  nm: string;
+  res: TConstantDef;
 begin
   nm:= args[0].Evaluate(Context).GetString;
   if FindConstant(nm, res) then
     Result:= TValue.Create(res.Value)
   else
-    raise EMathSysError.CreateFmt('Unknown Constant: %s',[nm]);
+    raise EMathSysError.CreateFmt('Unknown Constant: %s', [nm]);
 end;
 
 class function TPackageCore.constinfo_0(Context: TContext;
@@ -1636,10 +1699,11 @@ type
 var
   Count: integer;
   procedure ListIn(List: PConstDef; Lo, Hi: integer);
-  var i:integer;
+  var
+    i: integer;
   begin
     for i:= lo to hi do begin
-      Context.System.Output.Hint(FormatConstInfo(List^[i]),[]);
+      Context.System.Output.Hint(FormatConstInfo(List^[i]), []);
       Inc(Count);
     end;
   end;
@@ -1652,14 +1716,15 @@ end;
 
 class function TPackageCore.constinfo_1(Context: TContext;
   args: TExprList): IValue;
-var nm: string;
-    res: TConstantDef;
+var
+  nm: string;
+  res: TConstantDef;
 begin
   nm:= args[0].Evaluate(Context).GetString;
   if FindConstant(nm, res) then begin
     Result:= TValue.Create(FormatConstInfo(res));
   end else
-    raise EMathSysError.CreateFmt('Unknown Constant: %s',[nm]);
+    raise EMathSysError.CreateFmt('Unknown Constant: %s', [nm]);
 end;
 
 { TDynamicArguments }
@@ -1672,8 +1737,7 @@ begin
   for i:= FromIndex to High(Args) do begin
     if Args[i].GetObject is TE_ExprRef then
       Add((Args[i].GetObject as TE_ExprRef).Name, TValue.CreateNull)
-    else
-    if Args[i].GetObject is TE_AssignmentStatic then begin
+    else if Args[i].GetObject is TE_AssignmentStatic then begin
       ex:= args[i].LHS;
       if ex.GetObject is TE_ExprRef then
         Add((ex.GetObject as TE_ExprRef).Name, Args[i].RHS.Evaluate(Context));
@@ -1681,12 +1745,12 @@ begin
   end;
 end;
 
-procedure TDynamicArguments.Add(Name: String; Value: IValue);
+procedure TDynamicArguments.Add(Name: string; Value: IValue);
 var
   i: integer;
 begin
   i:= length(FItems);
-  SetLength(FItems, i+1);
+  SetLength(FItems, i + 1);
   FItems[i].Name:= Name;
   FItems[i].Value:= Value;
 end;
@@ -1696,7 +1760,7 @@ var
   i: integer;
 begin
   Result:= false;
-  For i:= 0 to high(FItems) do
+  for i:= 0 to high(FItems) do
     if AnsiSameText(FItems[i].Name, Name) then begin
       Result:= true;
       exit;
@@ -1704,37 +1768,42 @@ begin
 end;
 
 function TDynamicArguments.GetValue(Name: string): IValue;
+begin
+  Result:= GetDefault(Name, TValue.CreateUnassigned);
+end;
+
+function TDynamicArguments.GetDefault(Name: string; Default: IValue): IValue;
 var
   i: integer;
 begin
-  For i:= 0 to high(FItems) do
+  for i:= 0 to high(FItems) do
     if AnsiSameText(FItems[i].Name, Name) then begin
       Result:= FItems[i].Value;
       exit;
     end;
-  Result:= TValue.CreateUnassigned;
+  Result:= Default;
 end;
 
 { TE_ArgList }
 
 function TE_ArgList.CollectAll: TExprList;
   procedure SubCollect(e: IExpression);
-  var tmp: TExprList;
-      i: integer;
-      o: TExpression;
+  var
+    tmp: TExprList;
+    i: integer;
+    o: TExpression;
   begin
-    if e=nil then
+    if e = nil then
       exit;
     o:= e.GetObject;
     if o is TE_ArgList then begin
       tmp:= TE_ArgList(o).CollectAll;
       for i:= 0 to high(tmp) do begin
-        SetLength(Result, Length(Result)+1);
+        SetLength(Result, Length(Result) + 1);
         Result[high(Result)]:= tmp[i];
       end;
-    end
-    else begin
-      SetLength(Result, Length(Result)+1);
+    end else begin
+      SetLength(Result, Length(Result) + 1);
       Result[high(Result)]:= e;
     end;
   end;
@@ -1750,16 +1819,17 @@ begin
   Result:= RHS.Evaluate(Context);
 end;
 
-function TE_ArgList.StringForm: String;
-var list: TExprList;
-    i: integer;
+function TE_ArgList.StringForm: string;
+var
+  list: TExprList;
+  i: integer;
 begin
   list:= CollectAll;
-  if Length(list)>0 then begin
+  if Length(list) > 0 then begin
     Result:= list[0].StringForm;
     for i:= 1 to high(list) do
-      Result:= Result + ','+ list[i].StringForm;
-    Result:= 'ArgList('+Result+')';
+      Result:= Result + ',' + list[i].StringForm;
+    Result:= 'ArgList(' + Result + ')';
   end else
     Result:= '';
 end;
@@ -1774,7 +1844,8 @@ begin
 end;
 
 function TE_Subcontext.Evaluate(Context: TContext): IValue;
-var ctx: TContext;
+var
+  ctx: TContext;
 begin
   ctx:= TContext.Create(Context.System, Context);
   try
@@ -1786,19 +1857,20 @@ begin
   end;
 end;
 
-function TE_Subcontext.StringForm: String;
+function TE_Subcontext.StringForm: string;
 begin
   if Assigned(Arguments) then
-    Result:= FName+'['+Arguments.StringForm+']'
+    Result:= FName + '[' + Arguments.StringForm + ']'
   else
-    Result:= FName+'[]';
+    Result:= FName + '[]';
 end;
 
 { TE_Describe }
 
 function TE_Describe.Evaluate(Context: TContext): IValue;
-var name: string;
-    e: IExpression;
+var
+  name: string;
+  e: IExpression;
 begin
   if RHS.GetObject is TE_ExprRef then begin
     name:= (RHS.GetObject as TE_ExprRef).FName;
@@ -1824,7 +1896,8 @@ end;
 { TE_AssignmentDynamic }
 
 function TE_AssignmentDynamic.Evaluate(Context: TContext): IValue;
-var name: string;
+var
+  name: string;
 begin
   if not (LHS.GetObject is TE_ExprRef) then
     raise ESyntaxError.Create('LHS of assignment needs to be a simple expression reference');
@@ -1835,8 +1908,9 @@ end;
 { TE_AssignmentStatic }
 
 function TE_AssignmentStatic.Evaluate(Context: TContext): IValue;
-var name: string;
-    v: IValue;
+var
+  name: string;
+  v: IValue;
 begin
   if not (LHS.GetObject is TE_ExprRef) then
     raise ESyntaxError.Create('LHS of assignment needs to be a simple expression reference');
@@ -1845,7 +1919,6 @@ begin
   Context.DefineValue(name, v);
   Result:= v;
 end;
-
 
 { TE_Power }
 
@@ -1913,17 +1986,50 @@ begin
   Result:= TValue.Create(0 - RHS.Evaluate(Context).GetNumber);
 end;
 
+{ TValueObject }
+
+constructor TValueObject.Create(Obj: TObject);
+begin
+  inherited Create;
+  FObject:= Obj;
+  FValueType:= vtNull;
+end;
+
+destructor TValueObject.Destroy;
+begin
+  FreeAndNil(FObject);
+  inherited;
+end;
+
+function TValueObject.GetClass: TClass;
+begin
+  Result:= FObject.ClassType;
+end;
+
+function TValueObject.GetObject: TObject;
+begin
+  Result:= FObject;
+end;
+
+function TValueObject.OutputForm: string;
+begin
+  Result:= StringForm;
+end;
+
+function TValueObject.StringForm: string;
+begin
+  Result:= '<' + GetClass.ClassName + '>';
+end;
 
 initialization
   GetLocaleFormatSettings(GetThreadLocale, NeutralFormatSettings);
-  with NeutralFormatSettings do
-  begin
-    ThousandSeparator := #160;
-    DecimalSeparator := '.';
-    DateSeparator := '-';
-    ShortDateFormat := 'yy-mm-dd';
-    LongDateFormat := 'mmmm d, yyyy';
-    TimeSeparator := ':';
+  with NeutralFormatSettings do begin
+    ThousandSeparator:= #160;
+    DecimalSeparator:= '.';
+    DateSeparator:= '-';
+    ShortDateFormat:= 'yy-mm-dd';
+    LongDateFormat:= 'mmmm d, yyyy';
+    TimeSeparator:= ':';
   end;
   TFunctionPackage.RegisterPackageFirst(TPackageCore);
 end.

@@ -7,7 +7,9 @@ uses
   uMath in 'uMath.pas',
   uTests in 'uTests.pas',
   uFunctions in 'uFunctions.pas',
-  uCCSVList in 'uCCSVList.pas';
+  uCCSVList in 'uCCSVList.pas',
+  uFunctionsGraphing in 'uFunctionsGraphing.pas',
+  uGraphWindow in 'uGraphWindow.pas' {GraphWindow};
 
 {$R *.res}
 
