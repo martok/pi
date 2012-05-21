@@ -25,6 +25,8 @@ type
   end;
 
   TPackageElementary = class(TFunctionPackage)
+  private
+    function LogPossible(Val: Number; var FailVal: IValue): boolean;
   published
     function Exp_1(Context: TContext; args: TExprList): IValue;
     function Ln_1(Context: TContext; args: TExprList): IValue;
@@ -158,24 +160,52 @@ begin
   Result:= TValue.Create(System.Exp(args[0].Evaluate(Context).GetNumber));
 end;
 
-function TPackageElementary.Ln_1(Context: TContext; args: TExprList): IValue;
+function TPackageElementary.LogPossible(Val: Number; var FailVal: IValue): boolean;
 begin
-  Result:= TValue.Create(System.Ln(args[0].Evaluate(Context).GetNumber));
+  Result:= false;
+  if IsZero(Val) then
+    FailVal:= TValue.Create(NegInfinity)
+  else if Val<0 then
+    FailVal:= TValue.Create(NaN)
+  else
+    Result:= true;
+end;
+
+function TPackageElementary.Ln_1(Context: TContext; args: TExprList): IValue;
+var
+  a: Number;
+begin
+  a:= args[0].Evaluate(Context).GetNumber;
+  if LogPossible(a, Result) then
+    Result:= TValue.Create(System.Ln(a));
 end;
 
 function TPackageElementary.Lg_1(Context: TContext; args: TExprList): IValue;
+var
+  a: Number;
 begin
-  Result:= TValue.Create(Math.Log10(args[0].Evaluate(Context).GetNumber));
+  a:= args[0].Evaluate(Context).GetNumber;
+  if LogPossible(a, Result) then
+    Result:= TValue.Create(Math.Log10(a));
 end;
 
 function TPackageElementary.Ld_1(Context: TContext; args: TExprList): IValue;
+var
+  a: Number;
 begin
-  Result:= TValue.Create(Math.Log2(args[0].Evaluate(Context).GetNumber));
+  a:= args[0].Evaluate(Context).GetNumber;
+  if LogPossible(a, Result) then
+    Result:= TValue.Create(Math.Log2(a));
 end;
 
 function TPackageElementary.Loga_2(Context: TContext; args: TExprList): IValue;
+var
+  b,a: Number;
 begin
-  Result:= TValue.Create(Math.LogN(args[0].Evaluate(Context).GetNumber,args[1].Evaluate(Context).GetNumber));
+  b:= args[0].Evaluate(Context).GetNumber;
+  a:= args[1].Evaluate(Context).GetNumber;
+  if LogPossible(a, Result) then
+    Result:= TValue.Create(Math.LogN(b,a));
 end;
 
 function TPackageElementary.Sqrt_1(Context: TContext; args: TExprList): IValue;

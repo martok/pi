@@ -1937,8 +1937,20 @@ end;
 { TE_Division }
 
 function TE_Division.Evaluate(Context: TContext): IValue;
+var
+  a, d: Number;
 begin
-  Result:= TValue.Create(LHS.Evaluate(Context).GetNumber / RHS.Evaluate(Context).GetNumber);
+  a:= LHS.Evaluate(Context).GetNumber;
+  d:= RHS.Evaluate(Context).GetNumber;
+  if IsZero(d) then begin
+    if IsZero(a) then
+      Result:= TValue.Create(NaN)
+    else if a < 0 then
+      Result:= TValue.Create(NegInfinity)
+    else if a > 0 then
+      Result:= TValue.Create(Infinity);
+  end else
+    Result:= TValue.Create(a / d)
 end;
 
 { TE_Modulus }
