@@ -19,6 +19,13 @@ a,a:visited,a:active {
 	border-bottom:1px solid #555;
 	text-decoration:none;
 }
+h1 {
+	margin-top: 50px;
+}
+
+h1#main {
+	margin-top: 0px;
+}
 
 code {
 	border: 1px solid silver;
@@ -42,14 +49,13 @@ li {
 	margin-bottom: 10px;
 }
 
-
 dl.opt dt {
 	font-family: monospace;
 }
 	</style>
 </head>
 <body>
-<h1>Über das Projekt &Pi;</h1>
+<h1 id="main">Über das Projekt &Pi;</h1>
 <p>
 Offizielles Repository: <a href="https://github.com/martok/pi">GitHub</a>.<br/>
 Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.php?t=106298">pi - Matheparsertaschenrechner</a>
@@ -103,6 +109,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 					<a href="#samp-gen-4">4</a>, <a href="#samp-gen-5">5</a>)
 				</li>
 		</ul>
+
 	<h2 id="datatypes">Datentypen</h2>
 		<p><code>Number</code><br/>
 		80bit Extended (long double)<br>
@@ -122,6 +129,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 		<p><code>FixedList</code><br/>
 		Liste mehrerer Werte, Darstellung: {el1,el2,el3}
 		</p>
+
 	<h2 id="expressions">Ausdrücke, Werte und Variablen</h2>
 		<p>Alles, was (syntaktisch korrekt) eingegeben werden kann wird als Ausdruck
 		bezeichnet. Das Umfasst sowohl mathematische Ausdrücke ("Formeln") als auch
@@ -146,6 +154,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 	<h2 id="functions">Funktionen</h2>
 		<p>Funktionen sind in sogenannten Packages organisiert. Jedes dieser Packages
 		stellt eine Einheit von Funktionen ähnlicher Kategorie dar.</p>
+
 		<h3 id="package-core">Package <code>Core</code></h3>
 			<p>Das Package stellt System-Funktionen zur Verfügung.</p>
 			<ul>
@@ -181,6 +190,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 					Entfernt eine Variable aus dem aktuellen Kontext
 				</li>
 			</ul>
+
 		<h3 id="package-trig">Package <code>Trig</code></h3>
 			<p>Das Package stellt trigonometrische und hyperbolische Funktionen zur Verfügung.</p>
 			<ul>
@@ -349,6 +359,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 					Gibt die Anzahl der Elemente in <i>list</i> zurück.
 				</li>
 			</ul>
+
 		<h3 id="package-data">Package <code>Data</code></h3>
 			<p>Das Package stellt Funktionen zum Arbeiten mit Dateien zur Verfügung.</p>
 			<ul>
@@ -380,9 +391,13 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 					Rückgabe: Liste von <code>{Mittelwert, Anzahl}</code>
 				</li>
 			</ul>
+
 		<h3 id="package-graph">Package <code>Graph</code></h3>
 			<p>Das Package stellt Funktionen zum Erstellen und Anzeigen von Diagrammen und Plots zur Verfügung.</p>
 			<p>Alle <i>range</i>-Angaben sind Listen der 2 Grenzen: <code>range=l(min, max)</code></p>
+			<p>Alle Funktionen, die Plot-Objekte erstellen backen den aktuellen Kontext zum Zeitpunkt ihrer
+				Ausführung. Spätere Änderungen werden nicht übernommen. Das kann man verwenden, um Funktionsscharen
+				zu plotten (<a href="#samp-graph-1">Beispiel</a>)</p>
 			<ul>
 				<li id="function-graph-plot">
 					<code>plot(expr,var,range[,options])</code><br/>
@@ -398,7 +413,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 					Plottet eine Liste von (x,y)-Tupeln<br/>
 					Optionen:
 					<dl class="opt">
-						<dt>Color=*random*</dt><dd>Angabe als TColor (clRed, clBlue etc) oder Hexadezimal '$bbggrr'</dd>
+						<dt>Color=*random*</dt><dd>Angabe als TColor ('clRed', 'clBlue' etc) oder Hexadezimal '$bbggrr'</dd>
 						<dt>Size=1</dt><dd>Linienbreite</dd>
 						<dt>Style='Cross'</dt><dd>Darstellungsart, Mögliche Werte: <i>Point</i>, <i>Cross</i>, <i>Bar</i></dd>
 					</dl>
@@ -406,6 +421,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 				<li id="function-graph-show">
 					<code>show(plots[,options])</code><br/>
 					Stellt mehrere Plot-Objekte dar. <i>plots</i> muss eine Liste sein.<br/>
+					Eine Legende mit der Zuordnung der Farben wird bei gedrückter Maustaste angezeigt.<br/>
 					Optionen:
 					<dl class="opt">
 						<dt>XRange=*auto*</dt><dd>X-Bereich. Automatisch so, dass alle plots dargestellt werden können</dd>
@@ -414,6 +430,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 					</dl>
 				</li>
 			</ul>
+
 	<h2>Beispiele</h2>
 		<h3 id="samp-gen-1">Einfache Berechnung</h3>
 			<pre><code>&gt; 1+2*3+4/5
@@ -438,5 +455,29 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 &gt; merge(part(list,0,1),part(list,-2,-1))
 = {1, 2, 4, 5}
 </code></pre>
+		<h3 id="samp-graph-1">Plot: Parametrischer Plot über p</h3>
+			<pre><code>&gt; show(each(range(0,3,1), p, plot(sin(p*x),x,l(0,10))))
+</code></pre>
+
+
+
+<h1>License</h1>
+		<pre>This license applies to everything in this package, except where otherwise
+noted. Parts taken from other authors may be subject to their own licenses.
+
+
+This project is available under a dual-license model, applying either (1) or (2):
+
+1. Non-Commercial and Evaluation Use:
+   This Source Code Form is subject to the terms of the Mozilla Public License,
+   v. 2.0. If a copy of the MPL was not distributed with this package, You can
+   obtain one at http://mozilla.org/MPL/2.0/
+
+   If you use this software in a product, an acknowledgment in the product
+   documentation would be appreciated but is not required.
+
+2. Commercial Use:
+  A special permission is required, please contact us for details.</pre>
+<div style="height: 200px"></div>
 </body>
 </html>
