@@ -54,7 +54,7 @@ uses uTests;
 
 const
   sProgramTitle = 'pi - Tiny Math Tool';
-  sProgramVersionStr = 'V 2';
+  sProgramVersionStr = 'V 3';
 
 {$R *.dfm}
 
