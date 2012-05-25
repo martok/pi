@@ -447,7 +447,7 @@ const
     //Erweitert: Wolfram Research Mathematica, PhysicalConstants package (Auswahl)
       //Measurement
     (LongName: 'AbsoluteZero'; Value: - 273.15; Uni: '°C'; Comment: 'for conversion purposes'),
-    (LongName: 'AtomicUnit'; Value: 1.660540E-21; Uni: 'kg'),
+    (LongName: 'AtomicUnit'; Value: 1.660539E-27; Uni: 'kg'),
     (LongName: 'SpeedOfLight'; Value: 2.99792458E8; Uni: 'm/s'),
     (LongName: 'SpeedOfSound'; Value: 343.051; Uni: 'm/s'),
     (LongName: 'Planck'; Value: 6.626069E-34; Uni: 'J/s'),
