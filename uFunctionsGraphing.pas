@@ -87,7 +87,11 @@ begin
   plot.FContext:= Context.Bake;
   conf:= TDynamicArguments.Create(args, 3, Context);
   try
-    plot.PlotOptions(conf);
+    try
+      plot.PlotOptions(conf);
+    except
+      FreeAndNil(Plot);
+    end;
   finally
     conf.Free;
   end;
@@ -109,7 +113,11 @@ begin
   plot.FContext:= Context.Bake;
   conf:= TDynamicArguments.Create(args, 1, Context);
   try
-    plot.PlotOptions(conf);
+    try
+      plot.PlotOptions(conf);
+    except
+      FreeAndNil(Plot);
+    end;
   finally
     conf.Free;
   end;
