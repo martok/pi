@@ -1112,12 +1112,12 @@ begin
   if i >= 0 then begin
     intf:= IExpression(Pointer(FExpressions.Objects[i]));
     intf._Release;
-    FExpressions.Objects[i]:= TObject(Expression);
+    FExpressions.Objects[i]:= TObject(Pointer(Expression));
     // only warn on non-system variables
     if not FSilent and not SameText(Name, 'ans') then
       FSystem.Output.Hint('Reassigned Variable: %s', [Name]);
   end else
-    FExpressions.AddObject(Name, TObject(Expression));
+    FExpressions.AddObject(Name, TObject(Pointer(Expression)));
   Expression._AddRef;
 end;
 
