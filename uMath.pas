@@ -300,6 +300,8 @@ type
     class function const_1(Context: TContext; args: TExprList): IValue;
     class function constinfo_0(Context: TContext; args: TExprList): IValue;
     class function constinfo_1(Context: TContext; args: TExprList): IValue;
+
+    class function nvl_2(Context: TContext; args: TExprList): IValue;
   end;
 
   TE_ArgList = class(TExpression)
@@ -386,6 +388,12 @@ type
     function Evaluate(Context: TContext): IValue; override;
   end;
 
+  TE_ListAccess = class(TExpression)
+  private
+  public
+    function Evaluate(Context: TContext): IValue; override;
+  end;
+
   TE_Negation = class(TExpression)
   private
   public
@@ -400,7 +408,7 @@ type
   end;
 
 const
-  Expressions: array[0..11] of TExpressionDef = (
+  Expressions: array[0..12] of TExpressionDef = (
     (P: 10; Infix: '?'; Unary: true; Cls: TE_Describe),
     (P: 15; Infix: '#'; Unary: true; Cls: TE_Character),
 
@@ -413,7 +421,9 @@ const
 
     (P: 30; Infix: '+'; Unary: False; Cls: TE_Addition),
     (P: 30; Infix: '-'; Unary: False; Cls: TE_Subtraction),
-    (P: 30; Infix: '||'; Unary: False; Cls: TE_Concatenation),
+
+    (P: 40; Infix: '||'; Unary: False; Cls: TE_Concatenation),
+    (P: 40; Infix: '@'; Unary: False; Cls: TE_ListAccess),
 
     (P: 100; Infix: '='; Unary: False; Cls: TE_AssignmentStatic),
     (P: 105; Infix: ':='; Unary: False; Cls: TE_AssignmentDynamic),
@@ -578,10 +588,12 @@ const
   CharBraceClose = ')';
   CharContextOpen = '[';
   CharContextClose = ']';
+  CharListOpen = '{';
+  CharListClose = '}';
 type
   TTokenKind = (tokVoid, tokExpression, tokEmpty,
     tokNumber, tokString, tokFuncRef, tokExprRef, tokExprContext,
-    tokBraceOpen, tokBraceClose, tokContextOpen, tokContextClose,
+    tokBraceOpen, tokBraceClose, tokContextOpen, tokContextClose, tokListOpen, tokListClose, tokList,
     tokOperator);
   TToken = record
     Pos: integer;
@@ -595,7 +607,7 @@ type
       tokFuncRef: ();
       tokExprRef: ();
       tokExprContext: ();
-      //  tokBraceOpen, tokBraceClose, tokContextOpen, tokContextClose
+      //  tokBraceOpen, tokBraceClose, tokContextOpen, tokContextClose, tokListOpen, tokListClose
       tokOperator: (OpIdx: integer);
   end;
   TTokenList = array of TToken;
@@ -743,6 +755,14 @@ var
             t.Kind:= tokContextClose;
             inc(p);
           end;
+        CharListOpen: begin
+            t.Kind:= tokListOpen;
+            inc(p);
+          end;
+        CharListClose: begin
+            t.Kind:= tokListClose;
+            inc(p);
+          end;
         'a'..'z', 'A'..'Z', '_': ParseIdentifier(t);
       else
         for i:= 0 to high(Expressions) do begin
@@ -793,7 +813,7 @@ var
         end;
     end;
 
-    procedure ProcessBraces(const Open, Close: TTokenKind; const Str: string);
+    procedure ProcessBraces(const Open, Close: TTokenKind; const Str: string; SetTo: TTokenKind = tokVoid);
     var
       i: integer;
     begin
@@ -808,7 +828,7 @@ var
                 Tokens[A].Kind:= tokEmpty;
               end else begin
                 Fold(A + 1, I - 1);
-                Tokens[A].Kind:= tokVoid;
+                Tokens[A].Kind:= SetTo;
               end;
               Tokens[I].Kind:= tokVoid;
             end else
@@ -826,6 +846,8 @@ var
     if R < L then
       exit;
 
+    //then subcontexts
+    ProcessBraces(tokListOpen, tokListClose, '{}', tokList);
     //collapse braces first
     ProcessBraces(tokBraceOpen, tokBraceClose, '()');
     //then subcontexts
@@ -862,6 +884,18 @@ var
         tokFuncRef: begin
             Tokens[i].Kind:= tokExpression;
             tmp:= TE_FunctionCall.Create(Tokens[i].Value);
+            A:= NextR(i);
+            if Tokens[A].Kind = tokEmpty then
+              TE_FunctionCall(tmp.GetObject).Arguments:= nil
+            else
+              TE_FunctionCall(tmp.GetObject).Arguments:= Tokens[A].Expr;
+            Tokens[A].Expr:= nil;
+            Tokens[a].Kind:= tokVoid;
+            Tokens[i].Expr:= tmp;
+          end;
+        tokList: begin
+            Tokens[i].Kind:= tokExpression;
+            tmp:= TE_FunctionCall.Create('L');
             A:= NextR(i);
             if Tokens[A].Kind = tokEmpty then
               TE_FunctionCall(tmp.GetObject).Arguments:= nil
@@ -1796,6 +1830,14 @@ begin
     raise EMathSysError.CreateFmt('Unknown Constant: %s', [nm]);
 end;
 
+class function TPackageCore.nvl_2(Context: TContext; args: TExprList): IValue;
+begin
+  if args[0].Evaluate(Context).ValueType in [vtNull, vtUnassigned] then
+    Result:= args[1].Evaluate(Context)
+  else
+    Result:= args[0].Evaluate(Context);
+end;
+
 { TDynamicArguments }
 
 constructor TDynamicArguments.Create(Args: TExprList; FromIndex: integer; Context: TContext);
@@ -2058,6 +2100,27 @@ end;
 function TE_Concatenation.Evaluate(Context: TContext): IValue;
 begin
   Result:= TValue.Create(LHS.Evaluate(Context).GetString + RHS.Evaluate(Context).GetString);
+end;
+
+{ TE_ListAccess }
+
+function TE_ListAccess.Evaluate(Context: TContext): IValue;
+var
+  a: IValueList;
+  f: integer;
+begin
+  if Supports(LHS.Evaluate(Context), IValueList, a) then begin
+    f:= trunc(RHS.Evaluate(Context).GetNumber);
+    if f < 0 then
+      f:= a.Length + f;
+    if f < 0 then
+      f:= 0;
+    if (f >= 0) and (f < a.Length) then
+      Result:= a.ListItem[f].AsNative
+    else
+      Result:= TValue.CreateNull;
+  end else
+    Result:= TValue.CreateNull;
 end;
 
 { TE_Negation }
