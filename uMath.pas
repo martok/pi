@@ -244,16 +244,36 @@ type
     property Name: string read FName;
   end;
 
+  TDynamicArgument = record
+    Name: string;
+    Value: IValue;
+  end;
+
   TExprList = array of IExpression;
-  TUDFHeader = function(Context: TContext; args: TExprList): IValue of object;
-  TUDFHelp = procedure(Output: TOutput) of object;
+
+  TDynamicArguments = class
+  private
+    FItems: array of TDynamicArgument;
+    function GetValue(Name: string): IValue;
+  protected
+    procedure Add(Name: string; Value: IValue);
+  public
+    constructor Create(Args: TExprList; FromIndex: integer; Context: TContext);
+    function IsSet(Name: string): boolean;
+    function GetDefault(Name: string; Default: IValue): IValue;
+    property Value[Name: string]: IValue read GetValue; default;
+  end;
+
+  TUDFHeader = function(Context: TContext; Args: TExprList): IValue of object;
+  TUDFHeaderOptions = function(Context: TContext; Args: TExprList; Options: TDynamicArguments): IValue of object;
   TFunctionPackageClass = class of TFunctionPackage;
   TFunctionPackage = class
   protected
+    class procedure PublishedMethods(Names: TStringList);
     class function RegisterPackageFirst(Package: TFunctionPackageClass): boolean;
   public
     class function FunctionExists(FunctionName: string; ParamCount: integer): boolean;
-    class function GetFunction(FunctionName: string; ParamCount: integer): TUDFHeader;
+    class function GetFunction(FunctionName: string; ParamCount: integer; out DynFrom: integer): TUDFHeader;
     class function RegisterPackage(Package: TFunctionPackageClass): boolean;
   end;
 
@@ -280,24 +300,6 @@ type
     class function const_1(Context: TContext; args: TExprList): IValue;
     class function constinfo_0(Context: TContext; args: TExprList): IValue;
     class function constinfo_1(Context: TContext; args: TExprList): IValue;
-  end;
-
-  TDynamicArgument = record
-    Name: string;
-    Value: IValue;
-  end;
-
-  TDynamicArguments = class
-  private
-    FItems: array of TDynamicArgument;
-    function GetValue(Name: string): IValue;
-  protected
-    procedure Add(Name: string; Value: IValue);
-  public
-    constructor Create(Args: TExprList; FromIndex: integer; Context: TContext);
-    function IsSet(Name: string): boolean;
-    function GetDefault(Name: string; Default: IValue): IValue;
-    property Value[Name: string]: IValue read GetValue; default;
   end;
 
   TE_ArgList = class(TExpression)
@@ -497,7 +499,7 @@ var
 implementation
 
 uses
-  uFunctions, uFunctionsGraphing;
+  uFunctions, uFunctionsGraphing, StrUtils;
 
 resourcestring
   sConstants = 'Constants';
@@ -1508,23 +1510,85 @@ end;
 
 { TFunctionPackage }
 
-class function TFunctionPackage.FunctionExists(FunctionName: string; ParamCount: integer): boolean;
+class procedure TFunctionPackage.PublishedMethods(Names: TStringList);
+type
+  PVMTEntry = ^TVMTEntry;
+  TVMTEntry = packed record
+    EntrySize: Word;
+    Code: Pointer;
+    Name: ShortString;
+  end;
+  PMethodTable = ^TMethodTable;
+  TMethodTable = packed record
+    Count: Word;
+    Methods: array of TVMTEntry;
+  end;
+var
+  pVMT: Pointer;
+  pClass: TClass;
+  vmt: PMethodTable;
+  entry: PVMTEntry;
+  i: integer;
 begin
-  Result:= Assigned(GetFunction(FunctionName, ParamCount));
+  // "Self" in a class method already points to the MT, so we don't strictly need that,
+  // but dereference the pointer anyway just to be sure the compiler did nothing weird
+  pClass:= Self;
+  while pClass <> nil do begin
+    pVMT:= Pointer(Cardinal(pClass) + vmtMethodTable);
+    vmt:= Pointer(PCardinal(pVMT)^);
+    if Assigned(vmt) then begin
+      entry:= @vmt^.Methods;
+      for i:= 0 to vmt^.Count - 1 do begin
+        Names.Add(entry^.Name);
+        Inc(Cardinal(entry), entry^.EntrySize);
+      end;
+    end;
+    pClass:= pClass.ClassParent;
+  end;
 end;
 
-class function TFunctionPackage.GetFunction(FunctionName: string; ParamCount: integer): TUDFHeader;
+class function TFunctionPackage.GetFunction(FunctionName: string; ParamCount: integer; out DynFrom: integer): TUDFHeader;
 var
   meth: TMethod;
+  list: TStringList;
+  s, cnt: string;
+  i: integer;
+  opt: boolean;
 begin
   Result:= nil;
-  meth.Data:= Self;
-  meth.Code:= MethodAddress(Format('%s_%d', [FunctionName, ParamCount]));
-  if not Assigned(meth.Code) then begin
-    meth.Code:= MethodAddress(Format('%s_N', [FunctionName]));
+  DynFrom:= -1;
+  list:= TStringList.Create;
+  try
+    meth.Data:= Self;
+    PublishedMethods(list);
+    list.Sort;
+    for i:= 0 to list.Count - 1 do begin
+      s:= list[i];
+      opt:= AnsiEndsStr('_opt', s);
+      if opt then
+        Delete(s, LastDelimiter('_', s), 1000);
+      cnt:= Copy(s, LastDelimiter('_', s) + 1, 1000);
+      Delete(s, LastDelimiter('_', s), 1000);
+      if AnsiCompareText(FunctionName, s) = 0 then begin
+        if (cnt = 'N') or (ParamCount >= StrToInt(cnt)) then begin
+          meth.Code:= MethodAddress(list[i]);
+          Result:= TUDFHeader(Meth);
+          if opt then
+            DynFrom:= StrToInt(cnt);
+          exit;
+        end;
+      end;
+    end;
+  finally
+    FreeAndNil(list);
   end;
-  if Assigned(Meth.Code) then
-    Result:= TUDFHeader(Meth);
+end;
+
+class function TFunctionPackage.FunctionExists(FunctionName: string; ParamCount: integer): boolean;
+var
+  k: integer;
+begin
+  Result:= Assigned(GetFunction(FunctionName, ParamCount, k));
 end;
 
 class function TFunctionPackage.RegisterPackage(Package: TFunctionPackageClass): boolean;
@@ -1569,7 +1633,8 @@ function TE_FunctionCall.Evaluate(Context: TContext): IValue;
 var
   u: TUDFHeader;
   ls: TExprList;
-  i: integer;
+  i, d: integer;
+  dyn: TDynamicArguments;
 begin
   if Assigned(Arguments) then begin
     if Arguments.GetObject is TE_ArgList then
@@ -1582,9 +1647,17 @@ begin
     SetLength(ls, 0);
 
   for i:= 0 to high(FunctionPackages) do begin
-    if FunctionPackages[i].FunctionExists(FName, Length(ls)) then begin
-      u:= FunctionPackages[i].GetFunction(Fname, Length(ls));
-      Result:= u(Context, ls);
+    u:= FunctionPackages[i].GetFunction(Fname, Length(ls), d);
+    if Assigned(u) then begin
+      if d >= 0 then begin
+        dyn:= TDynamicArguments.Create(ls, d, Context);
+        try
+          Result:= TUDFHeaderOptions(u)(Context, ls, dyn);
+        finally
+          FreeAndNil(dyn);
+        end;
+      end else
+        Result:= u(Context, ls);
       exit;
     end;
   end;
@@ -1627,14 +1700,12 @@ begin
   Context.System.NewContext('');
 end;
 
-class function TPackageCore.New_1(Context: TContext;
-  args: TExprList): IValue;
+class function TPackageCore.New_1(Context: TContext; args: TExprList): IValue;
 begin
   Context.System.NewContext(args[0].Evaluate(Context).GetString);
 end;
 
-class function TPackageCore.Drop_0(Context: TContext;
-  args: TExprList): IValue;
+class function TPackageCore.Drop_0(Context: TContext; args: TExprList): IValue;
 begin
   Context.System.DropContext();
 end;
@@ -1691,8 +1762,7 @@ begin
     raise EMathSysError.CreateFmt('Unknown Constant: %s', [nm]);
 end;
 
-class function TPackageCore.constinfo_0(Context: TContext;
-  args: TExprList): IValue;
+class function TPackageCore.constinfo_0(Context: TContext; args: TExprList): IValue;
 type
   TConstDefRef = array[0..0] of TConstantDef;
   PConstDef = ^TConstDefRef;
@@ -1714,8 +1784,7 @@ begin
   Result:= TValue.Create(Count);
 end;
 
-class function TPackageCore.constinfo_1(Context: TContext;
-  args: TExprList): IValue;
+class function TPackageCore.constinfo_1(Context: TContext; args: TExprList): IValue;
 var
   nm: string;
   res: TConstantDef;
@@ -2045,3 +2114,4 @@ initialization
   end;
   TFunctionPackage.RegisterPackageFirst(TPackageCore);
 end.
+

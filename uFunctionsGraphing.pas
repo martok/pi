@@ -54,9 +54,9 @@ type
 
   TPackageGraph = class(TFunctionPackage)
   published
-    function Plot_N(Context: TContext; args: TExprList): IValue;
-    function ListPlot_N(Context: TContext; args: TExprList): IValue;
-    function Show_N(Context: TContext; args: TExprList): IValue;
+    function Plot_3_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+    function ListPlot_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+    function Show_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
   end;
 
 implementation
@@ -65,13 +65,12 @@ uses Math, uGraphWindow, TypInfo;
 
 { TPackageGraph }
 
-function TPackageGraph.Plot_N(Context: TContext; args: TExprList): IValue;
+function TPackageGraph.Plot_3_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
 var
   ex, v: IExpression;
   va: string;
   plot: TPlot;
   l: IValueList;
-  conf: TDynamicArguments;
 begin
   ex:= args[0];
   v:= args[1];
@@ -85,24 +84,18 @@ begin
   plot.FMin:= l.ListItem[0].GetNumber;
   plot.FMax:= l.ListItem[1].GetNumber;
   plot.FContext:= Context.Bake;
-  conf:= TDynamicArguments.Create(args, 3, Context);
   try
-    try
-      plot.PlotOptions(conf);
-    except
-      FreeAndNil(Plot);
-    end;
-  finally
-    conf.Free;
+    plot.PlotOptions(Options);
+  except
+    FreeAndNil(Plot);
   end;
   Result:= TValueObject.Create(plot);
 end;
 
-function TPackageGraph.ListPlot_N(Context: TContext; args: TExprList): IValue;
+function TPackageGraph.ListPlot_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
 var
   l, l2: IValueList;
   plot: TListPlot;
-  conf: TDynamicArguments;
 begin
   if not Supports(args[0].Evaluate(Context), IValueList, l) then
     raise EMathSysError.Create('Function ListPlot requires a list of 2-tuples');
@@ -111,27 +104,21 @@ begin
       raise EMathSysError.Create('Function ListPlot requires a list of 2-tuples');
   plot:= TListPlot.Create(l);
   plot.FContext:= Context.Bake;
-  conf:= TDynamicArguments.Create(args, 1, Context);
   try
-    try
-      plot.PlotOptions(conf);
-    except
-      FreeAndNil(Plot);
-    end;
-  finally
-    conf.Free;
+    plot.PlotOptions(Options);
+  except
+    FreeAndNil(Plot);
   end;
   Result:= TValueObject.Create(plot);
 end;
 
-function TPackageGraph.Show_N(Context: TContext; args: TExprList): IValue;
+function TPackageGraph.Show_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
 var
   pl: IValueList;
   plots: array of IValueObject;
   gr: TGraphWindow;
   vo: IValueObject;
   i: integer;
-  conf: TDynamicArguments;
   n, mi, ma: Number;
   a, b, axes: string;
 begin
@@ -144,76 +131,71 @@ begin
     end else
       raise EMathSysError.CreateFmt('Element %d is not a plot object', [i]);
 
-  conf:= TDynamicArguments.Create(args, 1, Context);
-  try
-    gr:= TGraphWindow.CreateGraph(plots);
+  gr:= TGraphWindow.CreateGraph(plots);
 
-    if conf.IsSet('Axes') then begin
-      axes:= conf.Value['Axes'].GetString;
-      a:= Copy(LowerCase(axes), 1, 3);
-      b:= Copy(LowerCase(axes), 4, 3);
-      if a = 'lin' then
-        gr.XScale:= smLin
-      else if a = 'log' then
-        gr.XScale:= smLog;
-      if b = 'lin' then
-        gr.YScale:= smLin
-      else if b = 'log' then
-        gr.YScale:= smLog;
-    end else begin
-      gr.XScale:= smLin;
-      gr.YScale:= smLin;
-    end;
-
-    if conf.IsSet('XRange') and Supports(conf.Value['XRange'], IValueList, pl) then begin
-      gr.XMin:= pl.ListItem[0].GetNumber;
-      gr.XMax:= pl.ListItem[1].GetNumber;
-    end else begin
-      mi:= MaxExtended;
-      ma:= MinExtended;
-      for i:= 0 to high(plots) do begin
-        n:= TPlot(plots[i].GetObject).GetMinX;
-        if n < mi then
-          mi:= n;
-        n:= TPlot(plots[i].GetObject).GetMaxX;
-        if n > ma then
-          ma:= n;
-      end;
-      gr.XMin:= mi;
-      gr.XMax:= ma;
-    end;
-
-    if conf.IsSet('YRange') and Supports(conf.Value['YRange'], IValueList, pl) then begin
-      gr.YMin:= pl.ListItem[0].GetNumber;
-      gr.YMax:= pl.ListItem[1].GetNumber;
-    end else begin
-      if gr.YScale = smLog then begin
-        gr.YMin:= 0.1;
-        gr.YMax:= 10;
-      end else begin
-        gr.YMin:= -5;
-        gr.YMax:= 5;
-      end;
-    end;
-
-    if gr.XScale = smLog then begin
-      if (gr.XMin <= 0) or IsZero(gr.XMin) then begin
-        gr.XMin:= 2000E-19;
-        Context.System.Output.Hint('XRange Minimum %f <= 0, autocorrecting.', [gr.YMin]);
-      end;
-    end;
-
-    if gr.YScale = smLog then begin
-      if (gr.YMin <= 0) or IsZero(gr.YMin) then begin
-        gr.YMin:= 2000E-19;
-        Context.System.Output.Hint('YRange Minimum %f <= 0, autocorrecting.', [gr.YMin]);
-      end;
-    end;
-
-    gr.Show;
-  finally
-    FreeAndNil(conf);
+  if Options.IsSet('Axes') then begin
+    axes:= Options.Value['Axes'].GetString;
+    a:= Copy(LowerCase(axes), 1, 3);
+    b:= Copy(LowerCase(axes), 4, 3);
+    if a = 'lin' then
+      gr.XScale:= smLin
+    else if a = 'log' then
+      gr.XScale:= smLog;
+    if b = 'lin' then
+      gr.YScale:= smLin
+    else if b = 'log' then
+      gr.YScale:= smLog;
+  end else begin
+    gr.XScale:= smLin;
+    gr.YScale:= smLin;
   end;
+
+  if Options.IsSet('XRange') and Supports(Options.Value['XRange'], IValueList, pl) then begin
+    gr.XMin:= pl.ListItem[0].GetNumber;
+    gr.XMax:= pl.ListItem[1].GetNumber;
+  end else begin
+    mi:= MaxExtended;
+    ma:= MinExtended;
+    for i:= 0 to high(plots) do begin
+      n:= TPlot(plots[i].GetObject).GetMinX;
+      if n < mi then
+        mi:= n;
+      n:= TPlot(plots[i].GetObject).GetMaxX;
+      if n > ma then
+        ma:= n;
+    end;
+    gr.XMin:= mi;
+    gr.XMax:= ma;
+  end;
+
+  if Options.IsSet('YRange') and Supports(Options.Value['YRange'], IValueList, pl) then begin
+    gr.YMin:= pl.ListItem[0].GetNumber;
+    gr.YMax:= pl.ListItem[1].GetNumber;
+  end else begin
+    if gr.YScale = smLog then begin
+      gr.YMin:= 0.1;
+      gr.YMax:= 10;
+    end else begin
+      gr.YMin:= -5;
+      gr.YMax:= 5;
+    end;
+  end;
+
+  if gr.XScale = smLog then begin
+    if (gr.XMin <= 0) or IsZero(gr.XMin) then begin
+      gr.XMin:= 2000E-19;
+      Context.System.Output.Hint('XRange Minimum %f <= 0, autocorrecting.', [gr.YMin]);
+    end;
+  end;
+
+  if gr.YScale = smLog then begin
+    if (gr.YMin <= 0) or IsZero(gr.YMin) then begin
+      gr.YMin:= 2000E-19;
+      Context.System.Output.Hint('YRange Minimum %f <= 0, autocorrecting.', [gr.YMin]);
+    end;
+  end;
+
+  gr.Show;
 end;
 
 { TPlotBase }
