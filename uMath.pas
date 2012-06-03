@@ -1564,11 +1564,9 @@ var
   entry: PVMTEntry;
   i: integer;
 begin
-  // "Self" in a class method already points to the MT, so we don't strictly need that,
-  // but dereference the pointer anyway just to be sure the compiler did nothing weird
   pClass:= Self;
   while pClass <> nil do begin
-    pVMT:= Pointer(Cardinal(pClass) + vmtMethodTable);
+    pVMT:= Pointer(Integer(pClass) + vmtMethodTable);
     vmt:= Pointer(PCardinal(pVMT)^);
     if Assigned(vmt) then begin
       entry:= @vmt^.Methods;
@@ -1604,7 +1602,9 @@ begin
       cnt:= Copy(s, LastDelimiter('_', s) + 1, 1000);
       Delete(s, LastDelimiter('_', s), 1000);
       if AnsiCompareText(FunctionName, s) = 0 then begin
-        if (cnt = 'N') or (ParamCount >= StrToInt(cnt)) then begin
+        if (cnt = 'N') or
+           (opt and (ParamCount >= StrToInt(cnt))) or
+           (not opt and (ParamCount = StrToInt(cnt)))  then begin
           meth.Code:= MethodAddress(list[i]);
           Result:= TUDFHeader(Meth);
           if opt then
