@@ -487,10 +487,11 @@ end;
 function TPackageData.CSVLoad_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
 var
   list, line: TCSVStringList;
-  i, j: integer;
+  i, j, first, last: integer;
   res, row: IValueList;
   cn: IValue;
   o_fs: TFormatSettings;
+  skip, count: integer;
 begin
   list:= TCSVStringList.Create;
   line:= TCSVStringList.Create;
@@ -507,11 +508,26 @@ begin
     if Options.IsSet('Decimal') and (Options['Decimal'].GetString > '') then
       NeutralFormatSettings.DecimalSeparator:= Options['Decimal'].GetString[1];
 
+    if Options.IsSet('Skip') then
+      skip:= trunc(Options['Skip'].GetNumber)
+    else
+      skip:= 0;
+
+    if Options.IsSet('Count') then
+      count:= trunc(Options['Count'].GetNumber)
+    else
+      count:= MaxInt;
+
     list.LoadFromFile(args[0].Evaluate(Context).GetString);
 
+    first:= skip;
+    last:= first + count - 1;
+    if last > list.Count - 1 then
+      last:= list.Count - 1;
+
     res:= TValueFixedList.Create;
-    res.Length:= list.Count;
-    for i:= 0 to res.Length - 1 do begin
+    res.Length:= last - first + 1;
+    for i:= first to last do begin
       line.StrictDelimitedText:= list[i];
       row:= TValueFixedList.Create;
       row.Length:= line.Count;
@@ -519,7 +535,7 @@ begin
         cn:= TValue.Create(line[j]);
         row.ListItem[j]:= cn.AsNative;
       end;
-      res.ListItem[i]:= row as IValue;
+      res.ListItem[i - first]:= row as IValue;
     end;
 
     Result:= res as IValue;
@@ -607,7 +623,7 @@ begin
   if not Supports(args[0].Evaluate(Context), IValueList, a) then
     raise EMathSysError.Create('Max requires a list.');
   m:= MinExtended;
-  for i:= 0 to a.Length-1 do begin
+  for i:= 0 to a.Length - 1 do begin
     n:= a.ListItem[i].GetNumber;
     if n > m then
       m:= n;
@@ -624,7 +640,7 @@ begin
   if not Supports(args[0].Evaluate(Context), IValueList, a) then
     raise EMathSysError.Create('Min requires a list.');
   m:= MaxExtended;
-  for i:= 0 to a.Length-1 do begin
+  for i:= 0 to a.Length - 1 do begin
     n:= a.ListItem[i].GetNumber;
     if n < m then
       m:= n;
