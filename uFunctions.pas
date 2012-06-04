@@ -67,6 +67,8 @@ type
     function CSVLoad_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
     function Table_1(Context: TContext; args: TExprList): IValue;
     function Bucket_4(Context: TContext; args: TExprList): IValue;
+    function Min_1(Context: TContext; args: TExprList): IValue;
+    function Max_1(Context: TContext; args: TExprList): IValue;
   end;
 
 implementation
@@ -594,6 +596,40 @@ begin
     r.ListItem[i]:= e as IValue;
   end;
   Result:= r as IValue;
+end;
+
+function TPackageData.Max_1(Context: TContext; args: TExprList): IValue;
+var
+  a: IValueList;
+  n, m: Number;
+  i: integer;
+begin
+  if not Supports(args[0].Evaluate(Context), IValueList, a) then
+    raise EMathSysError.Create('Max requires a list.');
+  m:= MinExtended;
+  for i:= 0 to a.Length-1 do begin
+    n:= a.ListItem[i].GetNumber;
+    if n > m then
+      m:= n;
+  end;
+  Result:= TValue.Create(m);
+end;
+
+function TPackageData.Min_1(Context: TContext; args: TExprList): IValue;
+var
+  a: IValueList;
+  n, m: Number;
+  i: integer;
+begin
+  if not Supports(args[0].Evaluate(Context), IValueList, a) then
+    raise EMathSysError.Create('Min requires a list.');
+  m:= MaxExtended;
+  for i:= 0 to a.Length-1 do begin
+    n:= a.ListItem[i].GetNumber;
+    if n < m then
+      m:= n;
+  end;
+  Result:= TValue.Create(m);
 end;
 
 initialization
