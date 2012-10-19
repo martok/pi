@@ -307,6 +307,10 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 					<code>Abs(number)</code><br/>
 					Betrag
 				</li>
+				<li id="function-numerical-round">
+					<code>Round(number, digits)</code><br/>
+					Rundet auf <i>digits</i> Stellen bzw. eine Genauigkeit von 10<sup><i>digits</i></sup>. Siehe <a href="#samp-num-round">Beispiel</a>.
+				</li>
 				<li id="function-numerical-fac">
 					<code>Fac(number)</code><br/>
 					Fakultät
@@ -477,6 +481,13 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 		<h3 id="samp-gen-5">Subkontexte verwenden</h3>
 			<pre><code>&gt; sum:= x+y+z, sum[x=2, y=3, z=7]
 = 12</code></pre>
+		<h3 id="samp-num-round">Runden: Anzahl der Stellen</h3>
+			<pre><code>&gt; round(123.456, -1)
+= 123.5
+&gt; round(123.456, 0)
+= 123
+&gt; round(123.456, 2)
+= 100</code></pre>
 		<h3 id="samp-gen-6">Aggregate und Listen: Fakultät</h3>
 			<pre><code>&gt; aggregate(range(1,10,1),f,1,x,f=f*x)
 = 3628800</code></pre>
