@@ -39,12 +39,19 @@ type
   end;
 
   TPackageNumerical = class(TFunctionPackage)
+  private
+    function Base_atoi(base: integer; Param: IValue): IValue;
+    function Base_itoa(base: integer; Param: IValue): IValue;
   published
     function Abs_1(Context: TContext; args: TExprList): IValue;
     function Fac_1(Context: TContext; args: TExprList): IValue;
 
     function AtoI_2(Context: TContext; args: TExprList): IValue;
     function ItoA_2(Context: TContext; args: TExprList): IValue;
+
+    function h_1(Context: TContext; args: TExprList): IValue;
+    function b_1(Context: TContext; args: TExprList): IValue;
+    function o_1(Context: TContext; args: TExprList): IValue;
   end;
 
   TPackageLists = class(TFunctionPackage)
@@ -246,14 +253,13 @@ end;
 const
   BaseString = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-function TPackageNumerical.AtoI_2(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.Base_atoi(base: integer; Param: IValue): IValue;
 var
-  base, i, j: integer;
+  i, j: integer;
   v: int64;
   n: string;
 begin
-  base:= Trunc(args[1].Evaluate(Context).GetNumber);
-  n:= args[0].Evaluate(Context).GetString;
+  n:= Param.GetString;
   n:= UpperCase(n);
   if base > Length(BaseString) then
     raise EMathSysError.CreateFmt('Base %d exceeds maximum allowed value of %d', [base, Length(BaseString)]);
@@ -267,14 +273,13 @@ begin
   Result:= TValue.Create(v);
 end;
 
-function TPackageNumerical.ItoA_2(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.Base_itoa(base: integer; Param: IValue): IValue;
 var
-  base, i: integer;
+  i: integer;
   n: string;
   v: int64;
 begin
-  base:= Trunc(args[1].Evaluate(Context).GetNumber);
-  v:= Trunc(args[0].Evaluate(Context).GetNumber);
+  v:= Trunc(Param.GetNumber);
 
   if v = 0 then begin
     Result:= TValue.Create('0');
@@ -292,6 +297,61 @@ begin
     n:= BaseString[i + 1] + n;
   end;
   Result:= TValue.Create(n);
+end;
+
+function TPackageNumerical.AtoI_2(Context: TContext; args: TExprList): IValue;
+var
+  base: integer;
+begin
+  base:= Trunc(args[1].Evaluate(Context).GetNumber);
+  Result:= Base_atoi(base, args[0].Evaluate(Context));
+end;
+
+function TPackageNumerical.ItoA_2(Context: TContext; args: TExprList): IValue;
+var
+  base: integer;
+begin
+  base:= Trunc(args[1].Evaluate(Context).GetNumber);
+  Result:= Base_itoa(base, args[0].Evaluate(Context));
+end;
+
+function TPackageNumerical.b_1(Context: TContext; args: TExprList): IValue;
+var
+  v: IValue;
+begin
+  v:= args[0].Evaluate(Context);
+  case v.ValueType of
+    vtNumber: Result:= Base_itoa(2, v);
+    vtString: Result:= Base_atoi(2, v);
+  else
+    Result:= v;
+  end;
+end;
+
+function TPackageNumerical.h_1(Context: TContext; args: TExprList): IValue;
+var
+  v: IValue;
+begin
+  v:= args[0].Evaluate(Context);
+  case v.ValueType of
+    vtNumber: Result:= Base_itoa(16, v);
+    vtString: Result:= Base_atoi(16, v);
+  else
+    Result:= v;
+  end;
+end;
+
+function TPackageNumerical.o_1(Context: TContext; args: TExprList): IValue;
+var
+  v: IValue;
+begin
+  v:= args[0].Evaluate(Context);
+  case v.ValueType of
+    vtNumber: Result:= Base_itoa(8, v);
+    vtString: Result:= Base_atoi(8, v);
+  else
+    Result:= v;
+  end;
 end;
 
 { TPackageLists }
