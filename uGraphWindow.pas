@@ -4,25 +4,31 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
-  Dialogs, uFunctionsGraphing, uMath;
+  Dialogs, uFunctionsGraphing, uMath, Menus;
 
 type
   TScaleMode = (smLin, smLog);
   TGraphWindow = class(TForm)
+    pmGraph: TPopupMenu;
+    miLegend: TMenuItem;
+    miLegendNone: TMenuItem;
+    N1: TMenuItem;
+    miLegendTop: TMenuItem;
+    miLegendBottom: TMenuItem;
+    miCopyEMF: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormPaint(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure FormCreate(Sender: TObject);
-    procedure FormMouseDown(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
-    procedure FormMouseUp(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
+    procedure miLegendChange(Sender: TObject);
+    procedure miCopyEMFClick(Sender: TObject);
   private
     { Private-Deklarationen }
-    FShowLegend: boolean;
     FPlots: array of IValueObject;
     FXMin, FXMax, FYMin, FYMax: Number;
     FXScale, FYScale: TScaleMode;
+    Buffer: TBitmap;
+    procedure PaintGraph(Canvas: TCanvas; DrawRect: TRect);
   public
     { Public-Deklarationen }
     constructor CreateGraph(Plots: array of IValueObject);
@@ -72,7 +78,7 @@ var
 
 implementation
 
-uses Types, Math;
+uses Types, Math, Clipbrd;
 
 {$R *.dfm}
 
@@ -144,13 +150,14 @@ end;
 procedure TGraphWindow.FormCreate(Sender: TObject);
 begin
   DoubleBuffered:= true;
-  FShowLegend:= false;
+  Buffer:= TBitmap.Create;
 end;
 
 destructor TGraphWindow.Destroy;
 var
   i: integer;
 begin
+  Buffer.Free;
   for i:= 0 to high(FPlots) do
     FPlots[i]:= nil;
   inherited;
@@ -162,6 +169,19 @@ begin
 end;
 
 procedure TGraphWindow.FormPaint(Sender: TObject);
+begin
+  Canvas.Draw(0,0,Buffer);
+end;
+
+procedure TGraphWindow.FormResize(Sender: TObject);
+begin
+  Buffer.Width:= ClientWidth;
+  Buffer.Height:= ClientHeight;
+  PaintGraph(Buffer.Canvas, ClientRect);
+  Refresh;
+end;
+
+procedure TGraphWindow.PaintGraph(Canvas: TCanvas; DrawRect: TRect);
 var
   box: TRect;
   ax, ay: TScale;
@@ -272,12 +292,17 @@ var
         end else if ob is TListPlot then begin
           for j:= 0 to TListPlot(ob).List.Length - 1 do begin
             tup:= TListPlot(ob).List.ListItem[j] as IValueList;
-            n:= tup.ListItem[0].GetNumber;
-            if ((ax is TLogScale) and ((n <= 0) or IsZero(n))) then
-              continue;
-            n:= tup.ListItem[1].GetNumber;
-            if ((ay is TLogScale) and ((n <= 0) or IsZero(n))) then
-              continue;
+            try
+              n:= tup.ListItem[0].GetNumber;
+              if ((ax is TLogScale) and ((n <= 0) or IsZero(n))) then
+                continue;
+              n:= tup.ListItem[1].GetNumber;
+              if ((ay is TLogScale) and ((n <= 0) or IsZero(n))) then
+                continue;
+            except
+              on e: EConvertError do
+                continue;
+            end;
             case TListPlot(ob).Style of
               lsPoint: begin
                   Canvas.Brush.Color:= ob.Color;
@@ -324,11 +349,19 @@ var
     ts: TSize;
   begin
     leg:= box;
-    InflateRect(leg, -20, -20);    
+    InflateRect(leg, -20, -20);
+    if miLegendTop.Checked then
+      leg.Bottom:= leg.Top+round(length(FPlots)*Canvas.TextHeight('Ij')*1.5)
+    else
+    if miLegendBottom.Checked then
+      leg.Top:= leg.Bottom-round(length(FPlots)*Canvas.TextHeight('Ij')*1.5);
+
     Canvas.Pen.Color:= clBlack;
     Canvas.Pen.Width:= 1;
-    Canvas.Brush.Color:= clWhite;
     Canvas.Brush.Style:= bsSolid;
+    Canvas.Brush.Color:= clGray;
+    Canvas.FillRect(Rect(leg.Left+5, leg.top+5, leg.Right+5, leg.Bottom+5));
+    Canvas.Brush.Color:= clWhite;
     Canvas.Rectangle(leg);
     clipr:= CreateRectRgn(leg.Left + 1, leg.Top + 1, leg.Right - 1, leg.Bottom - 1);
     SelectClipRgn(Canvas.Handle, clipr);
@@ -357,8 +390,9 @@ var
 
 begin
   Canvas.Brush.Color:= clWhite;
-  Canvas.FillRect(ClientRect);
-  box:= Rect(10, 10, ClientWidth - 10, ClientHeight - 10);
+  box:= DrawRect;
+  Canvas.FillRect(box);
+  InflateRect(box, -10, -10);
   Canvas.Pen.Color:= clBlack;
   Canvas.Pen.Width:= 1;
   Canvas.Rectangle(box);
@@ -373,7 +407,7 @@ begin
   try
     Graphs;
     Axes;
-    if FShowLegend then
+    if not miLegendNone.Checked then
       Legend;
   finally
     FreeAndNil(ax);
@@ -381,23 +415,32 @@ begin
   end;
 end;
 
-procedure TGraphWindow.FormResize(Sender: TObject);
+procedure TGraphWindow.miLegendChange(Sender: TObject);
 begin
+  PaintGraph(Buffer.Canvas, ClientRect);
   Refresh;
 end;
 
-procedure TGraphWindow.FormMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TGraphWindow.miCopyEMFClick(Sender: TObject);
+var
+  emf: TMetafile;
+  emfc: TMetafileCanvas;
 begin
-  FShowLegend:= true;
-  Refresh;
-  SetCaptureControl(Self);
-end;
-
-procedure TGraphWindow.FormMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-begin
-  ReleaseCapture;
-  FShowLegend:= False;
-  Refresh;
+  emf:= TMetafile.Create;
+  try
+    emf.Enhanced:= true;
+    emf.Width:= ClientWidth;
+    emf.Height:= ClientHeight;
+    emfc:= TMetafileCanvas.Create(emf, Canvas.Handle);
+    try
+      PaintGraph(emfc, ClientRect);
+    finally
+      emfc.Free;
+    end;
+    Clipboard.Assign(emf);
+  finally
+    emf.Free;
+  end;
 end;
 
 end.
