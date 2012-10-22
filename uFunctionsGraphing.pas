@@ -114,6 +114,7 @@ end;
 
 function TPackageGraph.Show_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
 var
+  par: IValue;
   pl: IValueList;
   plots: array of IValueObject;
   gr: TGraphWindow;
@@ -122,14 +123,20 @@ var
   n, mi, ma: Number;
   a, b, axes: string;
 begin
-  if not Supports(args[0].Evaluate(Context), IValueList, pl) then
-    raise EMathSysError.Create('Function Show requires a list of plot objects');
-  SetLength(Plots, pl.Length);
-  for i:= 0 to high(plots) do
-    if Supports(pl.ListItem[i], IValueObject, vo) and (vo.GetObject is TPlotBase) then begin
-      plots[i]:= vo;
+  par:= args[0].Evaluate(Context);
+  if Supports(par, IValueList, pl) then begin
+    SetLength(Plots, pl.Length);
+    for i:= 0 to high(plots) do
+      if Supports(pl.ListItem[i], IValueObject, vo) and (vo.GetObject is TPlotBase) then begin
+        plots[i]:= vo;
+      end else
+        raise EMathSysError.CreateFmt('Show: Element %d is not a plot object', [i]);
+  end else
+    if Supports(par, IValueObject, vo) and (vo.GetObject is TPlotBase) then begin
+      SetLength(Plots, 1);
+      plots[0]:= vo;
     end else
-      raise EMathSysError.CreateFmt('Element %d is not a plot object', [i]);
+      raise EMathSysError.Create('Function Show requires a list of plot objects or a single plot object');
 
   gr:= TGraphWindow.CreateGraph(plots);
 
