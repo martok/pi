@@ -44,6 +44,7 @@ type
     function Base_itoa(base: integer; Param: IValue): IValue;
   published
     function Abs_1(Context: TContext; args: TExprList): IValue;
+    function Round_1(Context: TContext; args: TExprList): IValue;
     function Round_2(Context: TContext; args: TExprList): IValue;
     function Fac_1(Context: TContext; args: TExprList): IValue;
 
@@ -235,6 +236,15 @@ end;
 function TPackageNumerical.Abs_1(Context: TContext; args: TExprList): IValue;
 begin
   Result:= TValue.Create(System.Abs(args[0].Evaluate(Context).GetNumber));
+end;
+
+function TPackageNumerical.Round_1(Context: TContext; args: TExprList): IValue;
+var
+  v: Number;
+begin
+  v:= args[0].Evaluate(Context).GetNumber;
+  v:= Round(v);
+  Result:= TValue.Create(v);
 end;
 
 function TPackageNumerical.Round_2(Context: TContext; args: TExprList): IValue;
