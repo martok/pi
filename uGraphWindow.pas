@@ -101,8 +101,13 @@ end;
 { TLinScale }
 
 procedure TLinScale.Init;
+var
+  sp: Number;
 begin
-  Fact:= (FFrameMax - FFrameMin) / (FMaxVal - FMinVal);
+  sp:= FMaxVal - FMinVal;
+  if IsZero(sp) then
+    sp:= 1;
+  Fact:= (FFrameMax - FFrameMin) / sp;
 end;
 
 function TLinScale.Scale(Value: Number): integer;
@@ -185,12 +190,8 @@ procedure TGraphWindow.PaintGraph(Canvas: TCanvas; DrawRect: TRect);
 var
   box: TRect;
   ax, ay: TScale;
-  ob: TPlotBase;
-  tup: IValueList;
-  y: integer;
   xaxis, yaxis, a, aprev, n, nprev: Number;
   gap: boolean;
-  ctx: TContext;
   clipr: HRGN;
 
   function AxisLabel(p: Number): string;
@@ -201,6 +202,7 @@ var
   procedure Axes;
   var
     l: string;
+    sp: Number;
     ts: TSize;
   begin
     if FXMax < 0 then
@@ -222,6 +224,9 @@ var
     Canvas.MoveTo(ax.Scale(yaxis), box.Top);
     Canvas.LineTo(ax.Scale(yaxis), box.Bottom);
     Canvas.Brush.Style:= bsClear;
+    sp:= FYMax - FYMin;
+    if IsZero(sp) then
+      sp:= 1;
     a:= FYMin;
     while a <= FYMax do begin
       if not IsZero(a) then begin
@@ -231,7 +236,7 @@ var
         ts:= Canvas.TextExtent(l);
         Canvas.TextOut(ax.Scale(yaxis) - ts.cx - 4, ay.Scale(a) - ts.cy div 2, l);
       end;
-      a:= a + Power(10, Round(Log10((FYMax - FYMin) / 10)));
+      a:= a + Power(10, Round(Log10(sp / 10)));
     end;
 
     Canvas.MoveTo(box.Left, ay.Scale(xaxis));
@@ -249,91 +254,79 @@ var
     end;
   end;
 
+  procedure DrawFunction_Plot(ob: TPlot);
+  var
+    x: Integer;
+    a: Number;
+  begin
+    Canvas.Pen.Width:= trunc(ob.Size);
+    Canvas.Pen.Color:= ob.Color;
+    gap:= true;
+    nprev:= 0;
+    aprev:= 0;
+    for x:= box.Left to box.Right - 1 do begin
+      a:= ax.Inverse(x);
+      n:= ob.ValueAt(a);
+      if ((ay is TLogScale) and ((n <= 0) or IsZero(n))) or
+        (IsNan(n)) or
+        (IsInfinite(n)) or
+        ((abs((n - nprev + 1E-17) / (a - aprev + 1E-17)) > 1E5)) then
+        gap:= true
+      else begin
+        if gap then
+          Canvas.MoveTo(ax.Scale(a), ay.Scale(n))
+        else
+          Canvas.LineTo(ax.Scale(a), ay.Scale(n));
+        gap:= false;
+        nprev:= n;
+        aprev:= a;
+      end;
+    end;
+  end;
+
+  procedure DrawFunction_Histogram(ob: THistogram);
+  var
+    j: Integer;
+    tup: IValueList;
+  begin
+    for j:= 0 to ob.List.Length - 1 do begin
+      tup:= ob.List.ListItem[j] as IValueList;
+      try
+        n:= tup.ListItem[0].GetNumber;
+        if ((ax is TLogScale) and ((n <= 0) or IsZero(n))) then
+          continue;
+        n:= tup.ListItem[1].GetNumber;
+        if ((ay is TLogScale) and ((n <= 0) or IsZero(n))) then
+          continue;
+      except
+        on e: EConvertError do
+          continue;
+      end;
+      Canvas.Brush.Color:= ob.Color;
+      Canvas.Pen.Width:= 1;
+      Canvas.Pen.Color:= clBlack;
+      Canvas.Rectangle(Rect(
+        ax.Scale(tup.ListItem[0].GetNumber - ob.Size / 2),
+        ay.Scale(tup.ListItem[1].GetNumber),
+        ax.Scale(tup.ListItem[0].GetNumber + ob.Size / 2),
+        ay.Scale(0)));
+    end;
+  end;
+
   procedure Graphs;
   var
-    i, x, j: integer;
+    i: integer;
+    ob: TPlotBase;
   begin
     clipr:= CreateRectRgn(box.Left + 1, box.Top + 1, box.Right - 1, box.Bottom - 1);
     SelectClipRgn(Canvas.Handle, clipr);
     try
       for i:= 0 to high(FPlots) do begin
         ob:= TPlotBase(FPlots[i].GetObject);
-        if ob is TPlot then begin
-          Canvas.Pen.Width:= trunc(ob.Size);
-          Canvas.Pen.Color:= ob.Color;
-          ctx:= TContext.Create(ob.Context.System, ob.Context);
-          try
-            ctx.Silent:= true;
-            gap:= true;
-            nprev:= 0;
-            aprev:= 0;
-            for x:= box.Left to box.Right - 1 do begin
-              a:= ax.Inverse(x);
-              ctx.DefineValue(TPlot(ob).Variable, TValue.Create(a));
-              n:= TPlot(ob).Expression.Evaluate(ctx).GetNumber;
-              if ((ay is TLogScale) and ((n <= 0) or IsZero(n))) or
-                (IsNan(n)) or
-                (IsInfinite(n)) or
-                ((abs((n - nprev + 1E-17) / (a - aprev + 1E-17)) > 1E5)) then
-                gap:= true
-              else begin
-                if gap then
-                  Canvas.MoveTo(ax.Scale(a), ay.Scale(n))
-                else
-                  Canvas.LineTo(ax.Scale(a), ay.Scale(n));
-                gap:= false;
-                nprev:= n;
-                aprev:= a;
-              end;
-            end;
-          finally
-            FreeAndNil(ctx);
-          end;
-        end else if ob is TListPlot then begin
-          for j:= 0 to TListPlot(ob).List.Length - 1 do begin
-            tup:= TListPlot(ob).List.ListItem[j] as IValueList;
-            try
-              n:= tup.ListItem[0].GetNumber;
-              if ((ax is TLogScale) and ((n <= 0) or IsZero(n))) then
-                continue;
-              n:= tup.ListItem[1].GetNumber;
-              if ((ay is TLogScale) and ((n <= 0) or IsZero(n))) then
-                continue;
-            except
-              on e: EConvertError do
-                continue;
-            end;
-            case TListPlot(ob).Style of
-              lsPoint: begin
-                  Canvas.Brush.Color:= ob.Color;
-                  Canvas.FillRect(Bounds(
-                    ax.Scale(tup.ListItem[0].GetNumber) - ceil(ob.Size / 2),
-                    ay.Scale(tup.ListItem[1].GetNumber) - ceil(ob.Size / 2),
-                    trunc(ob.Size), trunc(ob.Size)));
-                end;
-              lsCross: begin
-                  Canvas.Pen.Width:= 1;
-                  Canvas.Pen.Color:= ob.Color;
-                  x:= ax.Scale(tup.ListItem[0].GetNumber);
-                  y:= ay.Scale(tup.ListItem[1].GetNumber);
-                  Canvas.MoveTo(x, y - ceil(ob.Size));
-                  Canvas.LineTo(x, y + ceil(ob.Size));
-                  Canvas.MoveTo(x - ceil(ob.Size), y);
-                  Canvas.LineTo(x + ceil(ob.Size), y);
-                end;
-              lsBar: begin
-                  Canvas.Brush.Color:= ob.Color;
-                  Canvas.Pen.Width:= 1;
-                  Canvas.Pen.Color:= clBlack;
-                  Canvas.Rectangle(Rect(
-                    ax.Scale(tup.ListItem[0].GetNumber - ob.Size / 2),
-                    ay.Scale(tup.ListItem[1].GetNumber),
-                    ax.Scale(tup.ListItem[0].GetNumber + ob.Size / 2),
-                    ay.Scale(0)));
-                end;
-            end;
-          end;
-        end;
+        if ob is TPlot then
+          DrawFunction_Plot(TPlot(ob))
+        else if ob is THistogram then
+          DrawFunction_Histogram(THistogram(ob));
       end;
     finally
       SelectClipRgn(Canvas.Handle, 0);
@@ -347,6 +340,7 @@ var
     leg: TRect;
     s: string;
     ts: TSize;
+    ob: TPlotBase;
   begin
     leg:= box;
     InflateRect(leg, -20, -20);
@@ -373,11 +367,7 @@ var
         Canvas.Pen.Width:= 5;
         Canvas.MoveTo(leg.Left+5, y);
         Canvas.LineTo(leg.Left+25, y);
-        if ob is TPlot then begin
-          s:= TPlot(ob).Expression.StringForm;
-        end else if ob is TListPlot then begin
-          s:= Format('{%d Items}',[TListPlot(ob).List.Length]);
-        end;
+        s:= TPlot(ob).GetLegend;
         ts:= Canvas.TextExtent(s);
         Canvas.TextOut(leg.Left+40, y - ts.cy div 2, s);
         inc(y, ts.cy + ts.cy div 2);
