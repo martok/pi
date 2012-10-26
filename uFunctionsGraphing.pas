@@ -56,10 +56,32 @@ type
     property List: IValueList read FList;
   end;
 
+  TXYPointStyle = (psNone, psDot, psCross, psPlus, psCircle, psSquare);
+  TXYLineStyle = (lsNone, lsStraight, lsHoldX, lsHoldY, lsStepX, lsStepY);
+
+  TXYPlot = class(TPlotBase)
+  private
+    FList: IValueList;
+    FPoints: TXYPointStyle;
+    FLines: TXYLineStyle;
+  protected
+    procedure PlotOptions(D: TDynamicArguments); override;
+  public
+    constructor Create(AList: IValueList);
+    function GetRange: TPlotRange; override;
+    function GetLegend: String; override;
+    property List: IValueList read FList;
+    property Points: TXYPointStyle read FPoints;
+    property Lines: TXYLineStyle read FLines;
+  end;
+
   TPackageGraph = class(TFunctionPackage)
+  private
+    function CheckForTuples(Param: IValue; count: integer): boolean;
   published
     function Plot_3_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
     function Histogram_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+    function XYPlot_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
     function Show_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
   end;
 
@@ -97,22 +119,57 @@ begin
   Result:= TValueObject.Create(plot);
 end;
 
+function TPackageGraph.CheckForTuples(Param: IValue; count: integer): boolean;
+var
+  l,l2: IValueList;
+  i: integer;
+begin
+  Result:= Supports(Param, IValueList, l);
+  if Result then
+    for i:= 0 to l.Length - 1 do
+      if not Supports(l.ListItem[0], IValueList, l2) or
+         (l2.Length <> count) then begin
+           Result:= false;
+           exit;
+         end;
+end;
+
 function TPackageGraph.Histogram_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
 var
-  l, l2: IValueList;
+  l: IValueList;
   plot: THistogram;
 begin
-  if not Supports(args[0].Evaluate(Context), IValueList, l) then
+  if not CheckForTuples(args[0].Evaluate(Context), 2) then
     raise EMathSysError.Create('Function ListPlot requires a list of 2-tuples');
-  if l.Length > 0 then
-    if not Supports(l.ListItem[0], IValueList, l2) or (l2.Length <> 2) then
-      raise EMathSysError.Create('Function ListPlot requires a list of 2-tuples');
+
+  Supports(args[0].Evaluate(Context), IValueList, l);
   plot:= THistogram.Create(l);
   plot.FContext:= Context.Bake;
   try
     plot.PlotOptions(Options);
   except
     FreeAndNil(Plot);
+    raise;
+  end;
+  Result:= TValueObject.Create(plot);
+end;
+
+function TPackageGraph.XYPlot_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+var
+  l: IValueList;
+  plot: TXYPlot;
+begin
+  if not CheckForTuples(args[0].Evaluate(Context), 2) then
+    raise EMathSysError.Create('Function XYPlot requires a list of 2-tuples');
+
+  Supports(args[0].Evaluate(Context), IValueList, l);
+  plot:= TXYPlot.Create(l);
+  plot.FContext:= Context.Bake;
+  try
+    plot.PlotOptions(Options);
+  except
+    FreeAndNil(Plot);
+    raise;
   end;
   Result:= TValueObject.Create(plot);
 end;
@@ -350,6 +407,69 @@ end;
 procedure THistogram.PlotOptions(D: TDynamicArguments);
 begin
   inherited;
+end;
+
+{ TXYPlot }
+
+constructor TXYPlot.Create(AList: IValueList);
+begin
+  inherited Create;
+  FList:= AList;
+  FPoints:= psCross;
+  FLines:= lsNone;
+end;
+
+function TXYPlot.GetLegend: String;
+begin
+  Result:= Format('{%d items}', [FList.Length]);
+end;
+
+function TXYPlot.GetRange: TPlotRange;
+var
+  i: integer;
+  v: IValue;
+  n: Number;
+begin
+  Result.XMin:= Infinity;
+  Result.YMin:= Infinity;
+  Result.XMax:= NegInfinity;
+  Result.YMax:= NegInfinity;
+  for i:= 0 to FList.Length - 1 do begin
+    v:= (FList.ListItem[i] as IValueList).ListItem[0];
+    n:= v.GetNumber;
+    if IsNan(n) then
+      continue;
+    if Result.XMin>n then Result.XMin:= n;
+    if Result.XMax<n then Result.XMax:= n;
+
+    v:= (FList.ListItem[i] as IValueList).ListItem[1];
+    n:= v.GetNumber;
+    if IsNan(n) then
+      continue;
+    if Result.YMin>n then Result.YMin:= n;
+    if Result.YMax<n then Result.YMax:= n;
+  end;
+end;
+
+procedure TXYPlot.PlotOptions(D: TDynamicArguments);
+var
+  i: integer;
+begin
+  inherited;
+  if D.IsSet('points') then begin
+    i:= GetEnumValue(TypeInfo(TXYPointStyle), 'ps' + D.Value['points'].GetString);
+    if i < 0 then
+      raise EMathSysError.CreateFmt('Invalid Point Style name: %s', [D.Value['points'].GetString])
+    else
+      FPoints:= TXYPointStyle(i)
+  end;
+  if D.IsSet('lines') then begin
+    i:= GetEnumValue(TypeInfo(TXYLineStyle), 'ls' + D.Value['lines'].GetString);
+    if i < 0 then
+      raise EMathSysError.CreateFmt('Invalid Line Style name: %s', [D.Value['lines'].GetString])
+    else
+      FLines:= TXYLineStyle(i);
+  end;
 end;
 
 initialization

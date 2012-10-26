@@ -288,29 +288,136 @@ var
   var
     j: Integer;
     tup: IValueList;
+    x,y: Number;
   begin
     for j:= 0 to ob.List.Length - 1 do begin
       tup:= ob.List.ListItem[j] as IValueList;
-      try
-        n:= tup.ListItem[0].GetNumber;
-        if ((ax is TLogScale) and ((n <= 0) or IsZero(n))) then
-          continue;
-        n:= tup.ListItem[1].GetNumber;
-        if ((ay is TLogScale) and ((n <= 0) or IsZero(n))) then
-          continue;
-      except
-        on e: EConvertError do
-          continue;
-      end;
+      x:= tup.ListItem[0].GetNumber;
+      if IsNan(x) then continue;
+      if ((ax is TLogScale) and ((x <= 0) or IsZero(x))) then
+        continue;
+      y:= tup.ListItem[1].GetNumber;
+      if IsNan(y) then continue;
+      if ((ay is TLogScale) and ((y <= 0) or IsZero(y))) then
+        continue;
       Canvas.Brush.Color:= ob.Color;
       Canvas.Pen.Width:= 1;
       Canvas.Pen.Color:= clBlack;
       Canvas.Rectangle(Rect(
-        ax.Scale(tup.ListItem[0].GetNumber - ob.Size / 2),
-        ay.Scale(tup.ListItem[1].GetNumber),
-        ax.Scale(tup.ListItem[0].GetNumber + ob.Size / 2),
+        ax.Scale(x - ob.Size / 2),
+        ay.Scale(y),
+        ax.Scale(x + ob.Size / 2),
         ay.Scale(0)));
     end;
+  end;
+
+  procedure DrawFunction_XYPlot(ob: TXYPlot);
+  var
+    j: Integer;
+    x,y,px,py: Number;
+    xx,yy: integer;
+
+    function GetXY(indx: integer): boolean;
+    var
+      tup: IValueList;
+    begin
+      Result:= false;
+      tup:= ob.List.ListItem[indx] as IValueList;
+      x:= tup.ListItem[0].GetNumber;
+      if IsNan(x) then exit;
+      if ((ax is TLogScale) and ((x <= 0) or IsZero(x))) then
+        exit;
+      y:= tup.ListItem[1].GetNumber;
+      if IsNan(y) then exit;
+      if ((ay is TLogScale) and ((y <= 0) or IsZero(y))) then
+        exit;
+      Result:= true;
+    end;
+  begin
+    px:= NaN;
+    py:= NaN;
+    if ob.Lines<>lsNone then
+      for j:= 0 to ob.List.Length - 1 do begin
+        if not GetXY(j) then continue;
+
+        xx:= ax.Scale(x);
+        yy:= ay.Scale(y);
+
+        if IsNan(px) then
+          canvas.MoveTo(xx,yy)
+        else begin
+          Canvas.MoveTo(ax.Scale(px),ay.Scale(py));
+          case ob.Lines of
+            lsStraight: begin
+              Canvas.Pen.Color:= ob.Color;
+              Canvas.LineTo(xx,yy);
+            end;
+            lsHoldX: begin
+              Canvas.Pen.Color:= ob.Color;
+              Canvas.LineTo(ax.Scale(px),yy);
+              Canvas.LineTo(xx,yy);
+            end;
+            lsHoldY: begin
+              Canvas.Pen.Color:= ob.Color;
+              Canvas.LineTo(xx,ay.Scale(py));
+              Canvas.LineTo(xx,yy);
+            end;
+            lsStepX: begin
+              Canvas.Pen.Color:= ob.Color;
+              Canvas.LineTo(ax.Scale(px),yy);
+              Canvas.MoveTo(xx,yy);
+            end;
+            lsStepY: begin
+              Canvas.Pen.Color:= ob.Color;
+              Canvas.LineTo(xx,ay.Scale(py));
+              Canvas.MoveTo(xx,yy);
+            end;
+          end;
+        end;
+        px:= x;
+        py:= y;
+      end;
+    if ob.Points<>psNone then
+      for j:= 0 to ob.List.Length - 1 do begin
+        if not GetXY(j) then continue;
+
+        xx:= ax.Scale(x);
+        yy:= ay.Scale(y);
+
+        case ob.Points of
+          psDot: Canvas.Pixels[xx,yy]:= ob.Color;
+          psCross: begin
+            Canvas.Pen.Color:= ob.Color;
+            Canvas.Pen.Style:= psSolid;
+            Canvas.MoveTo(xx-trunc(ob.Size),yy-Trunc(ob.Size));
+            Canvas.LineTo(xx+trunc(ob.Size+1),yy+Trunc(ob.Size+1));
+            Canvas.MoveTo(xx+trunc(ob.Size),yy-Trunc(ob.Size));
+            Canvas.LineTo(xx-trunc(ob.Size+1),yy+Trunc(ob.Size+1));
+          end;
+          psPlus: begin
+            Canvas.Pen.Color:= ob.Color;
+            Canvas.Pen.Style:= psSolid;
+            Canvas.MoveTo(xx-trunc(ob.Size),yy);
+            Canvas.LineTo(xx+trunc(ob.Size+1),yy);
+            Canvas.MoveTo(xx,yy-Trunc(ob.Size));
+            Canvas.LineTo(xx,yy+Trunc(ob.Size+1));
+          end;
+          psCircle: begin
+            Canvas.Brush.Color:= ob.Color;
+            Canvas.Pen.Color:= clBlack;
+            Canvas.Pen.Style:= psSolid;
+            Canvas.Ellipse(xx-trunc(ob.Size),yy-Trunc(ob.Size),
+                           xx+trunc(ob.Size+1),yy+Trunc(ob.Size+1));
+          end;
+          psSquare: begin
+            Canvas.Brush.Color:= ob.Color;
+            Canvas.Pen.Color:= clBlack;
+            Canvas.Pen.Style:= psSolid;
+            Canvas.Rectangle(xx-trunc(ob.Size),yy-Trunc(ob.Size),
+                           xx+trunc(ob.Size+1),yy+Trunc(ob.Size+1));
+          end;
+        end;
+      end;
   end;
 
   procedure Graphs;
@@ -326,7 +433,9 @@ var
         if ob is TPlot then
           DrawFunction_Plot(TPlot(ob))
         else if ob is THistogram then
-          DrawFunction_Histogram(THistogram(ob));
+          DrawFunction_Histogram(THistogram(ob))
+        else if ob is TXYPlot then
+          DrawFunction_XYPlot(TXYPlot(ob));
       end;
     finally
       SelectClipRgn(Canvas.Handle, 0);

@@ -1341,7 +1341,8 @@ begin
 {$WARNINGS OFF}
   case FValueType of
     vtNumber: Result:= FNumber;
-    vtString: Result:= StrToFloat(FString, NeutralFormatSettings);
+    vtString: if not TryStrToFloat(FString, Result, NeutralFormatSettings) then
+      Result:= NaN;
   else
     Result:= NAN;
   end;
