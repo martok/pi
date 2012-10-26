@@ -44,19 +44,19 @@ type
   TScale = class
   protected
     FMinVal,
-      FMaxVal: Single;
+      FMaxVal: Number;
     FFrameMin,
       FFrameMax: integer;
     procedure Init; virtual;
   public
-    constructor Create(AMinVal, AMaxVal: Single; AFrameMin, AFrameMax: integer);
+    constructor Create(AMinVal, AMaxVal: Number; AFrameMin, AFrameMax: integer);
     function Scale(Value: Number): integer; virtual; abstract;
     function Inverse(Pixel: integer): Number; virtual; abstract;
   end;
 
   TLinScale = class(TScale)
   private
-    Fact: Double;
+    Fact: Number;
   protected
     procedure Init; override;
   public
@@ -65,7 +65,7 @@ type
   end;
   TLogScale = class(TScale)
   private
-    Fact: Double;
+    Fact: Number;
   protected
     procedure Init; override;
   public
@@ -84,7 +84,7 @@ uses Types, Math, Clipbrd;
 
 { TScale }
 
-constructor TScale.Create(AMinVal, AMaxVal: Single; AFrameMin, AFrameMax: integer);
+constructor TScale.Create(AMinVal, AMaxVal: Number; AFrameMin, AFrameMax: integer);
 begin
   inherited Create;
   FMinVal:= AMinVal;

@@ -115,6 +115,7 @@ begin
     plot.PreCalculate;
   except
     FreeAndNil(Plot);
+    raise;
   end;
   Result:= TValueObject.Create(plot);
 end;
