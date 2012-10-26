@@ -74,6 +74,7 @@ type
     function PWD_0(Context: TContext; args: TExprList): IValue;
     function CWD_1(Context: TContext; args: TExprList): IValue;
     function CSVLoad_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+    function Source_1(Context: TContext; args: TExprList): IValue;
     function Table_1(Context: TContext; args: TExprList): IValue;
     function Bucket_4(Context: TContext; args: TExprList): IValue;
     function Min_1(Context: TContext; args: TExprList): IValue;
@@ -626,6 +627,33 @@ begin
     NeutralFormatSettings:= o_fs;
     FreeAndNil(list);
     FreeAndNil(line);
+  end;
+end;
+
+function TPackageData.Source_1(Context: TContext; args: TExprList): IValue;
+var
+  list: TStringList;
+  i: integer;
+  s: string;
+begin
+  list:= TStringList.Create;
+  try
+    list.LoadFromFile(args[0].Evaluate(Context).GetString);
+    for i:= 0 to list.Count-1 do begin
+      s:= trim(list[i]);
+      if (Length(s)>0) and (s[1]<>';') then begin
+        try
+          Context.System.Run(s);
+        except
+          on e: Exception do begin
+            Context.System.Output.Error('%s: %s',[e.ClassName, e.Message]);
+            raise;
+          end;
+        end;
+      end;
+    end;
+  finally
+    FreeAndNil(list);
   end;
 end;
 
