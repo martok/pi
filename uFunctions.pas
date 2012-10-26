@@ -592,22 +592,21 @@ begin
     if Options.IsSet('Decimal') and (Options['Decimal'].GetString > '') then
       NeutralFormatSettings.DecimalSeparator:= Options['Decimal'].GetString[1];
 
+    list.LoadFromFile(args[0].Evaluate(Context).GetString);
+
     if Options.IsSet('Skip') then
       skip:= trunc(Options['Skip'].GetNumber)
     else
       skip:= 0;
 
-    if Options.IsSet('Count') then
-      count:= trunc(Options['Count'].GetNumber)
-    else
-      count:= MaxInt;
-
-    list.LoadFromFile(args[0].Evaluate(Context).GetString);
-
     first:= skip;
-    last:= first + count - 1;
-    if last > list.Count - 1 then
-      last:= list.Count - 1;
+    if Options.IsSet('Count') then begin
+      count:= trunc(Options['Count'].GetNumber);
+      last:= first + count - 1;
+      if last>List.Count-1 then
+        last:= List.Count-1;
+    end else
+      last:= List.Count - 1;
 
     res:= TValueFixedList.Create;
     res.Length:= last - first + 1;
