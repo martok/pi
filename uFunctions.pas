@@ -79,6 +79,7 @@ type
     function Bucket_4(Context: TContext; args: TExprList): IValue;
     function Min_1(Context: TContext; args: TExprList): IValue;
     function Max_1(Context: TContext; args: TExprList): IValue;
+    function SortBy_3_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
   end;
 
 implementation
@@ -756,6 +757,110 @@ begin
       m:= n;
   end;
   Result:= TValue.Create(m);
+end;
+
+type
+  TSortByConfig = class
+    OrderDesc: boolean;
+    StringCompare: boolean;
+  end;
+  TSortByListElement = class
+    Key: IValue;
+    OriginalIndex: integer;
+    SortConfig: TSortByConfig;
+  end;
+
+function ListSortCompare_SortBy(A, B: Pointer): integer;
+var
+  L, R: TSortByListElement;
+  X,Y: Number;
+  c: TSortByConfig;
+begin
+  L:= TSortByListElement(A);
+  R:= TSortByListElement(B);
+  c:= L.SortConfig;
+
+  if c.StringCompare then begin
+    Result:= AnsiCompareText(L.Key.GetString, R.Key.GetString);
+  end else begin
+    X:= L.Key.GetNumber;
+    Y:= R.Key.GetNumber;
+    if X<Y then Result:= -1
+    else if X>Y then Result:= +1
+    else Result:= 0;
+  end;
+  if c.OrderDesc then
+    Result:= - Result;
+end;
+
+function TPackageData.SortBy_3_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+var
+  list: IValueList;
+  v: IExpression;                                           //TE_ExprRef
+  ex: IExpression;
+  i: integer;
+  ctx: TContext;
+  res: IValueList;
+  sortList: TList;
+  sbc: TSortByConfig;
+  sle: TSortByListElement;
+begin
+  if not Supports(args[0].Evaluate(Context), IValueList, list) then
+    raise EMathSysError.Create('Function SortBy requires a list to work on');
+  v:= args[1];
+  if v.GetClassType <> TE_ExprRef then
+    raise EMathSysError.Create('Function SortBy requires a variable reference');
+  ex:= args[2];
+
+  sbc:= TSortByConfig.Create;
+  try
+    sbc.OrderDesc:= Options.IsSet('Desc');
+    sbc.StringCompare:= Options.IsSet('String');
+
+    sortList:= TList.Create;
+    try
+      sortList.Capacity:= list.Length;
+      ctx:= TContext.Create(Context.System, Context);
+      try
+        ctx.Silent:= true;
+        for i:= 0 to list.length - 1 do begin
+          sle:= TSortByListElement.Create;
+          try
+            sle.OriginalIndex:= i;
+            sle.SortConfig:= sbc;
+            ctx.DefineValue(TE_ExprRef(v.GetObject).Name, list.ListItem[i]);
+            sle.Key:= ex.Evaluate(ctx);
+            sortList.Add(sle);
+          except
+            FreeAndNil(sle);
+          end;
+        end;
+
+        sortList.Sort(ListSortCompare_SortBy);
+
+        res:= TValueFixedList.Create;
+        try
+          res.Length:= list.Length;
+          for i:= 0 to sortList.Count-1 do
+            res.ListItem[i]:= list.ListItem[TSortByListElement(sortList.Items[i]).OriginalIndex];
+         Result:= res as IValue;
+        except
+          FreeAndNil(res);
+        end;
+      finally
+        FreeAndNil(ctx);
+      end;
+    finally
+      try
+        for i:= 0 to sortList.Count-1 do
+          TSortByListElement(sortList.Items[i]).Free;
+      finally
+        FreeAndNil(sortList);
+      end;
+    end;
+  finally
+    FreeAndNil(sbc);
+  end;
 end;
 
 initialization

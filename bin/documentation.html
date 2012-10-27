@@ -399,7 +399,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 					Wechselt in <i>path</i> (kann auch eine relative Angabe sein)
 				</li>
 				<li id="function-data-csvload">
-					<code>csvload(file[,options])</code><br/>
+					<code>CsvLoad(file[,options])</code><br/>
 					Lädt eine CSV-Datei in eine Liste von Listen<br/>
 					Optionen:
 					<dl class="opt">
@@ -411,25 +411,34 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 					</dl>
 				</li>
 				<li id="function-data-source">
-					<code>source(file)</code><br/>
+					<code>Source(file)</code><br/>
 					Lädt eine Datei und führt sie Zeilenweise aus. Tritt ein Fehler auf, wird die Ausführung beendet.
 				</li>
 				<li id="function-data-table">
-					<code>table(list)</code><br/>
+					<code>Table(list)</code><br/>
 					Stellt eine Liste (oder Liste von Listen) als Tabelle dar
 				</li>
 				<li id="function-data-bucket">
-					<code>bucket(list, min, max, count)</code><br/>
+					<code>Bucket(list, min, max, count)</code><br/>
 					Zählt alle Werte in <i>min</i> < x < <i>max</i> in <i>count</i> Gruppen.
 					Rückgabe: Liste von <code>{Mittelwert, Anzahl}</code>
 				</li>
 				<li id="function-data-max">
-					<code>max(list)</code><br/>
+					<code>Max(list)</code><br/>
 					Größter Wert einer Liste
 				</li>
 				<li id="function-data-min">
-					<code>min(list)</code><br/>
+					<code>Min(list)</code><br/>
 					Kleinster Wert einer Liste
+				</li>
+				<li id="function-lists-sortby">
+					<code>SortBy(list, var, expr)</code><br/>
+					Sortiert <i>list</i> unter verwendung der Schlüssel, wie sie <i>expr</i> generiert. Siehe <a href="#samp-data-sortby">Beispiel</a>.<br/>
+					Optionen:
+					<dl class="opt">
+						<dt>Desc=*undefined*</dt><dd>Absteigend sortieren, sonst Aufsteigend</dd>
+						<dt>String=*undefined*</dt><dd>Als Text sortieren, sonst als Zahl</dd>
+					</dl>
 				</li>
 			</ul>
 
@@ -441,7 +450,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 				zu plotten (<a href="#samp-graph-1">Beispiel</a>)</p>
 			<ul>
 				<li id="function-graph-plot">
-					<code>plot(expr,var,range[,options])</code><br/>
+					<code>Plot(expr,var,range[,options])</code><br/>
 					Plottet eine Expression in Variable <i>var</i> über <i>range</i><br/>
 					Optionen:
 					<dl class="opt">
@@ -450,7 +459,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 					</dl>
 				</li>
 				<li id="function-graph-histogram">
-					<code>histogram(list[,options])</code><br/>
+					<code>Histogram(list[,options])</code><br/>
 					Plottet eine Liste von {Mittelwert,Anzahl}-Tupeln<br/>
 					Optionen:
 					<dl class="opt">
@@ -459,7 +468,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 					</dl>
 				</li>
 				<li id="function-graph-xyplot">
-					<code>xyplot(list[,options])</code><br/>
+					<code>XYPlot(list[,options])</code><br/>
 					Plottet eine Liste von {X,Y}-Punkten<br/>
 					Optionen:
 					<dl class="opt">
@@ -470,7 +479,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 					</dl>
 				</li>
 				<li id="function-graph-show">
-					<code>show(plots[,options])</code><br/>
+					<code>Show(plots[,options])</code><br/>
 					Stellt mehrere Plot-Objekte dar. <i>plots</i> muss eine Liste von Plot-Objekten oder ein Plot-Objekt sein.<br/>
 					Eine Legende mit der Zuordnung der Farben wird bei gedrückter Maustaste angezeigt.<br/>
 					Optionen:
@@ -512,6 +521,9 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 = {1->5,1}
 &gt; merge(part(list,0,1),part(list,-2,-1))
 = {1, 2, 4, 5}
+</code></pre>
+		<h3 id="samp-data-sortby">Sortby: Liste von {X,Y} (Wertetabelle) absteigend nach X-Werten sortieren</h3>
+			<pre><code>&gt; sortby(list, el, el@0, Desc)
 </code></pre>
 		<h3 id="samp-graph-1">Plot: Parametrischer Plot über p</h3>
 			<pre><code>&gt; show(each(range(0,3,1), p, plot(sin(p*x),x,l(0,10))))
