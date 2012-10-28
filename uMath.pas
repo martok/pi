@@ -174,6 +174,8 @@ type
     //IStringConvertible
     function StringForm: string; virtual;
     function OutputForm: string; virtual;
+
+    class function CheckForTuples(Param: IValue; count: integer): boolean;
   end;
 
   TE_Constant = class(TExpression)
@@ -1408,6 +1410,21 @@ begin
     vtNumber: Result:= NumberToStr(FNumber, NeutralFormatSettings, true);
     vtString: Result:= QuotedStr(GetString);
   end;
+end;
+
+class function TValue.CheckForTuples(Param: IValue; count: integer): boolean;
+var
+  l,l2: IValueList;
+  i: integer;
+begin
+  Result:= Supports(Param, IValueList, l);
+  if Result then
+    for i:= 0 to l.Length - 1 do
+      if not Supports(l.ListItem[0], IValueList, l2) or
+         (l2.Length <> count) then begin
+           Result:= false;
+           exit;
+         end;
 end;
 
 { TE_Constant }

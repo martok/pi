@@ -76,8 +76,6 @@ type
   end;
 
   TPackageGraph = class(TFunctionPackage)
-  private
-    function CheckForTuples(Param: IValue; count: integer): boolean;
   published
     function Plot_3_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
     function Histogram_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
@@ -120,27 +118,12 @@ begin
   Result:= TValueObject.Create(plot);
 end;
 
-function TPackageGraph.CheckForTuples(Param: IValue; count: integer): boolean;
-var
-  l,l2: IValueList;
-  i: integer;
-begin
-  Result:= Supports(Param, IValueList, l);
-  if Result then
-    for i:= 0 to l.Length - 1 do
-      if not Supports(l.ListItem[0], IValueList, l2) or
-         (l2.Length <> count) then begin
-           Result:= false;
-           exit;
-         end;
-end;
-
 function TPackageGraph.Histogram_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
 var
   l: IValueList;
   plot: THistogram;
 begin
-  if not CheckForTuples(args[0].Evaluate(Context), 2) then
+  if not TValue.CheckForTuples(args[0].Evaluate(Context), 2) then
     raise EMathSysError.Create('Function ListPlot requires a list of 2-tuples');
 
   Supports(args[0].Evaluate(Context), IValueList, l);
@@ -160,7 +143,7 @@ var
   l: IValueList;
   plot: TXYPlot;
 begin
-  if not CheckForTuples(args[0].Evaluate(Context), 2) then
+  if not TValue.CheckForTuples(args[0].Evaluate(Context), 2) then
     raise EMathSysError.Create('Function XYPlot requires a list of 2-tuples');
 
   Supports(args[0].Evaluate(Context), IValueList, l);
