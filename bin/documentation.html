@@ -413,6 +413,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 				<li id="function-data-source">
 					<code>Source(file)</code><br/>
 					Lädt eine Datei und führt sie Zeilenweise aus. Tritt ein Fehler auf, wird die Ausführung beendet.
+					Die Dateiendung <code>.pi</code> wird automatisch ergänzt, falls <i>file</i> nicht gefunden wird.
 				</li>
 				<li id="function-data-table">
 					<code>Table(list)</code><br/>
@@ -439,6 +440,11 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 						<dt>Desc=*undefined*</dt><dd>Absteigend sortieren, sonst Aufsteigend</dd>
 						<dt>String=*undefined*</dt><dd>Als Text sortieren, sonst als Zahl</dd>
 					</dl>
+				</li>
+				<li id="function-data-numderive">
+					<code>NumDerive(list)</code><br/>
+					Numerische Ableitung einer Liste von {X,Y}-Punkten. In der Mitte zwischen zwei X-Werten wird die differenz
+					nach dY/dY abgelegt. Die erzeugte Liste ist ein Element kürzer.
 				</li>
 			</ul>
 

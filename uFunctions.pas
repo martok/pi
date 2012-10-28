@@ -80,6 +80,7 @@ type
     function Min_1(Context: TContext; args: TExprList): IValue;
     function Max_1(Context: TContext; args: TExprList): IValue;
     function SortBy_3_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+    function NumDerive_1(Context: TContext; args: TExprList): IValue;
   end;
 
 implementation
@@ -638,7 +639,10 @@ var
 begin
   list:= TStringList.Create;
   try
-    list.LoadFromFile(args[0].Evaluate(Context).GetString);
+    s:= args[0].Evaluate(Context).GetString;
+    if not FileExists(s) and FileExists(s+'.pi') then
+      s:= s+'.pi';
+    list.LoadFromFile(s);
     for i:= 0 to list.Count-1 do begin
       s:= trim(list[i]);
       if (Length(s)>0) and (s[1]<>';') then begin
@@ -861,6 +865,39 @@ begin
   finally
     FreeAndNil(sbc);
   end;
+end;
+
+function TPackageData.NumDerive_1(Context: TContext; args: TExprList): IValue;
+var
+  l: IValueList;
+  res,tup: IValueList;
+
+  i: integer;
+  a,b,x,y: Number;
+begin
+  if not TValue.CheckForTuples(args[0].Evaluate(Context), 2) then
+    raise EMathSysError.Create('Function XYPlot requires a list of 2-tuples');
+
+  Supports(args[0].Evaluate(Context), IValueList, l);
+  res:= TValueFixedList.Create;
+
+  res.Length:= l.Length-1;
+  tup:= l.ListItem[0] as IValueList;
+  a:= tup.ListItem[0].GetNumber;
+  b:= tup.ListItem[1].GetNumber;
+  for i:= 1 to l.Length-1 do begin
+    tup:= l.ListItem[i] as IValueList;
+    x:= tup.ListItem[0].GetNumber;
+    y:= tup.ListItem[1].GetNumber;
+    tup:= TValueFixedList.Create;
+    tup.Length:= 2;
+    tup.ListItem[0]:= TValue.Create((x+a) / 2);
+    tup.ListItem[1]:= TValue.Create((y-b) / (x-a));
+    Res.ListItem[i-1]:= tup as IValue;
+    a:= x;
+    b:= y;
+  end;
+  Result:= res as IValue;
 end;
 
 initialization
