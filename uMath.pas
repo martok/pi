@@ -416,6 +416,8 @@ const
 
     //    (P: 15; Infix: '-'; Unary: True; Cls: TE_Negation), // Done by Parse/Fold if it finds a Subtraction with no LHS
 
+    (P: 18; Infix: '@'; Unary: False; Cls: TE_ListAccess),
+
     (P: 19; Infix: '^'; Unary: False; Cls: TE_Power),
     (P: 20; Infix: '*'; Unary: False; Cls: TE_Multiplication),
     (P: 20; Infix: '/'; Unary: False; Cls: TE_Division),
@@ -425,7 +427,6 @@ const
     (P: 30; Infix: '-'; Unary: False; Cls: TE_Subtraction),
 
     (P: 40; Infix: '||'; Unary: False; Cls: TE_Concatenation),
-    (P: 40; Infix: '@'; Unary: False; Cls: TE_ListAccess),
 
     (P: 100; Infix: '='; Unary: False; Cls: TE_AssignmentStatic),
     (P: 105; Infix: ':='; Unary: False; Cls: TE_AssignmentDynamic),
@@ -1242,6 +1243,7 @@ function TContext.Bake: TContext;
 begin
   Result:= TContext.Create(FSystem, nil);
   try
+    Result.Silent:= true;
     Cook(Self);
   except
     FreeAndNil(Result);
