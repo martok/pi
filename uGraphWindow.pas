@@ -190,20 +190,88 @@ procedure TGraphWindow.PaintGraph(Canvas: TCanvas; DrawRect: TRect);
 var
   box: TRect;
   ax, ay: TScale;
-  xaxis, yaxis, a, aprev, n, nprev: Number;
+  xaxis, yaxis, aprev, n, nprev: Number;
   gap: boolean;
   clipr: HRGN;
 
   function AxisLabel(p: Number): string;
   begin
-    Result:= FloatToStrF(p, ffGeneral, 5, 0, NeutralFormatSettings);
+    Result:= FloatToStrF(p, ffGeneral, 4, 0, NeutralFormatSettings);
   end;
 
   procedure Axes;
-  var
-    l: string;
-    sp: Number;
-    ts: TSize;
+
+    function RoundStep(st:Number): Number;
+    var
+      sn: TValueSign;
+    begin
+      sn:= Sign(st);
+      st:= abs(st);
+      Result:= sn * Max(Max(5*Power(10,Floor(Log10(st/5))),
+                            2*Power(10,Floor(Log10(st/2)))),
+                            Power(10,Floor(Log10(st))));
+    end;
+
+    procedure VerticalTickMark(atY: Number);
+    var
+      l: string;
+      ts: TSize;
+      tx: integer;
+    begin
+      if not IsZero(atY) then begin
+        Canvas.MoveTo(ax.Scale(yaxis) - 4, ay.Scale(atY));
+        Canvas.LineTo(ax.Scale(yaxis) + 4, ay.Scale(atY));
+        l:= AxisLabel(atY);
+        ts:= Canvas.TextExtent(l);
+        tx:= ax.Scale(yaxis) - ts.cx - 4;
+        if tx < box.Left then
+          tx:= ax.Scale(yaxis) + 4;
+        Canvas.TextOut(tx, ay.Scale(atY) - ts.cy div 2, l);
+      end;
+    end;
+
+    procedure VerticalAxis(Start: Number; PixelHint: integer);
+    var
+      a,b,c: Number;
+    begin
+      a:= Start;
+      while (a >= FYMin) and (a <= FYMax) do begin
+        VerticalTickMark(a);
+        b:= ay.Inverse(ay.Scale(a) + PixelHint);
+        c:= b-a;
+        b:= RoundStep(c);
+        a:= a + b;
+      end;
+    end;
+
+    procedure HorizontalTickMark(atX: Number);
+    var
+      l: string;
+      ts: TSize;
+    begin
+      if not IsZero(atX) then begin
+        Canvas.MoveTo(ax.Scale(atX), ay.Scale(xaxis) - 4);
+        Canvas.LineTo(ax.Scale(atX), ay.Scale(xaxis) + 4);
+        l:= AxisLabel(atX);
+        ts:= Canvas.TextExtent(l);
+        Canvas.TextOut(ax.Scale(atX) - ts.cx div 2, ay.Scale(xaxis) + 4, l);
+      end;
+    end;
+
+    procedure HorizontalAxis(Start: Number; PixelHint: integer);
+    var
+      a,b,c: Number;
+    begin
+      a:= Start;
+      while (a >= FXMin) and (a <= FXMax) do begin
+        HorizontalTickMark(a);
+        b:= ax.Inverse(ax.Scale(a) + PixelHint);
+        c:= b-a;
+        b:= RoundStep(c);
+        a:= a + b;
+      end;
+    end;
+
   begin
     if FXMax < 0 then
       yaxis:= FXMax
@@ -221,37 +289,17 @@ var
 
     Canvas.Pen.Width:= 2;
     Canvas.Pen.Color:= clBlack;
+    Canvas.Brush.Style:= bsClear;
+
     Canvas.MoveTo(ax.Scale(yaxis), box.Top);
     Canvas.LineTo(ax.Scale(yaxis), box.Bottom);
-    Canvas.Brush.Style:= bsClear;
-    sp:= FYMax - FYMin;
-    if IsZero(sp) then
-      sp:= 1;
-    a:= FYMin;
-    while a <= FYMax do begin
-      if not IsZero(a) then begin
-        Canvas.MoveTo(ax.Scale(yaxis) - 4, ay.Scale(a));
-        Canvas.LineTo(ax.Scale(yaxis) + 4, ay.Scale(a));
-        l:= AxisLabel(a);
-        ts:= Canvas.TextExtent(l);
-        Canvas.TextOut(ax.Scale(yaxis) - ts.cx - 4, ay.Scale(a) - ts.cy div 2, l);
-      end;
-      a:= a + Power(10, Round(Log10(sp / 10)));
-    end;
+    VerticalAxis(Max(0, FYMin),-80);
+    VerticalAxis(Min(0, FYMax),80);
 
     Canvas.MoveTo(box.Left, ay.Scale(xaxis));
     Canvas.LineTo(box.Right, ay.Scale(xaxis));
-    a:= FXMin;
-    while a <= FXMax do begin
-      if not IsZero(a) then begin
-        Canvas.MoveTo(ax.Scale(a), ay.Scale(xaxis) - 4);
-        Canvas.LineTo(ax.Scale(a), ay.Scale(xaxis) + 4);
-        l:= AxisLabel(a);
-        ts:= Canvas.TextExtent(l);
-        Canvas.TextOut(ax.Scale(a) - ts.cx div 2, ay.Scale(xaxis) + 4, l);
-      end;
-      a:= a + Power(10, Round(Log10((FXMax - FXMin) / 10)));
-    end;
+    HorizontalAxis(Max(0, FXMin),100);
+    HorizontalAxis(Min(0, FXMax),-100);
   end;
 
   procedure DrawFunction_Plot(ob: TPlot);
