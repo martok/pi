@@ -251,6 +251,7 @@ begin
   end;
 
   gr.Show;
+  Context.System.Output.Result('['+gr.Caption+']');
 end;
 
 { TPlotBase }

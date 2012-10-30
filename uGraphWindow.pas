@@ -16,12 +16,17 @@ type
     miLegendTop: TMenuItem;
     miLegendBottom: TMenuItem;
     miCopyEMF: TMenuItem;
+    N2: TMenuItem;
+    miGrid: TMenuItem;
+    miFineGrid: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormPaint(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure miLegendChange(Sender: TObject);
     procedure miCopyEMFClick(Sender: TObject);
+    procedure miGridClick(Sender: TObject);
+    procedure miFineGridClick(Sender: TObject);
   private
     { Private-Deklarationen }
     FPlots: array of IValueObject;
@@ -76,9 +81,17 @@ type
 var
   GraphWindow: TGraphWindow;
 
+const
+  COL_AXIS         : TColor = $404040;
+  COL_GRID_MAJOR   : TColor = $808080;
+  COL_GRID_MINOR   : TColor = $C0C0C0;
+
 implementation
 
 uses Types, Math, Clipbrd;
+
+var
+  Graphs_Counter :integer = 0;
 
 {$R *.dfm}
 
@@ -147,6 +160,8 @@ var
   i: integer;
 begin
   inherited Create(Application);
+  inc(Graphs_Counter);
+  Caption:= Format('Graph %d',[Graphs_Counter]);
   SetLength(FPlots, Length(Plots));
   for i:= 0 to high(Plots) do
     FPlots[i]:= Plots[i];
@@ -156,6 +171,7 @@ procedure TGraphWindow.FormCreate(Sender: TObject);
 begin
   DoubleBuffered:= true;
   Buffer:= TBitmap.Create;
+  miGrid.Checked:= True;
 end;
 
 destructor TGraphWindow.Destroy;
@@ -209,38 +225,74 @@ var
       st:= abs(st);
       Result:= sn * Max(Max(5*Power(10,Floor(Log10(st/5))),
                             2*Power(10,Floor(Log10(st/2)))),
-                            Power(10,Floor(Log10(st))));
+                              Power(10,Floor(Log10(st))));
     end;
 
-    procedure VerticalTickMark(atY: Number);
+    procedure LabelAxis(Hor: boolean; Value: Number);
     var
       l: string;
       ts: TSize;
-      tx: integer;
+      w: integer;
     begin
-      if not IsZero(atY) then begin
-        Canvas.MoveTo(ax.Scale(yaxis) - 4, ay.Scale(atY));
-        Canvas.LineTo(ax.Scale(yaxis) + 4, ay.Scale(atY));
-        l:= AxisLabel(atY);
+      if not IsZero(Value) then begin
+        l:= AxisLabel(Value);
         ts:= Canvas.TextExtent(l);
-        tx:= ax.Scale(yaxis) - ts.cx - 4;
-        if tx < box.Left then
-          tx:= ax.Scale(yaxis) + 4;
-        Canvas.TextOut(tx, ay.Scale(atY) - ts.cy div 2, l);
+
+        if Hor then begin
+          if miGrid.Checked then
+           Canvas.TextOut(ax.Scale(Value) + 4, ay.Scale(xaxis) + 1, l)
+          else
+           Canvas.TextOut(ax.Scale(Value) - ts.cx div 2, ay.Scale(xaxis) + 1, l);
+        end else begin
+          w:= ax.Scale(yaxis) - ts.cx - 4;
+          if w <= box.Left then
+            w:= ax.Scale(yaxis) + 5;
+          if miGrid.Checked then
+            Canvas.TextOut(w, ay.Scale(Value) - ts.cy + 2, l)
+          else
+            Canvas.TextOut(w, ay.Scale(Value) - ts.cy div 2, l);
+        end;
       end;
     end;
 
-    procedure HorizontalTickMark(atX: Number);
+    procedure TickMark(Hor:Boolean; Value: Number; Main: boolean);
     var
-      l: string;
-      ts: TSize;
+      w: integer;
     begin
-      if not IsZero(atX) then begin
-        Canvas.MoveTo(ax.Scale(atX), ay.Scale(xaxis) - 4);
-        Canvas.LineTo(ax.Scale(atX), ay.Scale(xaxis) + 4);
-        l:= AxisLabel(atX);
-        ts:= Canvas.TextExtent(l);
-        Canvas.TextOut(ax.Scale(atX) - ts.cx div 2, ay.Scale(xaxis) + 4, l);
+      if not IsZero(Value) then begin
+        if Main then
+          LabelAxis(Hor, Value);
+
+        if (miGrid.Checked and Main) or (miFineGrid.Checked and not Main) then begin
+          Canvas.Pen.Width:= 1;
+          Canvas.Pen.Style:= Graphics.psDot;
+          if Main then
+            Canvas.Pen.Color:= COL_GRID_MAJOR
+          else
+            Canvas.Pen.Color:= COL_GRID_MINOR;
+          if Hor then begin
+            Canvas.MoveTo(ax.Scale(Value), box.Top);
+            Canvas.LineTo(ax.Scale(Value), box.Bottom);
+          end else begin
+            Canvas.MoveTo(box.Left, ay.Scale(Value));
+            Canvas.LineTo(box.Right, ay.Scale(Value));
+          end;
+        end;
+
+        Canvas.Pen.Width:= 1;
+        Canvas.Pen.Style:= psSolid;
+        Canvas.Pen.Color:= COL_AXIS;
+        if Main then
+          w:= 4
+        else
+          w:= 3;
+        if Hor then begin
+          Canvas.MoveTo(ax.Scale(Value), ay.Scale(xaxis) - w);
+          Canvas.LineTo(ax.Scale(Value), ay.Scale(xaxis) + 0);
+        end else begin
+          Canvas.MoveTo(ax.Scale(yaxis) - w, ay.Scale(Value));
+          Canvas.LineTo(ax.Scale(yaxis) + w, ay.Scale(Value));
+        end;
       end;
     end;
 
@@ -252,7 +304,7 @@ var
       a,b: Number;
       i: integer;
     begin
-      rng:= Max-Min;
+      rng:= (Max-Min)/2;
       rng:= Power(10, Ceil(Log10(rng)));
       for i:= high(divs) downto 0 do begin
         maindiv:= rng/divs[i];
@@ -261,31 +313,22 @@ var
       end;
       for i:= 0 to high(divs) do begin
         subdiv:= maindiv/divs[i];
-        if abs(Scale.Scale(0)-Scale.Scale(subdiv)) <= PixelHint then
+        if abs(Scale.Scale(0)-Scale.Scale(subdiv)) <= PixelHint/2 then
           break;
       end;
 
       a:= Floor(Min / maindiv) * maindiv;
-      while a < Max do begin
+      TickMark(TickH, a, true);
+      while a < Max+subdiv/10 do begin
         b:= a + maindiv;
-        if (b < Max) and (b > Min) then begin
-          if TickH then
-            HorizontalTickMark(b)
-          else
-            VerticalTickMark(b);
+        if (b < Max+subdiv/10) and (b > Min-subdiv/10) then begin
+          TickMark(TickH,b,true);
         end;
 
-        while a < b do begin
+        a:= a + subdiv;
+        while (a < b) and not IsZero(a-b) and (a < Max+subdiv/10) and (a > Min-subdiv/10) do begin
+          TickMark(TickH,a,false);
           a:= a + subdiv;
-          if (a < Max) and (a > Min) then begin
-            if TickH then begin
-              Canvas.MoveTo(ax.Scale(a), ay.Scale(xaxis) - 2);
-              Canvas.LineTo(ax.Scale(a), ay.Scale(xaxis) + 2);
-            end else begin
-              Canvas.MoveTo(ax.Scale(yaxis) - 2, ay.Scale(a));
-              Canvas.LineTo(ax.Scale(yaxis) + 2, ay.Scale(a));
-            end;
-          end;
         end;
         a:= b;
       end;
@@ -306,16 +349,18 @@ var
     else
       xaxis:= 0;
 
-    Canvas.Pen.Width:= 2;
-    Canvas.Pen.Color:= clBlack;
+    Canvas.Pen.Width:= 1;
+    Canvas.Pen.Color:= COL_AXIS;
     Canvas.Brush.Style:= bsClear;
+    Canvas.Font.Name:= 'Arial';
 
     Canvas.MoveTo(ax.Scale(yaxis), box.Top);
     Canvas.LineTo(ax.Scale(yaxis), box.Bottom);
-    PaintAxis(ay, FYMin, FYMax, 80, false);
-
     Canvas.MoveTo(box.Left, ay.Scale(xaxis));
     Canvas.LineTo(box.Right, ay.Scale(xaxis));
+
+    PaintAxis(ay, FYMin, FYMax, 80, false);
+
     PaintAxis(ax, FXMin, FXMax, 100,  true);
   end;
 
@@ -329,7 +374,7 @@ var
     gap:= true;
     nprev:= 0;
     aprev:= 0;
-    for x:= box.Left to box.Right - 1 do begin
+    for x:= ax.FFrameMin to ax.FFrameMax - 1 do begin
       a:= ax.Inverse(x);
       n:= ob.ValueAt(a);
       if ((ay is TLogScale) and ((n <= 0) or IsZero(n))) or
@@ -403,12 +448,16 @@ var
     py:= NaN;
     if ob.Lines<>lsNone then
       for j:= 0 to ob.List.Length - 1 do begin
-        if not GetXY(j) then continue;
+        if not GetXY(j) then begin
+          px:= nan;
+          py:= nan;
+          continue;
+        end;
 
         xx:= ax.Scale(x);
         yy:= ay.Scale(y);
 
-        if IsNan(px) then
+        if IsNan(px) or IsNan(py) then
           canvas.MoveTo(xx,yy)
         else begin
           Canvas.MoveTo(ax.Scale(px),ay.Scale(py));
@@ -605,6 +654,21 @@ begin
   finally
     emf.Free;
   end;
+end;
+
+procedure TGraphWindow.miGridClick(Sender: TObject);
+begin
+  miFineGrid.Enabled:= miGrid.Checked;
+  miFineGrid.Checked:= miFineGrid.Checked and miGrid.Checked;
+  PaintGraph(Buffer.Canvas, ClientRect);
+  Refresh;
+end;
+
+procedure TGraphWindow.miFineGridClick(Sender: TObject);
+begin
+  PaintGraph(Buffer.Canvas, ClientRect);
+  miGrid.Checked:= miGrid.Checked or miFineGrid.Checked;
+  Refresh;
 end;
 
 end.

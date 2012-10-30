@@ -51,6 +51,19 @@ object GraphWindow: TGraphWindow
         OnClick = miLegendChange
       end
     end
+    object miGrid: TMenuItem
+      AutoCheck = True
+      Caption = 'Show Grid'
+      OnClick = miGridClick
+    end
+    object miFineGrid: TMenuItem
+      AutoCheck = True
+      Caption = 'Show Fine Grid'
+      OnClick = miFineGridClick
+    end
+    object N2: TMenuItem
+      Caption = '-'
+    end
     object miCopyEMF: TMenuItem
       Caption = 'Copy EMF'
       OnClick = miCopyEMFClick
