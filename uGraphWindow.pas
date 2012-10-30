@@ -230,20 +230,6 @@ var
       end;
     end;
 
-    procedure VerticalAxis(Start: Number; PixelHint: integer);
-    var
-      a,b,c: Number;
-    begin
-      a:= Start;
-      while (a >= FYMin) and (a <= FYMax) do begin
-        VerticalTickMark(a);
-        b:= ay.Inverse(ay.Scale(a) + PixelHint);
-        c:= b-a;
-        b:= RoundStep(c);
-        a:= a + b;
-      end;
-    end;
-
     procedure HorizontalTickMark(atX: Number);
     var
       l: string;
@@ -258,17 +244,50 @@ var
       end;
     end;
 
-    procedure HorizontalAxis(Start: Number; PixelHint: integer);
+    procedure PaintAxis(Scale: TScale; Min, Max: Number; PixelHint: integer; TickH: boolean);
+    const
+      divs:array[0..3] of integer = (2,4,5,10);
     var
-      a,b,c: Number;
+      rng,maindiv,subdiv: Number;
+      a,b: Number;
+      i: integer;
     begin
-      a:= Start;
-      while (a >= FXMin) and (a <= FXMax) do begin
-        HorizontalTickMark(a);
-        b:= ax.Inverse(ax.Scale(a) + PixelHint);
-        c:= b-a;
-        b:= RoundStep(c);
-        a:= a + b;
+      rng:= Max-Min;
+      rng:= Power(10, Ceil(Log10(rng)));
+      for i:= high(divs) downto 0 do begin
+        maindiv:= rng/divs[i];
+        if abs(Scale.Scale(0)-Scale.Scale(maindiv)) > PixelHint then
+          break;
+      end;
+      for i:= 0 to high(divs) do begin
+        subdiv:= maindiv/divs[i];
+        if abs(Scale.Scale(0)-Scale.Scale(subdiv)) <= PixelHint then
+          break;
+      end;
+
+      a:= Floor(Min / maindiv) * maindiv;
+      while a < Max do begin
+        b:= a + maindiv;
+        if (b < Max) and (b > Min) then begin
+          if TickH then
+            HorizontalTickMark(b)
+          else
+            VerticalTickMark(b);
+        end;
+
+        while a < b do begin
+          a:= a + subdiv;
+          if (a < Max) and (a > Min) then begin
+            if TickH then begin
+              Canvas.MoveTo(ax.Scale(a), ay.Scale(xaxis) - 2);
+              Canvas.LineTo(ax.Scale(a), ay.Scale(xaxis) + 2);
+            end else begin
+              Canvas.MoveTo(ax.Scale(yaxis) - 2, ay.Scale(a));
+              Canvas.LineTo(ax.Scale(yaxis) + 2, ay.Scale(a));
+            end;
+          end;
+        end;
+        a:= b;
       end;
     end;
 
@@ -293,13 +312,11 @@ var
 
     Canvas.MoveTo(ax.Scale(yaxis), box.Top);
     Canvas.LineTo(ax.Scale(yaxis), box.Bottom);
-    VerticalAxis(Max(0, FYMin),-80);
-    VerticalAxis(Min(0, FYMax),80);
+    PaintAxis(ay, FYMin, FYMax, 80, false);
 
     Canvas.MoveTo(box.Left, ay.Scale(xaxis));
     Canvas.LineTo(box.Right, ay.Scale(xaxis));
-    HorizontalAxis(Max(0, FXMin),100);
-    HorizontalAxis(Min(0, FXMax),-100);
+    PaintAxis(ax, FXMin, FXMax, 100,  true);
   end;
 
   procedure DrawFunction_Plot(ob: TPlot);
