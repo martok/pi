@@ -190,14 +190,14 @@ begin
     axes:= Options.Value['Axes'].GetString;
     a:= Copy(LowerCase(axes), 1, 3);
     b:= Copy(LowerCase(axes), 4, 3);
-    if a = 'lin' then
-      gr.XScale:= smLin
-    else if a = 'log' then
-      gr.XScale:= smLog;
-    if b = 'lin' then
-      gr.YScale:= smLin
-    else if b = 'log' then
-      gr.YScale:= smLog;
+    i:= GetEnumValue(TypeInfo(TScaleMode),'sm'+a);
+    if i<0 then
+      raise EMathSysError.Create('Invalid Axis Mode: '+a);
+    gr.XScale:= TScaleMode(i);
+    i:= GetEnumValue(TypeInfo(TScaleMode),'sm'+b);
+    if i<0 then
+      raise EMathSysError.Create('Invalid Axis Mode: '+b);
+    gr.YScale:= TScaleMode(i);
   end else begin
     gr.XScale:= smLin;
     gr.YScale:= smLin;

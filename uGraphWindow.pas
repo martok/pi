@@ -57,6 +57,7 @@ type
     constructor Create(AMinVal, AMaxVal: Number; AFrameMin, AFrameMax: integer);
     function Scale(Value: Number): integer; virtual; abstract;
     function Inverse(Pixel: integer): Number; virtual; abstract;
+    function AxisLabel(p: Number): string; virtual;
   end;
 
   TLinScale = class(TScale)
@@ -96,6 +97,11 @@ var
 {$R *.dfm}
 
 { TScale }
+
+function TScale.AxisLabel(p: Number): string;
+begin
+  Result:= FloatToStrF(p, ffGeneral, 4, 0, NeutralFormatSettings);
+end;
 
 constructor TScale.Create(AMinVal, AMaxVal: Number; AFrameMin, AFrameMax: integer);
 begin
@@ -210,11 +216,6 @@ var
   gap: boolean;
   clipr: HRGN;
 
-  function AxisLabel(p: Number): string;
-  begin
-    Result:= FloatToStrF(p, ffGeneral, 4, 0, NeutralFormatSettings);
-  end;
-
   procedure Axes;
 
     function RoundStep(st:Number): Number;
@@ -235,18 +236,22 @@ var
       w: integer;
     begin
       if not IsZero(Value) then begin
-        l:= AxisLabel(Value);
+        if Hor then
+          l:= ax.AxisLabel(Value)
+        else
+          l:= ay.AxisLabel(Value);
         ts:= Canvas.TextExtent(l);
 
         if Hor then begin
           if miGrid.Checked then
-           Canvas.TextOut(ax.Scale(Value) + 4, ay.Scale(xaxis) + 1, l)
+            Canvas.TextOut(ax.Scale(Value) + 4, ay.Scale(xaxis) + 1, l)
           else
-           Canvas.TextOut(ax.Scale(Value) - ts.cx div 2, ay.Scale(xaxis) + 1, l);
+            Canvas.TextOut(ax.Scale(Value) - ts.cx div 2, ay.Scale(xaxis) + 1, l);
         end else begin
-          w:= ax.Scale(yaxis) - ts.cx - 4;
-          if w <= box.Left then
-            w:= ax.Scale(yaxis) + 5;
+          if ax.Scale(yaxis)-50 <= box.Left then
+            w:= ax.Scale(yaxis) + 5
+          else
+            w:= ax.Scale(yaxis) - ts.cx - 4;
           if miGrid.Checked then
             Canvas.TextOut(w, ay.Scale(Value) - ts.cy + 2, l)
           else
@@ -359,9 +364,9 @@ var
     Canvas.MoveTo(box.Left, ay.Scale(xaxis));
     Canvas.LineTo(box.Right, ay.Scale(xaxis));
 
-    PaintAxis(ay, FYMin, FYMax, 80, false);
+    PaintAxis(ay, ay.FMinVal, ay.FMaxVal, 80, false);
 
-    PaintAxis(ax, FXMin, FXMax, 100,  true);
+    PaintAxis(ax, ax.FMinVal, ax.FMaxVal, 100, true);
   end;
 
   procedure DrawFunction_Plot(ob: TPlot);
@@ -609,14 +614,14 @@ begin
   Canvas.Pen.Color:= clBlack;
   Canvas.Pen.Width:= 1;
   Canvas.Rectangle(box);
-  if FXScale = smLog then
-    ax:= TLogScale.Create(FXMin, FXMax, box.Left + 10, box.Right - 10)
-  else
-    ax:= TLinScale.Create(FXMin, FXMax, box.Left + 10, box.Right - 10);
-  if FYScale = smLog then
-    ay:= TLogScale.Create(FYMin, FYMax, box.Bottom - 10, box.Top + 10)
-  else
-    ay:= TLinScale.Create(FYMin, FYMax, box.Bottom - 10, box.Top + 10);
+  case FXScale of
+    smLog: ax:= TLogScale.Create(FXMin, FXMax, box.Left + 10, box.Right - 10);
+    smLin: ax:= TLinScale.Create(FXMin, FXMax, box.Left + 10, box.Right - 10);
+  end;
+  case FYScale of
+    smLog: ay:= TLogScale.Create(FYMin, FYMax, box.Bottom - 10, box.Top + 10);
+    smLin: ay:= TLinScale.Create(FYMin, FYMax, box.Bottom - 10, box.Top + 10);
+  end;
   try
     Graphs;
     Axes;
