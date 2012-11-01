@@ -61,6 +61,7 @@ type
     function L_N(Context: TContext; args: TExprList): IValue;
     function Range_3(Context: TContext; args: TExprList): IValue;
     function Each_3(Context: TContext; args: TExprList): IValue;
+    function Hold_1(Context: TContext; args: TExprList): IValue;
     function Flatten_1(Context: TContext; args: TExprList): IValue;
     function Aggregate_5(Context: TContext; args: TExprList): IValue;
     function Merge_2(Context: TContext; args: TExprList): IValue;
@@ -435,19 +436,44 @@ begin
   end;
 end;
 
-function TPackageLists.Flatten_1(Context: TContext; args: TExprList): IValue;
+function TPackageLists.Hold_1(Context: TContext; args: TExprList): IValue;
 var
   list: IValueList;
   i: integer;
   res: IValueList;
 begin
   if not Supports(args[0].Evaluate(Context), IValueList, list) then
-    raise EMathSysError.Create('Function Flatten requires a list to work on');
+    raise EMathSysError.Create('Function Hold requires a list to work on');
 
   res:= TValueFixedList.Create;
   res.Length:= list.Length;
   for i:= 0 to list.length - 1 do
     res.ListItem[i]:= list.ListItem[i];
+  Result:= res as IValue;
+end;
+
+function TPackageLists.Flatten_1(Context: TContext; args: TExprList): IValue;
+var
+  list, it: IValueList;
+  i, j: integer;
+  res: IValueList;
+begin
+  if not Supports(args[0].Evaluate(Context), IValueList, list) then
+    raise EMathSysError.Create('Function Flatten requires a list to work on');
+
+  res:= TValueFixedList.Create;
+  res.Length:= 0;
+  for i:= 0 to list.length - 1 do begin
+    if Supports(list.ListItem[i], IValueList, it) then begin
+      for j:= 0 to it.Length-1 do begin
+        res.Length:= res.Length+1;
+        res.ListItem[res.Length-1]:= it.ListItem[j];
+      end;
+    end else begin
+      res.Length:= res.Length+1;
+      res.ListItem[res.Length-1]:= list.ListItem[i];
+    end;
+  end;
   Result:= res as IValue;
 end;
 
@@ -687,7 +713,7 @@ begin
       l:= a.ListItem[i].GetString;
       inc(total);
     end;
-    Context.System.Output.Hint(l, []);
+    Context.System.Output.Hint('%s', [l]);
   end;
   Result:= TValue.Create(total);
 end;
