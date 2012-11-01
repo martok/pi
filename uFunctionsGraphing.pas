@@ -13,7 +13,9 @@ type
   private
     FSize: Single;
     FColor: TColor;
+    FCaption: String;
     FContext: TContext;
+    function GetCaption: string;
   protected
     procedure PlotOptions(D: TDynamicArguments); virtual;
   public
@@ -24,6 +26,7 @@ type
     property Context: TContext read FContext;
     property Color: TColor read FColor;
     property Size: Single read FSize;
+    property Caption: string read GetCaption;
   end;
 
   TPlot = class(TPlotBase)
@@ -261,6 +264,7 @@ begin
   inherited;
   FSize:= 1;
   FColor:= Random($FFFFFF);
+  FCaption:= '';
 end;
 
 destructor TPlotBase.Destroy;
@@ -269,12 +273,22 @@ begin
   inherited;
 end;
 
+function TPlotBase.GetCaption: string;
+begin
+  if FCaption>'' then
+    Result:= FCaption
+  else
+    Result:= GetLegend;
+end;
+
 procedure TPlotBase.PlotOptions(D: TDynamicArguments);
 begin
   if D.IsSet('Color') then
     FColor:= StringToColor(D.Value['Color'].GetString);
   if D.IsSet('Size') then
     FSize:= D.Value['Size'].GetNumber;
+  if D.IsSet('Caption') then
+    FCaption:= D.Value['Caption'].GetString;
 end;
 
 { TPlot }

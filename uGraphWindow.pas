@@ -627,7 +627,7 @@ var
         Canvas.Pen.Width:= 5;
         Canvas.MoveTo(leg.Left+5, y);
         Canvas.LineTo(leg.Left+25, y);
-        s:= TPlot(ob).GetLegend;
+        s:= TPlot(ob).Caption;
         ts:= Canvas.TextExtent(s);
         Canvas.TextOut(leg.Left+40, y - ts.cy div 2, s);
         inc(y, ts.cy + ts.cy div 2);
