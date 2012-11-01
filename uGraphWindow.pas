@@ -355,7 +355,8 @@ var
       end;
 
       a:= Floor(Min / maindiv) * maindiv;
-      TickMark(TickH, a, true);
+      if (a > Min-subdiv/10) then
+        TickMark(TickH, a, true);
       while a < Max+subdiv/10 do begin
         b:= a + maindiv;
         if (b < Max+subdiv/10) and (b > Min-subdiv/10) then begin
@@ -363,8 +364,9 @@ var
         end;
 
         a:= a + subdiv;
-        while (a < b) and not IsZero(a-b) and (a < Max+subdiv/10) and (a > Min-subdiv/10) do begin
-          TickMark(TickH,a,false);
+        while (a < b) and not IsZero(a-b) and (a < Max+subdiv/10) do begin
+          if (a > Min-subdiv/10) then
+            TickMark(TickH,a,false);
           a:= a + subdiv;
         end;
         a:= b;
