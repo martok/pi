@@ -19,6 +19,7 @@ type
     N2: TMenuItem;
     miGrid: TMenuItem;
     miFineGrid: TMenuItem;
+    miResetZoom: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormPaint(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -27,12 +28,22 @@ type
     procedure miCopyEMFClick(Sender: TObject);
     procedure miGridClick(Sender: TObject);
     procedure miFineGridClick(Sender: TObject);
+    procedure FormMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+    procedure FormMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure miResetZoomClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
   private
     { Private-Deklarationen }
     FPlots: array of IValueObject;
     FXMin, FXMax, FYMin, FYMax: Number;
+    FSXMin, FSXMax, FSYMin, FSYMax: Number;
     FXScale, FYScale: TScaleMode;
     Buffer: TBitmap;
+    FZooming: boolean;
+    FZoomRect: TRect;
     procedure PaintGraph(Canvas: TCanvas; DrawRect: TRect);
   public
     { Public-Deklarationen }
@@ -55,6 +66,7 @@ type
     procedure Init; virtual;
   public
     constructor Create(AMinVal, AMaxVal: Number; AFrameMin, AFrameMax: integer);
+    class function FromMode(Mode: TScaleMode; AMinVal, AMaxVal: Number; AFrameMin, AFrameMax: integer):TScale;
     function Scale(Value: Number): integer; virtual; abstract;
     function Inverse(Pixel: integer): Number; virtual; abstract;
     function AxisLabel(p: Number): string; virtual;
@@ -111,6 +123,15 @@ begin
   FFrameMin:= AFrameMin;
   FFrameMax:= AFrameMax;
   Init;
+end;
+
+class function TScale.FromMode(Mode: TScaleMode; AMinVal, AMaxVal: Number;AFrameMin, AFrameMax: integer): TScale;
+begin
+  Result:= nil;
+  case Mode of
+    smLin: Result:= TLinScale.Create(AMinVal, AMaxVal,AFrameMin, AFrameMax);
+    smLog: Result:= TLogScale.Create(AMinVal, AMaxVal,AFrameMin, AFrameMax);
+  end;
 end;
 
 procedure TScale.Init;
@@ -178,6 +199,10 @@ begin
   DoubleBuffered:= true;
   Buffer:= TBitmap.Create;
   miGrid.Checked:= True;
+  FSXMin:= NAN;
+  FSXMax:= NAN;
+  FSYMin:= NAN;
+  FSYMax:= NAN;
 end;
 
 destructor TGraphWindow.Destroy;
@@ -198,6 +223,13 @@ end;
 procedure TGraphWindow.FormPaint(Sender: TObject);
 begin
   Canvas.Draw(0,0,Buffer);
+  if FZooming then begin
+    Canvas.Pen.Style:= psDashDot;
+    Canvas.Pen.Width:= 1;
+    Canvas.Pen.Color:= clHighlight;
+    Canvas.Brush.Style:= bsClear;
+    Canvas.Rectangle(FZoomRect);
+  end;
 end;
 
 procedure TGraphWindow.FormResize(Sender: TObject);
@@ -614,14 +646,8 @@ begin
   Canvas.Pen.Color:= clBlack;
   Canvas.Pen.Width:= 1;
   Canvas.Rectangle(box);
-  case FXScale of
-    smLog: ax:= TLogScale.Create(FXMin, FXMax, box.Left + 10, box.Right - 10);
-    smLin: ax:= TLinScale.Create(FXMin, FXMax, box.Left + 10, box.Right - 10);
-  end;
-  case FYScale of
-    smLog: ay:= TLogScale.Create(FYMin, FYMax, box.Bottom - 10, box.Top + 10);
-    smLin: ay:= TLinScale.Create(FYMin, FYMax, box.Bottom - 10, box.Top + 10);
-  end;
+  ax:= TScale.FromMode(FXScale, FXMin, FXMax, box.Left + 10, box.Right - 10);
+  ay:= TScale.FromMode(FYScale, FYMin, FYMax, box.Bottom - 10, box.Top + 10);
   try
     Graphs;
     Axes;
@@ -673,6 +699,81 @@ procedure TGraphWindow.miFineGridClick(Sender: TObject);
 begin
   PaintGraph(Buffer.Canvas, ClientRect);
   miGrid.Checked:= miGrid.Checked or miFineGrid.Checked;
+  Refresh;
+end;
+
+procedure TGraphWindow.FormMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  if Button=mbLeft then begin
+    FZooming:= True;
+    FZoomRect.TopLeft:= Point(X,Y);
+  end;
+end;
+
+procedure TGraphWindow.FormMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+  procedure ZoomIn;
+  var
+    box: TRect;
+    ax,ay: TScale;
+  begin
+    box:= ClientRect;
+    InflateRect(box, -10, -10);
+    ax:= TScale.FromMode(FXScale, FXMin, FXMax, box.Left + 10, box.Right - 10);
+    ay:= TScale.FromMode(FYScale, FYMin, FYMax, box.Bottom - 10, box.Top + 10);
+    try
+      FZoomRect:= Rect(
+        Min(FZoomRect.Left, FZoomRect.Right),
+        Min(FZoomRect.Top, FZoomRect.Bottom),
+        Max(FZoomRect.Left, FZoomRect.Right),
+        Max(FZoomRect.Top, FZoomRect.Bottom)
+      );
+      FXMin:= ax.Inverse(FZoomRect.Left);
+      FXMax:= ax.Inverse(FZoomRect.Right);
+      FYMax:= ay.Inverse(FZoomRect.Top);
+      FYMin:= ay.Inverse(FZoomRect.Bottom);
+      PaintGraph(Buffer.Canvas, ClientRect);
+    finally
+      FreeAndNil(ax);
+      FreeAndNil(ay);
+    end;
+  end;
+begin
+  if FZooming then begin
+    FZooming:= False;
+    FZoomRect.BottomRight:= Point(X,Y);
+    if (FZoomRect.Left<>FZoomRect.Right) and (FZoomRect.Top<>FZoomRect.Bottom) then
+      ZoomIn;
+    Refresh;
+  end;
+end;
+
+procedure TGraphWindow.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+begin
+  if FZooming then begin
+    FZoomRect.BottomRight:= Point(X,Y);
+    Refresh;
+  end;
+end;
+
+procedure TGraphWindow.FormShow(Sender: TObject);
+begin
+  if IsNaN(FSXMin) then begin
+    FSXMin:= FXMin;
+    FSXMax:= FXMax;
+    FSYMin:= FYMin;
+    FSYMax:= FYMax;
+  end;
+end;
+
+procedure TGraphWindow.miResetZoomClick(Sender: TObject);
+begin
+  FXMin:= FSXMin;
+  FXMax:= FSXMax;
+  FYMin:= FSYMin;
+  FYMax:= FSYMax;
+  PaintGraph(Buffer.Canvas, ClientRect);
   Refresh;
 end;
 

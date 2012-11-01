@@ -15,8 +15,12 @@ object GraphWindow: TGraphWindow
   Position = poDefault
   OnClose = FormClose
   OnCreate = FormCreate
+  OnMouseDown = FormMouseDown
+  OnMouseMove = FormMouseMove
+  OnMouseUp = FormMouseUp
   OnPaint = FormPaint
   OnResize = FormResize
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 14
   object pmGraph: TPopupMenu
@@ -60,6 +64,10 @@ object GraphWindow: TGraphWindow
       AutoCheck = True
       Caption = 'Show Fine Grid'
       OnClick = miFineGridClick
+    end
+    object miResetZoom: TMenuItem
+      Caption = 'Reset Zoom'
+      OnClick = miResetZoomClick
     end
     object N2: TMenuItem
       Caption = '-'
