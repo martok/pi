@@ -816,7 +816,8 @@ var
         end;
     end;
 
-    procedure ProcessBraces(const Open, Close: TTokenKind; const Str: string; SetTo: TTokenKind = tokVoid);
+    procedure ProcessBraces(const Open, Close: TTokenKind; const Str: string;
+                    SetTo: TTokenKind = tokVoid; IfEmpty: TTokenKind = tokEmpty);
     var
       i: integer;
     begin
@@ -828,7 +829,7 @@ var
           else if Tokens[i].Kind = Close then begin
             if A >= 0 then begin
               if A = I - 1 then begin
-                Tokens[A].Kind:= tokEmpty;
+                Tokens[A].Kind:= IfEmpty;
               end else begin
                 Fold(A + 1, I - 1);
                 Tokens[A].Kind:= SetTo;
@@ -850,7 +851,7 @@ var
       exit;
 
     //then subcontexts
-    ProcessBraces(tokListOpen, tokListClose, '{}', tokList);
+    ProcessBraces(tokListOpen, tokListClose, '{}', tokList, tokList);
     //collapse braces first
     ProcessBraces(tokBraceOpen, tokBraceClose, '()');
     //then subcontexts
@@ -900,12 +901,15 @@ var
             Tokens[i].Kind:= tokExpression;
             tmp:= TE_FunctionCall.Create('L');
             A:= NextR(i);
-            if Tokens[A].Kind = tokEmpty then
-              TE_FunctionCall(tmp.GetObject).Arguments:= nil
-            else
-              TE_FunctionCall(tmp.GetObject).Arguments:= Tokens[A].Expr;
-            Tokens[A].Expr:= nil;
-            Tokens[a].Kind:= tokVoid;
+            if A >= 0 then begin
+              if Tokens[A].Kind = tokEmpty then
+                TE_FunctionCall(tmp.GetObject).Arguments:= nil
+              else
+                TE_FunctionCall(tmp.GetObject).Arguments:= Tokens[A].Expr;
+              Tokens[A].Expr:= nil;
+              Tokens[A].Kind:= tokVoid;
+            end else
+              TE_FunctionCall(tmp.GetObject).Arguments:= nil;
             Tokens[i].Expr:= tmp;
           end;
       end;
