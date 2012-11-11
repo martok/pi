@@ -65,6 +65,12 @@ object GraphWindow: TGraphWindow
     object N3: TMenuItem
       Caption = '-'
     end
+    object miToolRead: TMenuItem
+      Caption = 'Read Value'
+      GroupIndex = 2
+      RadioItem = True
+      OnClick = miToolReadClick
+    end
     object miToolZoom: TMenuItem
       Caption = 'Zoom'
       Checked = True

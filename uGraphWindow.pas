@@ -8,7 +8,7 @@ uses
 
 type
   TScaleMode = (smLin, smLog);
-  TInteractMode = (imNone, imZoom, imDrag);
+  TInteractMode = (imNone, imRead, imZoom, imDrag);
 
   TGraphWindow = class(TForm)
     pmGraph: TPopupMenu;
@@ -25,6 +25,7 @@ type
     N3: TMenuItem;
     miToolZoom: TMenuItem;
     miToolPan: TMenuItem;
+    miToolRead: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormPaint(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -42,6 +43,7 @@ type
     procedure FormShow(Sender: TObject);
     procedure miToolZoomClick(Sender: TObject);
     procedure miToolPanClick(Sender: TObject);
+    procedure miToolReadClick(Sender: TObject);
   private
     { Private-Deklarationen }
     FPlots: array of IValueObject;
@@ -226,6 +228,7 @@ begin
   FSYMax:= NAN;
   FInteract:= imNone;
   FNextInteract:= imZoom;
+  miToolRead.Click;
 end;
 
 destructor TGraphWindow.Destroy;
@@ -244,9 +247,51 @@ begin
 end;
 
 procedure TGraphWindow.FormPaint(Sender: TObject);
+var
+  box,tr: TRect;
+  ax,ay: TScale;
+  vx,vy: Number;
+  s: string;
+  ts: TSize;
 begin
   Canvas.Draw(0,0,Buffer);
   case FInteract of
+    imRead: begin
+      box:= ClientRect;
+      InflateRect(box, -10, -10);
+      ax:= TScale.FromMode(FXScale, FXMin, FXMax, box.Left + 10, box.Right - 10);
+      ay:= TScale.FromMode(FYScale, FYMin, FYMax, box.Bottom - 10, box.Top + 10);
+      try
+        //draw crosshairs
+        Canvas.Pen.Style:= psDashDot;
+        Canvas.Pen.Width:= 1;
+        Canvas.Pen.Color:= clHighlight;
+        Canvas.Brush.Style:= bsClear;
+        Canvas.MoveTo(FZoomRect.Right, box.Top);   Canvas.LineTo(FZoomRect.Right, box.Bottom);
+        Canvas.MoveTo(box.Left, FZoomRect.Bottom); Canvas.LineTo(box.Right, FZoomRect.Bottom);
+        //format label
+        vx:= ax.Inverse(FZoomRect.Right);
+        vy:= ay.Inverse(FZoomRect.Bottom);
+        s:= ax.AxisLabel(vx)+'  '+ay.AxisLabel(vy);
+        ts:= Canvas.TextExtent(s);
+        tr:= Bounds(FZoomRect.Right, FZoomRect.Bottom, ts.cx+6, ts.cy+4);
+        //needs wrapping around?
+        if tr.Right>box.Right then
+          OffsetRect(tr, -(tr.Right-tr.Left), 0);
+        if tr.Bottom>box.Bottom then
+          OffsetRect(tr, 0, -(tr.Bottom-tr.Top));
+        //draw framed text
+        Canvas.Brush.Color:= clWhite;
+        Canvas.Brush.Style:= bsSolid;
+        Canvas.Pen.Color:= clBlack;
+        Canvas.Pen.Style:= psSolid;
+        Canvas.Rectangle(tr);
+        Canvas.TextOut(tr.Left+3, tr.Top+2, s);
+      finally
+        FreeAndNil(ax);
+        FreeAndNil(ay);
+      end;
+    end;
     imZoom: begin
       Canvas.Pen.Style:= psDashDot;
       Canvas.Pen.Width:= 1;
@@ -261,9 +306,9 @@ begin
       Canvas.Brush.Style:= bsClear;
       Canvas.MoveTo(FZoomRect.Left, FZoomRect.Top);
       Canvas.LineTo(FZoomRect.Right, FZoomRect.Bottom);
-      Canvas.Brush.Style:= bsSolid;
       Canvas.Brush.Color:= Canvas.Pen.Color;
-      ArrowHead(Canvas,FZoomRect.TopLeft, FZoomRect.BottomRight, 10, 45);
+      Canvas.Brush.Style:= bsSolid;
+      ArrowHead(Canvas,FZoomRect.TopLeft, FZoomRect.BottomRight, 8, 45*pi/180);
     end;
   end;
 end;
@@ -748,6 +793,8 @@ begin
     if Button = mbLeft then begin
       FInteract:= FNextInteract;
       FZoomRect.TopLeft:= Point(X,Y);
+      FZoomRect.BottomRight:= FZoomRect.TopLeft;
+      Refresh;
     end;
   end;
 end;
@@ -797,6 +844,7 @@ begin
   ay:= TScale.FromMode(FYScale, FYMin, FYMax, box.Bottom - 10, box.Top + 10);
   try
     case FInteract of
+      imRead: ;
       imZoom: begin
         FZoomRect.BottomRight:= Point(X,Y);
         if (FZoomRect.Left<>FZoomRect.Right) and (FZoomRect.Top<>FZoomRect.Bottom) then
@@ -818,10 +866,8 @@ end;
 procedure TGraphWindow.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 begin
   case FInteract of
-    imZoom: begin
-      FZoomRect.BottomRight:= Point(X,Y);
-      Refresh;
-    end;
+    imRead,
+    imZoom,
     imDrag: begin
       FZoomRect.BottomRight:= Point(X,Y);
       Refresh;
@@ -849,16 +895,25 @@ begin
   Refresh;
 end;
 
+procedure TGraphWindow.miToolReadClick(Sender: TObject);
+begin
+  TMenuItem(Sender).Checked:= true;
+  FNextInteract:= imRead;
+  Cursor:= crCross;
+end;
+
 procedure TGraphWindow.miToolZoomClick(Sender: TObject);
 begin
   TMenuItem(Sender).Checked:= true;
   FNextInteract:= imZoom;
+  Cursor:= crCross;
 end;
 
 procedure TGraphWindow.miToolPanClick(Sender: TObject);
 begin
   TMenuItem(Sender).Checked:= true;
   FNextInteract:= imDrag;
+  Cursor:= crHandPoint;
 end;
 
 end.
