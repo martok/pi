@@ -29,7 +29,6 @@ object GraphWindow: TGraphWindow
     object miLegend: TMenuItem
       Caption = 'Show Legend'
       object miLegendNone: TMenuItem
-        AutoCheck = True
         Caption = 'None'
         Checked = True
         GroupIndex = 1
@@ -41,14 +40,12 @@ object GraphWindow: TGraphWindow
         GroupIndex = 1
       end
       object miLegendTop: TMenuItem
-        AutoCheck = True
         Caption = 'Top'
         GroupIndex = 1
         RadioItem = True
         OnClick = miLegendChange
       end
       object miLegendBottom: TMenuItem
-        AutoCheck = True
         Caption = 'Bottom'
         GroupIndex = 1
         RadioItem = True
@@ -65,15 +62,34 @@ object GraphWindow: TGraphWindow
       Caption = 'Show Fine Grid'
       OnClick = miFineGridClick
     end
-    object miResetZoom: TMenuItem
-      Caption = 'Reset Zoom'
-      OnClick = miResetZoomClick
+    object N3: TMenuItem
+      Caption = '-'
+    end
+    object miToolZoom: TMenuItem
+      Caption = 'Zoom'
+      Checked = True
+      GroupIndex = 2
+      RadioItem = True
+      OnClick = miToolZoomClick
+    end
+    object miToolPan: TMenuItem
+      Caption = 'Pan'
+      GroupIndex = 2
+      RadioItem = True
+      OnClick = miToolPanClick
+    end
+    object miResetView: TMenuItem
+      Caption = 'Reset View'
+      GroupIndex = 2
+      OnClick = miResetViewClick
     end
     object N2: TMenuItem
       Caption = '-'
+      GroupIndex = 2
     end
     object miCopyEMF: TMenuItem
       Caption = 'Copy EMF'
+      GroupIndex = 2
       OnClick = miCopyEMFClick
     end
   end

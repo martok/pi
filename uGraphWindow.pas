@@ -8,6 +8,8 @@ uses
 
 type
   TScaleMode = (smLin, smLog);
+  TInteractMode = (imNone, imZoom, imDrag);
+
   TGraphWindow = class(TForm)
     pmGraph: TPopupMenu;
     miLegend: TMenuItem;
@@ -19,7 +21,10 @@ type
     N2: TMenuItem;
     miGrid: TMenuItem;
     miFineGrid: TMenuItem;
-    miResetZoom: TMenuItem;
+    miResetView: TMenuItem;
+    N3: TMenuItem;
+    miToolZoom: TMenuItem;
+    miToolPan: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormPaint(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -33,8 +38,10 @@ type
     procedure FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure FormMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
-    procedure miResetZoomClick(Sender: TObject);
+    procedure miResetViewClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure miToolZoomClick(Sender: TObject);
+    procedure miToolPanClick(Sender: TObject);
   private
     { Private-Deklarationen }
     FPlots: array of IValueObject;
@@ -42,7 +49,8 @@ type
     FSXMin, FSXMax, FSYMin, FSYMax: Number;
     FXScale, FYScale: TScaleMode;
     Buffer: TBitmap;
-    FZooming: boolean;
+    FInteract: TInteractMode;
+    FNextInteract: TInteractMode;
     FZoomRect: TRect;
     procedure PaintGraph(Canvas: TCanvas; DrawRect: TRect);
   public
@@ -107,6 +115,19 @@ var
   Graphs_Counter :integer = 0;
 
 {$R *.dfm}
+
+procedure ArrowHead(Canvas: TCanvas; LineFrom, LineTo: TPoint; Width: integer; AngleRad: double);
+var
+  LineDir,len: double;
+  Poly: array[0..2] of TPoint;
+begin
+  LineDir:= ArcTan2(LineTo.Y-LineFrom.Y, LineTo.X-LineFrom.X);
+  len:= (Width/2) / Sin(AngleRad/2);
+  Poly[0]:= LineTo;
+  Poly[1]:= Point(round(LineTo.X - Cos(LineDir+AngleRad/2)*len), round(LineTo.Y - Sin(LineDir+AngleRad/2)*len));
+  Poly[2]:= Point(round(LineTo.X - Cos(LineDir-AngleRad/2)*len), round(LineTo.Y - Sin(LineDir-AngleRad/2)*len));
+  Canvas.Polygon(Poly);
+end;
 
 { TScale }
 
@@ -203,6 +224,8 @@ begin
   FSXMax:= NAN;
   FSYMin:= NAN;
   FSYMax:= NAN;
+  FInteract:= imNone;
+  FNextInteract:= imZoom;
 end;
 
 destructor TGraphWindow.Destroy;
@@ -223,12 +246,25 @@ end;
 procedure TGraphWindow.FormPaint(Sender: TObject);
 begin
   Canvas.Draw(0,0,Buffer);
-  if FZooming then begin
-    Canvas.Pen.Style:= psDashDot;
-    Canvas.Pen.Width:= 1;
-    Canvas.Pen.Color:= clHighlight;
-    Canvas.Brush.Style:= bsClear;
-    Canvas.Rectangle(FZoomRect);
+  case FInteract of
+    imZoom: begin
+      Canvas.Pen.Style:= psDashDot;
+      Canvas.Pen.Width:= 1;
+      Canvas.Pen.Color:= clHighlight;
+      Canvas.Brush.Style:= bsClear;
+      Canvas.Rectangle(FZoomRect);
+    end;
+    imDrag: begin
+      Canvas.Pen.Style:= psDashDot;
+      Canvas.Pen.Width:= 1;
+      Canvas.Pen.Color:= clHighlight;
+      Canvas.Brush.Style:= bsClear;
+      Canvas.MoveTo(FZoomRect.Left, FZoomRect.Top);
+      Canvas.LineTo(FZoomRect.Right, FZoomRect.Bottom);
+      Canvas.Brush.Style:= bsSolid;
+      Canvas.Brush.Color:= Canvas.Pen.Color;
+      ArrowHead(Canvas,FZoomRect.TopLeft, FZoomRect.BottomRight, 10, 45);
+    end;
   end;
 end;
 
@@ -663,6 +699,7 @@ end;
 
 procedure TGraphWindow.miLegendChange(Sender: TObject);
 begin
+  TMenuItem(Sender).Checked:= true;
   PaintGraph(Buffer.Canvas, ClientRect);
   Refresh;
 end;
@@ -707,55 +744,88 @@ end;
 procedure TGraphWindow.FormMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-  if Button=mbLeft then begin
-    FZooming:= True;
-    FZoomRect.TopLeft:= Point(X,Y);
+  if FInteract = imNone then begin
+    if Button = mbLeft then begin
+      FInteract:= FNextInteract;
+      FZoomRect.TopLeft:= Point(X,Y);
+    end;
   end;
 end;
 
-procedure TGraphWindow.FormMouseUp(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
+procedure TGraphWindow.FormMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  box: TRect;
+  ax,ay: TScale;
+
   procedure ZoomIn;
-  var
-    box: TRect;
-    ax,ay: TScale;
   begin
-    box:= ClientRect;
-    InflateRect(box, -10, -10);
-    ax:= TScale.FromMode(FXScale, FXMin, FXMax, box.Left + 10, box.Right - 10);
-    ay:= TScale.FromMode(FYScale, FYMin, FYMax, box.Bottom - 10, box.Top + 10);
-    try
-      FZoomRect:= Rect(
-        Min(FZoomRect.Left, FZoomRect.Right),
-        Min(FZoomRect.Top, FZoomRect.Bottom),
-        Max(FZoomRect.Left, FZoomRect.Right),
-        Max(FZoomRect.Top, FZoomRect.Bottom)
-      );
-      FXMin:= ax.Inverse(FZoomRect.Left);
-      FXMax:= ax.Inverse(FZoomRect.Right);
-      FYMax:= ay.Inverse(FZoomRect.Top);
-      FYMin:= ay.Inverse(FZoomRect.Bottom);
-      PaintGraph(Buffer.Canvas, ClientRect);
-    finally
-      FreeAndNil(ax);
-      FreeAndNil(ay);
-    end;
+    FZoomRect:= Rect(
+      Min(FZoomRect.Left, FZoomRect.Right),
+      Min(FZoomRect.Top, FZoomRect.Bottom),
+      Max(FZoomRect.Left, FZoomRect.Right),
+      Max(FZoomRect.Top, FZoomRect.Bottom)
+    );
+    FXMin:= ax.Inverse(FZoomRect.Left);
+    FXMax:= ax.Inverse(FZoomRect.Right);
+    FYMax:= ay.Inverse(FZoomRect.Top);
+    FYMin:= ay.Inverse(FZoomRect.Bottom);
+    PaintGraph(Buffer.Canvas, ClientRect);
   end;
+
+  procedure Drag;
+  var
+    r: TRect;
+  begin
+    r:= Rect(
+      ax.Scale(FXMin), ay.Scale(FYMax),
+      ax.Scale(FXMax), ay.Scale(FYMin)
+    );
+
+    OffsetRect(r, FZoomRect.Left-FZoomRect.Right, FZoomRect.Top-FZoomRect.Bottom);
+
+    FXMin:= ax.Inverse(r.Left);
+    FXMax:= ax.Inverse(r.Right);
+    FYMax:= ay.Inverse(r.Top);
+    FYMin:= ay.Inverse(r.Bottom);
+    PaintGraph(Buffer.Canvas, ClientRect);
+  end;
+
 begin
-  if FZooming then begin
-    FZooming:= False;
-    FZoomRect.BottomRight:= Point(X,Y);
-    if (FZoomRect.Left<>FZoomRect.Right) and (FZoomRect.Top<>FZoomRect.Bottom) then
-      ZoomIn;
-    Refresh;
+  box:= ClientRect;
+  InflateRect(box, -10, -10);
+  ax:= TScale.FromMode(FXScale, FXMin, FXMax, box.Left + 10, box.Right - 10);
+  ay:= TScale.FromMode(FYScale, FYMin, FYMax, box.Bottom - 10, box.Top + 10);
+  try
+    case FInteract of
+      imZoom: begin
+        FZoomRect.BottomRight:= Point(X,Y);
+        if (FZoomRect.Left<>FZoomRect.Right) and (FZoomRect.Top<>FZoomRect.Bottom) then
+          ZoomIn;
+      end;
+      imDrag: begin
+        FZoomRect.BottomRight:= Point(X,Y);
+        Drag;
+      end;
+    end;
+  finally
+    FreeAndNil(ax);
+    FreeAndNil(ay);
   end;
+  FInteract:= imNone;
+  Refresh;
 end;
 
 procedure TGraphWindow.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 begin
-  if FZooming then begin
-    FZoomRect.BottomRight:= Point(X,Y);
-    Refresh;
+  case FInteract of
+    imZoom: begin
+      FZoomRect.BottomRight:= Point(X,Y);
+      Refresh;
+    end;
+    imDrag: begin
+      FZoomRect.BottomRight:= Point(X,Y);
+      Refresh;
+    end;
   end;
 end;
 
@@ -769,7 +839,7 @@ begin
   end;
 end;
 
-procedure TGraphWindow.miResetZoomClick(Sender: TObject);
+procedure TGraphWindow.miResetViewClick(Sender: TObject);
 begin
   FXMin:= FSXMin;
   FXMax:= FSXMax;
@@ -777,6 +847,18 @@ begin
   FYMax:= FSYMax;
   PaintGraph(Buffer.Canvas, ClientRect);
   Refresh;
+end;
+
+procedure TGraphWindow.miToolZoomClick(Sender: TObject);
+begin
+  TMenuItem(Sender).Checked:= true;
+  FNextInteract:= imZoom;
+end;
+
+procedure TGraphWindow.miToolPanClick(Sender: TObject);
+begin
+  TMenuItem(Sender).Checked:= true;
+  FNextInteract:= imDrag;
 end;
 
 end.
