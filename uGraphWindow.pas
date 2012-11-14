@@ -131,11 +131,18 @@ begin
   Canvas.Polygon(Poly);
 end;
 
+function Floor64(const X: Extended): int64;
+begin
+  Result:= Trunc(X);
+  if Frac(X) < 0.0 then
+    Dec(Result);
+end;
+
 { TScale }
 
 function TScale.AxisLabel(p: Number): string;
 begin
-  Result:= FloatToStrF(p, ffGeneral, 4, 0, NeutralFormatSettings);
+  Result:= FloatToStrF(p, ffGeneral, 9, 0, NeutralFormatSettings);
 end;
 
 constructor TScale.Create(AMinVal, AMaxVal: Number; AFrameMin, AFrameMax: integer);
@@ -337,9 +344,9 @@ var
     begin
       sn:= Sign(st);
       st:= abs(st);
-      Result:= sn * Max(Max(5*Power(10,Floor(Log10(st/5))),
-                            2*Power(10,Floor(Log10(st/2)))),
-                              Power(10,Floor(Log10(st))));
+      Result:= sn * Max(Max(5*Power(10,Floor64(Log10(st/5))),
+                            2*Power(10,Floor64(Log10(st/2)))),
+                              Power(10,Floor64(Log10(st))));
     end;
 
     procedure LabelAxis(Hor: boolean; Value: Number);
@@ -435,10 +442,10 @@ var
           break;
       end;
 
-      a:= Floor(Min / maindiv) * maindiv;
+      a:= Floor64(Min / maindiv) * maindiv;
       if (a > Min-subdiv/10) then
         TickMark(TickH, a, true);
-      while a < Max+subdiv/10 do begin
+      while a < (Max+subdiv/10) do begin
         b:= a + maindiv;
         if (b < Max+subdiv/10) and (b > Min-subdiv/10) then begin
           TickMark(TickH,b,true);
