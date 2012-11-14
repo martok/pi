@@ -44,6 +44,8 @@ type
     function Base_itoa(base: integer; Param: IValue): IValue;
   published
     function Abs_1(Context: TContext; args: TExprList): IValue;
+    function Sign_1(Context: TContext; args: TExprList): IValue;
+    function Step_1(Context: TContext; args: TExprList): IValue;
     function Round_1(Context: TContext; args: TExprList): IValue;
     function Round_2(Context: TContext; args: TExprList): IValue;
     function Fac_1(Context: TContext; args: TExprList): IValue;
@@ -240,6 +242,32 @@ end;
 function TPackageNumerical.Abs_1(Context: TContext; args: TExprList): IValue;
 begin
   Result:= TValue.Create(System.Abs(args[0].Evaluate(Context).GetNumber));
+end;
+
+function TPackageNumerical.Sign_1(Context: TContext; args: TExprList): IValue;
+var
+  n, m: Number;
+begin
+  n:= args[0].Evaluate(Context).GetNumber;
+  if IsZero(n) then
+    m:= 0
+  else if n>0 then
+    m:= 1.0
+  else
+    m:= -1.0;
+  Result:= TValue.Create(m);
+end;
+
+function TPackageNumerical.Step_1(Context: TContext; args: TExprList): IValue;
+var
+  n, m: Number;
+begin
+  n:= args[0].Evaluate(Context).GetNumber;
+  if IsZero(n) or (n>0) then
+    m:= 1.0
+  else
+    m:= 0;
+  Result:= TValue.Create(m);
 end;
 
 function TPackageNumerical.Round_1(Context: TContext; args: TExprList): IValue;
