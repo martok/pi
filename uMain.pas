@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, uMath, StdCtrls, ExtCtrls, ActnList, ToolWin, ComCtrls, ImgList,
-  TreeNT, ShellAPI;
+  ShellAPI;
 
 type
   TfmPiMain = class(TForm)
@@ -24,9 +24,9 @@ type
     ToolButton4: TToolButton;
     ilButtons: TImageList;
     reOutput: TRichEdit;
-    trContext: TTreeNT;
     ToolButton5: TToolButton;
     acHelp: TAction;
+    trContext: TTreeView;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -34,9 +34,11 @@ type
     procedure acRunCmdExecute(Sender: TObject);
     procedure acExitExecute(Sender: TObject);
     procedure acRunTestExecute(Sender: TObject);
-    procedure trContextCollapsing(Sender: TObject; Node: TTreeNTNode;
+    procedure trContextCollapsing(Sender: TObject; Node: TTreeNode;
       var AllowCollapse: Boolean);
     procedure acHelpExecute(Sender: TObject);
+    procedure trContextEdited(Sender: TObject; Node: TTreeNode; var S: String);
+    procedure trContextEditing(Sender: TObject; Node: TTreeNode; var AllowEdit: Boolean);
   private
     { Private-Deklarationen }
     procedure UpdateContext;
@@ -76,21 +78,26 @@ end;
 procedure TfmPiMain.UpdateContext;
 var ct:TContext;
     j: integer;
-    n: TTreeNTNode;
+    n: TTreeNode;
     s: string;
 begin
-  trContext.Items.Clear;
-  ct:= MathS.Context;
-  while ct<>nil do begin
-    s:= ct.ContextName;
-    if s='' then
-      s:= 'Context';
-    n:= trContext.Items.AddObject(nil, format('%s (%d)',[s,ct.Count]), ct);
-    for j:= 0 to ct.Count-1 do
-      trContext.Items.AddChild(n, format('%s = %s', [ct.Name[j], ct.Definition(ct.Name[j]).StringForm]));
-    ct:= ct.Parent;
+  trContext.Items.BeginUpdate;
+  try
+    trContext.Items.Clear;
+    ct:= MathS.Context;
+    while ct<>nil do begin
+      s:= ct.ContextName;
+      if s='' then
+        s:= 'Context';
+      n:= trContext.Items.AddObject(nil, format('%s (%d)',[s,ct.Count]), ct);
+      for j:= 0 to ct.Count-1 do
+        trContext.Items.AddChild(n, format('%s = %s', [ct.Name[j], ct.Definition(ct.Name[j]).StringForm]));
+      ct:= ct.Parent;
+    end;
+    trContext.FullExpand;
+  finally
+    trContext.Items.EndUpdate;
   end;
-  trContext.FullExpand;
 end;
 
 procedure TfmPiMain.FormShow(Sender: TObject);
@@ -150,7 +157,17 @@ begin
   end;
 end;
 
-procedure TfmPiMain.trContextCollapsing(Sender: TObject; Node: TTreeNTNode;
+procedure TfmPiMain.trContextEdited(Sender: TObject; Node: TTreeNode; var S: String);
+begin
+  S:= Node.Text;
+end;
+
+procedure TfmPiMain.trContextEditing(Sender: TObject; Node: TTreeNode; var AllowEdit: Boolean);
+begin
+  AllowEdit:= Assigned(Node.Parent);
+end;
+
+procedure TfmPiMain.trContextCollapsing(Sender: TObject; Node: TTreeNode;
   var AllowCollapse: Boolean);
 begin
   AllowCollapse:= false;
