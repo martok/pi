@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
-  Dialogs, uFunctionsGraphing, uMath, Menus;
+  Dialogs, uFunctionsGraphing, uMath, Menus, ExtDlgs;
 
 type
   TScaleMode = (smLin, smLog);
@@ -26,6 +26,8 @@ type
     miToolZoom: TMenuItem;
     miToolPan: TMenuItem;
     miToolRead: TMenuItem;
+    sdGraph: TSavePictureDialog;
+    miSaveEMF: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormPaint(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -44,6 +46,7 @@ type
     procedure miToolZoomClick(Sender: TObject);
     procedure miToolPanClick(Sender: TObject);
     procedure miToolReadClick(Sender: TObject);
+    procedure miSaveEMFClick(Sender: TObject);
   private
     { Private-Deklarationen }
     FPlots: array of IValueObject;
@@ -775,6 +778,30 @@ begin
     Clipboard.Assign(emf);
   finally
     emf.Free;
+  end;
+end;
+
+procedure TGraphWindow.miSaveEMFClick(Sender: TObject);
+var
+  emf: TMetafile;
+  emfc: TMetafileCanvas;
+begin
+  if sdGraph.Execute then begin
+    emf:= TMetafile.Create;
+    try
+      emf.Enhanced:= true;
+      emf.Width:= ClientWidth;
+      emf.Height:= ClientHeight;
+      emfc:= TMetafileCanvas.Create(emf, Canvas.Handle);
+      try
+        PaintGraph(emfc, ClientRect);
+      finally
+        emfc.Free;
+      end;
+      emf.SaveToFile(sdGraph.FileName);
+    finally
+      emf.Free;
+    end;
   end;
 end;
 

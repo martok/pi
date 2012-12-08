@@ -734,7 +734,7 @@ var
       FillChar(t, sizeof(t), 0);
       t.Pos:= p;
       case Expr[p] of
-        ' ': begin
+        ' ',#9: begin
             inc(p);
             continue;
           end;

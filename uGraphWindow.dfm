@@ -98,5 +98,16 @@ object GraphWindow: TGraphWindow
       GroupIndex = 2
       OnClick = miCopyEMFClick
     end
+    object miSaveEMF: TMenuItem
+      Caption = 'Save EMF'
+      GroupIndex = 2
+      OnClick = miSaveEMFClick
+    end
+  end
+  object sdGraph: TSavePictureDialog
+    DefaultExt = 'emf'
+    Filter = 'Enhanced Metafile (*.emf)|*.emf|All Files (*.*)|*.*'
+    Left = 160
+    Top = 60
   end
 end
