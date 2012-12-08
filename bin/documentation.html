@@ -528,6 +528,38 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 				</li>
 			</ul>
 
+		<h3 id="package-statistics">Package <code>Statistics</code></h3>
+			<p>Das Package stellt Funktionen zu Statistischen Verteilungen zur Verfügung.</p>
+			<ul>
+				<li id="function-statistics-erf">
+					<code>Erf(x)</code><br/>
+					Gauß'sche Fehlerfunktion
+				</li>
+				<li id="function-statistics-erfc">
+					<code>ErfC(x)</code><br/>
+					Komplementäre Gauß'sche Fehlerfunktion (ErfC(x) = 1 - Erf(x))
+				</li>
+				<li id="function-statistics-normpdf">
+					<code>NormPDF(x, mu, sigma)</code><br/>
+					Wahrscheinlichkeitsdichte der Normalverteilung mit dem Erwartungswert <i>mu</i> und der Standardabweichung <i>sigma</i>.
+				</li>
+				<li id="function-statistics-stdnormpdf">
+					<code>StdNormPDF(x)</code><br/>
+					Wahrscheinlichkeitsdichte der Standardnormalverteilung.
+				</li>
+				<li id="function-statistics-stdnormcdf">
+					<code>StdNormCDF(x)</code><br/>
+					Verteilungsfunktion der Standardnormalverteilung.
+				</li>
+				<li id="function-statistics-invstdnormcdf">
+					<code>InvStdNormCDF(x)</code><br/>
+					Inverse der Verteilungsfunktion der Standardnormalverteilung.
+				</li>
+				<li id="function-statistics-stdnormrand">
+					<code>StdNormRand()</code><br/>
+					Liefert einen standardnormalverteilten Zufallswert.
+				</li>
+			</ul>
 	<h2>Beispiele</h2>
 		<h3 id="samp-gen-1">Einfache Berechnung</h3>
 			<pre><code>&gt; 1+2*3+4/5
@@ -565,6 +597,16 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 		<h3 id="samp-graph-1">Plot: Parametrischer Plot über p</h3>
 			<pre><code>&gt; show(each(range(0,3,1), p, plot(sin(p*x),x,l(0,10))))
 </code></pre>
+		<h3 id="samp-statistics-1">Statistik: Vergleich von Standardnormalverteilung und gezogenen Stichproben</h3>
+			<pre><code>&gt; samples = bucket(each(range(0,1000,1),t,stdnormrand()),-5,5,19)
+&gt; dist:= stdnormpdf(x)*500
+&gt; show({histogram(samples,color='clskyblue'),plot(dist,x,{-5,5},color='clred')})
+</code></pre>
+
+
+
+
+
 
 
 

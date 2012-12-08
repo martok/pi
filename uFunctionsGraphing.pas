@@ -337,8 +337,10 @@ begin
   dx:= (FMax-FMin)/(SAMPLES-1);
   while (x < FMax) or IsZero(x-FMax) do begin
     n:= ValueAt(x);
-    if n > ma then ma:= n;
-    if n < mi then mi:= n;
+    if not IsNan(n) then begin
+      if n > ma then ma:= n;
+      if n < mi then mi:= n;
+    end;
     x:= x + dx;
   end;
   FCacheRange.YMin:= mi;

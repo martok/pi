@@ -1,7 +1,9 @@
 program pi;
 
+{$DEFINE USEFASTMM}
+
 uses
-  FastMM4,
+  {$IFDEF USEFASTMM}FastMM4,{$ENDIF}
   Forms,
   uMain in 'uMain.pas' {fmPiMain},
   uMath in 'uMath.pas',
@@ -9,12 +11,13 @@ uses
   uFunctions in 'uFunctions.pas',
   uCCSVList in 'uCCSVList.pas',
   uFunctionsGraphing in 'uFunctionsGraphing.pas',
-  uGraphWindow in 'uGraphWindow.pas' {GraphWindow};
+  uGraphWindow in 'uGraphWindow.pas' {GraphWindow},
+  uFunctionsStatistics in 'uFunctionsStatistics.pas';
 
 {$R *.res}
 
 begin
-  fastmm4.ReportMemoryLeaksOnShutdown:= True;
+  {$IFDEF USEFASTMM}FastMM4.ReportMemoryLeaksOnShutdown:= True;{$ENDIF}
   Application.Initialize;
   Application.CreateForm(TfmPiMain, fmPiMain);
   Application.Run;
