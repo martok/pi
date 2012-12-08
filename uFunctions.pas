@@ -42,6 +42,7 @@ type
   private
     function Base_atoi(base: integer; Param: IValue): IValue;
     function Base_itoa(base: integer; Param: IValue): IValue;
+    function GCD(a,b: int64): int64;
   published
     function Abs_1(Context: TContext; args: TExprList): IValue;
     function Sign_1(Context: TContext; args: TExprList): IValue;
@@ -56,6 +57,10 @@ type
     function h_1(Context: TContext; args: TExprList): IValue;
     function b_1(Context: TContext; args: TExprList): IValue;
     function o_1(Context: TContext; args: TExprList): IValue;
+
+    function GCD_2(Context: TContext; args: TExprList): IValue;
+    function LCM_2(Context: TContext; args: TExprList): IValue;
+    function Fraction_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
   end;
 
   TPackageLists = class(TFunctionPackage)
@@ -408,6 +413,111 @@ begin
     Result:= v;
   end;
 end;
+
+function TPackageNumerical.GCD(a, b: int64): int64;
+// Euclid's Algorithm
+var
+  r: Int64;
+begin
+  if b<>0 then
+    repeat
+      r:= a mod b;
+      a:= b;
+      b:= r;
+    until r=0;
+  Result:= a;
+end;
+
+function TPackageNumerical.GCD_2(Context: TContext; args: TExprList): IValue;
+var
+  a,b: int64;
+begin
+  a:= Trunc(args[0].Evaluate(Context).GetNumber);
+  b:= Trunc(args[1].Evaluate(Context).GetNumber);
+
+  Result:= TValue.Create(GCD(a,b));
+end;
+
+function TPackageNumerical.LCM_2(Context: TContext; args: TExprList): IValue;
+var
+  a,b,g: int64;
+begin
+  a:= Trunc(args[0].Evaluate(Context).GetNumber);
+  b:= Trunc(args[1].Evaluate(Context).GetNumber);
+
+  g:= gcd(a,b);
+  if g<>0 then
+    Result:= TValue.Create(a div g * b)
+  else
+    Result:= TValue.Create(0);
+end;
+
+function TPackageNumerical.Fraction_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+var
+  prec: Number;
+  mixed: boolean;
+var
+  x, p, lastp, q, lastq, ptemp, qtemp, u, err, d: Number;
+  nom,den,w: int64;
+begin
+  prec:= Options.GetDefault('precision', TValue.Create(1E-11)).GetNumber / 100;
+  mixed:= Options.IsSet('mixed');
+
+  x:= Args[0].Evaluate(Context).GetNumber;
+
+  // Initialisierung
+  p := 1;
+  q := 0;
+  lastp := 0;
+  lastq := 1;
+  u := x;
+
+  repeat
+    // Einen ganzzahligen Anteil abspalten
+    d := round(u);
+    u := u - d;
+
+    // Update von p und q: Kettenbruch (siehe unten) nachführen. Es gilt: p/q ~= x
+    ptemp := p*d+lastp;
+    qtemp := q*d+lastq;
+    lastp := p;
+    lastq := q;
+    p := ptemp;
+    q := qtemp;
+
+    // Approximationsfehler relativ
+    err := abs((p/q-x) / x);
+
+    // Abbruchkriterien
+    if (u=0) or (err<prec) or (x+err/4=x {sic!}) then  // (*) numerisches Ende abfangen
+     break;
+
+    // Bruch umkehren
+    u := 1/u;
+  until false;
+
+  // Vor Integerkonversion auf Bereich überprüfen
+  if (p>high(Int64)) or (q>high(Int64)) or
+     (p<low(Int64)) or (p<low(Int64)) then
+    raise EIntOverflow.Create('Fraction: Integer conversion overflow.');
+
+  // Vorzeichen von Nenner zum Zähler
+  if q < 0 then
+    nom := -Trunc(p)
+  else
+    nom := Trunc(p);
+  den := abs(Trunc(q));
+
+  if mixed then begin
+    w:= nom div den;
+    if w<>0 then
+      nom:= abs(nom);
+    nom:= nom mod den;
+    Result:= TValueFixedList.CreateAs([TValue.Create(w),TValue.Create(Nom),TValue.Create(den)])
+  end else
+    Result:= TValueFixedList.CreateAs([TValue.Create(Nom),TValue.Create(den)]);
+end;
+
 
 { TPackageLists }
 

@@ -220,6 +220,7 @@ type
     procedure SetItem(Index: Integer; const Value: IValue); override;
     procedure SetLength(const Value: Integer); override;
   public
+    constructor CreateAs(Items: array of IValue);
     function OutputForm: string; override;
   end;
 
@@ -1465,6 +1466,16 @@ begin
 end;
 
 { TValueFixedList }
+
+constructor TValueFixedList.CreateAs(Items: array of IValue);
+var
+  i: integer;
+begin
+  inherited Create;
+  SetLength(Length(Items));
+  for i:= 0 to high(Items) do
+    SetItem(i, Items[i]);
+end;
 
 function TValueFixedList.GetLength: Integer;
 begin

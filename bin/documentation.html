@@ -345,6 +345,23 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 					<code>b(string OR number)</code><br/>
 					Konvertiert aus/in String-Darstellung in Basis 8.
 				</li>
+				<li id="function-numerical-gcd">
+					<code>GCD(a, b)</code><br/>
+					Berechnet den größten gemeinsamen Teiler (ggT, greatest common divisor) der Ganzzahlen <i>a</i> und <i>b</i>
+				</li>
+				<li id="function-numerical-lcm">
+					<code>LCM(a, b)</code><br/>
+					Berechnet das kleinste gemeinse Vielfache (kgV, least common multiple) der Ganzzahlen <i>a</i> und <i>b</i>
+				</li>
+				<li id="function-numerical-fraction">
+					<code>Fraction(number)</code><br/>
+					Findet eine Bruchdarstellung für <i>number</i> und gibt diese als Liste zurück<br/>
+					Optionen:
+					<dl class="opt">
+						<dt>precision=1E-11</dt><dd>Erlaubte Abweichung in Prozent, höhere Genauigkeiten erfordern größere Nenner</dd>
+						<dt>mixed=*undefined*</dt><dd>Gemischten Bruch als <i>a+b/c</i> zurückgeben, sonst gewöhnlicher Bruch <i>a/b</i></dd>
+					</dl>
+				</li>
 			</ul>
 
 		<h3 id="package-lists">Package <code>Lists</code></h3>
