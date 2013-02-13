@@ -447,8 +447,9 @@ type
 
 const
   cPi: Number = 3.1415926535897932384626433832795028841972; // required for tests
-  MathematicalConstants: array[0..7] of TConstantDef = (
+  MathematicalConstants: array[0..8] of TConstantDef = (
     (LongName: 'Pi'; Value: 3.1415926535897932384626433832795028841972),
+    (LongName: 'Tau'; Value: 6.28318530717958647692528676655900576839433879875021),
     (LongName: 'E'; Value: 2.7182818284590452353602874713526624977572),
     (LongName: 'Degree'; Value: 0.0174532925199432957692369076848861271344),
     (LongName: 'GoldenRatio'; Value: 1.6180339887498948482045868343656381177203),
@@ -566,6 +567,7 @@ begin
   NewContext(sWork);
   FOutput:= TOutput.Create;
   imp('pi', 'Pi');
+  imp('tau', 'Tau');
   imp('e', 'E');
 end;
 
