@@ -284,6 +284,9 @@ type
   private
     FName: string;
     Arguments: IExpression;
+    FFunctionBound: boolean;
+    FFunction: TUDFHeader;
+    FFirstDynamic: Integer;
   public
     constructor Create(Name: string);
     function Evaluate(Context: TContext): IValue; override;
@@ -1698,13 +1701,13 @@ constructor TE_FunctionCall.Create(Name: string);
 begin
   inherited Create;
   FName:= Name;
+  FFunctionBound:= false;
 end;
 
 function TE_FunctionCall.Evaluate(Context: TContext): IValue;
 var
-  u: TUDFHeader;
   ls: TExprList;
-  i, d: integer;
+  i: integer;
   dyn: TDynamicArguments;
 begin
   if Assigned(Arguments) then begin
@@ -1717,22 +1720,28 @@ begin
   end else
     SetLength(ls, 0);
 
-  for i:= 0 to high(FunctionPackages) do begin
-    u:= FunctionPackages[i].GetFunction(Fname, Length(ls), d);
-    if Assigned(u) then begin
-      if d >= 0 then begin
-        dyn:= TDynamicArguments.Create(ls, d, Context);
-        try
-          Result:= TUDFHeaderOptions(u)(Context, ls, dyn);
-        finally
-          FreeAndNil(dyn);
-        end;
-      end else
-        Result:= u(Context, ls);
-      exit;
+  if not FFunctionBound then begin
+    FFunctionBound:= True;
+    for i:= 0 to high(FunctionPackages) do begin
+      FFunction:= FunctionPackages[i].GetFunction(FName, Length(ls), FFirstDynamic);
+      if Assigned(FFunction) then
+        break;
     end;
   end;
-  raise EMathSysError.CreateFmt('Function %s has no version with %d parameters', [FName, Length(ls)]);
+
+  if Assigned(FFunction) then begin
+    if FFirstDynamic >= 0 then begin
+      dyn:= TDynamicArguments.Create(ls, FFirstDynamic, Context);
+      try
+        Result:= TUDFHeaderOptions(FFunction)(Context, ls, dyn);
+      finally
+        FreeAndNil(dyn);
+      end;
+    end else
+      Result:= FFunction(Context, ls);
+    exit;
+  end else
+    raise EMathSysError.CreateFmt('Function %s has no version with %d parameters', [FName, Length(ls)]);
 end;
 
 function TE_FunctionCall.StringForm: string;

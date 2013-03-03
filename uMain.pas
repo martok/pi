@@ -4,8 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, uMath, StdCtrls, ExtCtrls, ActnList, ToolWin, ComCtrls, ImgList,
-  ShellAPI;
+  Dialogs, uMath, ImgList, ActnList, StdCtrls, ComCtrls, ToolWin, ExtCtrls;
 
 type
   TfmPiMain = class(TForm)
@@ -52,7 +51,7 @@ var
 
 implementation
 
-uses uTests;
+uses uTests, ShellAPI;
 
 const
   sProgramTitle = 'pi - Tiny Math Tool';
