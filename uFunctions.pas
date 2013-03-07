@@ -50,6 +50,8 @@ type
     function Round_1(Context: TContext; args: TExprList): IValue;
     function Round_2(Context: TContext; args: TExprList): IValue;
     function Fac_1(Context: TContext; args: TExprList): IValue;
+    function Binomial_2(Context: TContext; args: TExprList): IValue;
+    function Permutations_2(Context: TContext; args: TExprList): IValue;
 
     function AtoI_2(Context: TContext; args: TExprList): IValue;
     function ItoA_2(Context: TContext; args: TExprList): IValue;
@@ -298,16 +300,61 @@ end;
 
 function TPackageNumerical.Fac_1(Context: TContext; args: TExprList): IValue;
 var
-  accu, k, desiredFact: Number;
+  accu: Number;
+  desiredFact: Int64;
 begin
   accu:= 1;
-  desiredFact:= args[0].Evaluate(Context).GetNumber;
-  k:= 2;
-  while k <= desiredFact do begin
-    accu:= accu * k;
-    k:= k + 1;
+  desiredFact:= trunc(args[0].Evaluate(Context).GetNumber);
+  while desiredFact >= 2 do begin
+    accu:= accu * desiredFact;
+    Dec(desiredFact);
   end;
   Result:= TValue.Create(accu);
+end;
+
+function bin(n,k: int64): int64;
+  { binomial(n,k) = n!/k!/(n-k)! = n*(n-1).../k!}
+var
+  i, b: int64;
+begin
+  if k = 0 then
+    Result:= 0
+  else
+    if 2 * k > n then
+      Result:= bin(n, n-k)
+    else begin
+      b := n;
+      i:= 2;
+      while (i<=k) do begin
+        b:= b * (n+1-i) div i;
+        inc(i);
+      end;
+      Result:= b;
+    end;
+end;
+
+function TPackageNumerical.Binomial_2(Context: TContext; args: TExprList): IValue;
+var
+  n,k,p: Int64;
+begin
+  n:= trunc(args[0].Evaluate(Context).GetNumber);
+  k:= trunc(args[1].Evaluate(Context).GetNumber);
+  p:= bin(n,k);
+  Result:= TValue.Create(p);
+end;
+
+function TPackageNumerical.Permutations_2(Context: TContext; args: TExprList): IValue;
+var
+  n,k,p: Int64;
+begin
+  n:= trunc(args[0].Evaluate(Context).GetNumber);
+  k:= trunc(args[1].Evaluate(Context).GetNumber);
+  p:= bin(n,k);
+  while k >= 2 do begin
+    p:= p * k;
+    Dec(k);
+  end;
+  Result:= TValue.Create(p);
 end;
 
 const
@@ -517,6 +564,7 @@ begin
   end else
     Result:= TValueFixedList.CreateAs([TValue.Create(Nom),TValue.Create(den)]);
 end;
+
 
 
 { TPackageLists }
