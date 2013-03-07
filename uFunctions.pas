@@ -68,7 +68,7 @@ type
     function L_N(Context: TContext; args: TExprList): IValue;
     function Range_3(Context: TContext; args: TExprList): IValue;
     function Each_3(Context: TContext; args: TExprList): IValue;
-    function Hold_1(Context: TContext; args: TExprList): IValue;
+    function HoldList_1(Context: TContext; args: TExprList): IValue;
     function Flatten_1(Context: TContext; args: TExprList): IValue;
     function Aggregate_5(Context: TContext; args: TExprList): IValue;
     function Merge_2(Context: TContext; args: TExprList): IValue;
@@ -574,7 +574,7 @@ begin
   end;
 end;
 
-function TPackageLists.Hold_1(Context: TContext; args: TExprList): IValue;
+function TPackageLists.HoldList_1(Context: TContext; args: TExprList): IValue;
 var
   list: IValueList;
   i: integer;

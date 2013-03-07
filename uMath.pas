@@ -317,7 +317,7 @@ type
     class function constinfo_1(Context: TContext; args: TExprList): IValue;
 
     class function nvl_2(Context: TContext; args: TExprList): IValue;
-    class function hold_1(Context: TContext; args: TExprList): IValue;
+    class function Hold_1(Context: TContext; args: TExprList): IValue;
   end;
 
   TE_ArgList = class(TExpression)
@@ -1877,7 +1877,7 @@ begin
     Result:= args[0].Evaluate(Context);
 end;
 
-class function TPackageCore.hold_1(Context: TContext; args: TExprList): IValue;
+class function TPackageCore.Hold_1(Context: TContext; args: TExprList): IValue;
 begin
   Result:= TValueExpressionContainer.Create(args[0]);
 end;

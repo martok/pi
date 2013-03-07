@@ -122,7 +122,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 
 	<h2 id="datatypes">Datentypen</h2>
 		<p><code>Number</code><br/>
-		80bit Extended (long double)<br>
+		80bit Extended (long double)<br/>
 		3.6 x 10^-4951 bis 1.1 x 10^4932 bei 19–20 stelliger Genauigkeit</p>
 		<p><code>String</code><br/>
 		Ansi-String
@@ -198,6 +198,10 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 				<li id="function-core-nvl">
 					<code>NVL(value, default)</code><br />
 					Ersetzt <i>value</i> durch <i>default</i>, wenn <i>value</i> Null ist.
+				</li>
+				<li id="function-core-hold">
+					<code>Hold(expr)</code><br />
+					Gibt die Expression <i>expr</i> unevaluiert zurück.
 				</li>
 			</ul>
 
@@ -297,7 +301,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 				</li>
 				<li id="function-elementary-random">
 					<code>Random()</code><br/>
-					Zufallszahl aus 0 <= Random < 1
+					Zufallszahl aus 0 &lt;= Random &lt; 1
 				</li>
 			</ul>
 
@@ -310,11 +314,11 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 				</li>
 				<li id="function-numerical-sign">
 					<code>Sign(number)</code><br/>
-					Vorzeichen der Zahl. <code>{-1|x<0, 0|x=0, 1|y>0}</code>
+					Vorzeichen der Zahl. <code>{-1|x&lt;0, 0|x=0, 1|y>0}</code>
 				</li>
 				<li id="function-numerical-step">
 					<code>Step(number)</code><br/>
-					Heaviside'sche Sprungfunktion mit <code>H(0)=1</code>. <code>{0|x<0, 1|y>=0}</code>
+					Heaviside'sche Sprungfunktion mit <code>H(0)=1</code>. <code>{0|x&lt;0, 1|y>=0}</code>
 				</li>
 				<li id="function-numerical-round">
 					<code>Round(number)</code><br/>
@@ -384,8 +388,8 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 					Führt <i>expr</i> in einem neuen Kontext auf jedem Element von <i>list</i>
 					als Variable <i>var</i> aus und gibt die Ergebnisse als eine neue Liste zurück
 				</li>
-				<li id="function-lists-hold">
-					<code>Hold(list)</code><br/>
+				<li id="function-lists-holdlist">
+					<code>HoldList(list)</code><br/>
 					Kopiert jedes Element von <i>list</i> in Ergebnis (zum Umwandeln von RangeList in FixedList)
 				</li>
 				<li id="function-lists-flatten">
@@ -450,7 +454,7 @@ Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.ph
 				</li>
 				<li id="function-data-bucket">
 					<code>Bucket(list, min, max, count)</code><br/>
-					Zählt alle Werte in <i>min</i> < x < <i>max</i> in <i>count</i> Gruppen.
+					Zählt alle Werte in <i>min</i> &lt; x &lt; <i>max</i> in <i>count</i> Gruppen.
 					Rückgabe: Liste von <code>{Mittelwert, Anzahl}</code>
 				</li>
 				<li id="function-data-max">
