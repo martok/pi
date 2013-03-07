@@ -81,16 +81,12 @@ type
     property Name[index: integer]: string read GetName;
   end;
 
-  TValueType = (vtUnassigned, vtNull, vtNumber, vtString);
+  TValueType = (vtUnassigned, vtNull, vtNumber, vtString, vtExpression, vtObject);
   IValue = interface
     ['{6E37EAE1-DD73-4825-893D-970D168165EE}']
     function ValueType: TValueType;
-    procedure SetNumber(const num: Number);
-    procedure SetString(const str: string);
     function GetNumber: Number;
     function GetString: string;
-    procedure SetNull;
-    procedure SetUnassigned;
     function AsNative: IValue;
   end;
 
@@ -152,6 +148,11 @@ type
     constructor Create;
   end;
 
+  IValueExpression = interface
+    ['{48043585-B0F0-4D6D-A05C-754033B63365}']
+    function GetExpression: IExpression;
+  end;
+
   TValue = class(TInterfacedObject, IValue, IStringConvertible)
   private
     FValueType: TValueType;
@@ -164,13 +165,9 @@ type
     constructor CreateNull;
     //IValue
     function ValueType: TValueType;
-    procedure SetNumber(const num: Number);
-    procedure SetString(const str: string);
     function GetNumber: Number;
     function GetString: string;
     function AsNative: IValue;
-    procedure SetNull;
-    procedure SetUnassigned;
     //IStringConvertible
     function StringForm: string; virtual;
     function OutputForm: string; virtual;
@@ -198,6 +195,18 @@ type
     // IValueObject
     function GetClass: TClass;
     function GetObject: TObject;
+  end;
+
+  TValueExpressionContainer = class(TValue, IValueExpression)
+  private
+    FExpr: IExpression;
+  public
+    constructor Create(Expression: IExpression);
+    // IStringConvertible
+    function StringForm: string; override;
+    function OutputForm: string; override;
+    // IValueExpression
+    function GetExpression: IExpression;
   end;
 
   TValueGenericList = class(TValue, IValueList)
@@ -308,6 +317,7 @@ type
     class function constinfo_1(Context: TContext; args: TExprList): IValue;
 
     class function nvl_2(Context: TContext; args: TExprList): IValue;
+    class function hold_1(Context: TContext; args: TExprList): IValue;
   end;
 
   TE_ArgList = class(TExpression)
@@ -1228,8 +1238,13 @@ end;
 
 procedure TContext.DefineValue(const Name: string; Value: IValue);
 begin
-  if Value.ValueType <> vtUnassigned then
-    Define(Name, TE_Constant.Create(Value));
+  case Value.ValueType of
+    vtUnassigned: ;
+    vtExpression: Define(Name, (Value as IValueExpression).GetExpression);
+  else
+    if Value.ValueType <> vtUnassigned then
+      Define(Name, TE_Constant.Create(Value));
+  end;
 end;
 
 function TContext.Defines(const Name: string): boolean;
@@ -1373,18 +1388,6 @@ begin
   end;
 end;
 
-procedure TValue.SetNumber(const num: Number);
-begin
-  FNumber:= num;
-  FValueType:= vtNumber;
-end;
-
-procedure TValue.SetString(const str: string);
-begin
-  FString:= str;
-  FValueType:= vtString;
-end;
-
 function TValue.AsNative: IValue;
 var
   f: Number;
@@ -1399,16 +1402,6 @@ begin
       else
         Result:= self;
   end;
-end;
-
-procedure TValue.SetNull;
-begin
-  FValueType:= vtNull;
-end;
-
-procedure TValue.SetUnassigned;
-begin
-  FValueType:= vtUnassigned;
 end;
 
 function TValue.ValueType: TValueType;
@@ -1884,6 +1877,11 @@ begin
     Result:= args[0].Evaluate(Context);
 end;
 
+class function TPackageCore.hold_1(Context: TContext; args: TExprList): IValue;
+begin
+  Result:= TValueExpressionContainer.Create(args[0]);
+end;
+
 { TDynamicArguments }
 
 constructor TDynamicArguments.Create(Args: TExprList; FromIndex: integer; Context: TContext);
@@ -2182,7 +2180,7 @@ constructor TValueObject.Create(Obj: TObject);
 begin
   inherited Create;
   FObject:= Obj;
-  FValueType:= vtNull;
+  FValueType:= vtObject;
 end;
 
 destructor TValueObject.Destroy;
@@ -2209,6 +2207,35 @@ end;
 function TValueObject.StringForm: string;
 begin
   Result:= '<' + GetClass.ClassName + '>';
+end;
+
+{ TValueExpressionContainer }
+
+constructor TValueExpressionContainer.Create(Expression: IExpression);
+begin
+  inherited Create;
+  FValueType:= vtExpression;
+  FExpr:= Expression;
+end;
+
+function TValueExpressionContainer.GetExpression: IExpression;
+begin
+  Result:= FExpr;
+end;
+
+function TValueExpressionContainer.OutputForm: string;
+var
+  sc: IStringConvertible;
+begin
+  if Supports(FExpr, IStringConvertible, sc) then
+    Result:= sc.OutputForm
+  else
+    Result:= FExpr.StringForm;
+end;
+
+function TValueExpressionContainer.StringForm: string;
+begin
+  Result:= FExpr.StringForm;
 end;
 
 initialization

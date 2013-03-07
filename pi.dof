@@ -64,7 +64,7 @@ PackageNoLink=1
 PackageThreadVar=1
 ImplicitImport=1
 HPPEMITIgnored=1
-NoRetVal=0
+NoRetVal=1
 UseBeforeDef=1
 ForLoopVarUndef=1
 UnitNameMismatch=1
@@ -136,6 +136,7 @@ ProductVersion=
 Comments=
 [Excluded Packages]
 f:\delphi7\Bin\DCLIB70.bpl=InterBase Datenzugriffskomponenten
+C:\WINNT\System32\ibevnt70.bpl=Borland Interbase-Event Alerter-Komponente
 f:\delphi7\Bin\DBWEBXPRT.BPL=Borland Package für Web-Experten
 F:\delphi7\Projects\Bpl\XWEBBROWSER.bpl=TWebBrowser
 [HistoryLists\hlUnitAliases]

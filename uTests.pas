@@ -192,40 +192,40 @@ end;
 procedure TMathSysTest.TestDatatypes;
 var result: IValue;
 begin
-  Result:= TValue.Create();
   BeginGroup('DataTypes');
+  { TODO : Rebuild }
   try
-    BeginGroup('Num->Num');
-      result.SetNumber(42);
+      BeginGroup('Num->Num');
+      result:= TValue.Create(42);
       Expect(IsZero(result.GetNumber - 42),'42!=42');
       EndGroup;
     BeginGroup('Num->Str');
-      result.SetNumber(42);
+      result:= TValue.Create(42);
       ExpectEqual(result.GetString, '42');
       EndGroup;
-    BeginGroup('Str->Str');
-      result.SetString('hallo');
+    BeginGroup('Str->Str');  
+      result:= TValue.Create('hallo');
       ExpectEqual(result.GetString, 'hallo');
       EndGroup;
-    BeginGroup('NumStr->NumStr');
-      result.SetString('123');
+    BeginGroup('NumStr->NumStr'); 
+      result:= TValue.Create('123');
       ExpectEqual(result.GetString, '123');
       EndGroup;
     BeginGroup('NumStr->Num');
-      result.SetString('123');
+      result:= TValue.Create('123');
       Expect(IsZero(result.GetNumber - 123),'"123"!=123');
       EndGroup;
-    BeginGroup('HiP->Str');
-      result.SetNumber(uMath.cPi);
+    BeginGroup('HiP->Str');  
+      result:= TValue.Create(uMath.cPi);
       ExpectEqual(result.GetString, '3.14159265358979324');
       EndGroup;
     BeginGroup('Str->HiP');
-      result.SetString('3.1415926535897932384626433832795');
+      result:= TValue.Create('3.1415926535897932384626433832795');
       Expect(IsZero(result.GetNumber - uMath.cPi),'"pi"!=pi');
       EndGroup;
   finally
     EndGroup;
-  end;
+  end;   
 end;
 
 procedure TMathSysTest.TestContexts;
