@@ -3,7 +3,7 @@ program pi;
 {$DEFINE USEFASTMM}
 
 uses
-  {$IFDEF USEFASTMM}FastMM4,{$ENDIF}
+  FastMM4,
   Forms,
   uMain in 'uMain.pas' {fmPiMain},
   uMath in 'uMath.pas',
@@ -12,7 +12,8 @@ uses
   uCCSVList in 'uCCSVList.pas',
   uFunctionsGraphing in 'uFunctionsGraphing.pas',
   uGraphWindow in 'uGraphWindow.pas' {GraphWindow},
-  uFunctionsStatistics in 'uFunctionsStatistics.pas';
+  uFunctionsStatistics in 'uFunctionsStatistics.pas',
+  uMathIntf in 'uMathIntf.pas';
 
 {$R *.res}
 
