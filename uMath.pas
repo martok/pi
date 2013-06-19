@@ -199,6 +199,7 @@ type
 
     //function nvl_2(Context: IContext; args: TExprList): IExpression;
     function Hold_1(Context: IContext; args: TExprList): IExpression;
+    function AbsoluteTime_1(Context: IContext; args: TExprList): IExpression;
   end;
 
   TPackageAlgebra = class(TFunctionPackage)
@@ -1784,6 +1785,19 @@ begin
   Result:= args[0];
 end;
 
+
+function TPackageCore.AbsoluteTime_1(Context: IContext; args: TExprList): IExpression;
+var
+  pc1,pc2, pf: Int64;
+  st: IExpression;
+begin
+  QueryPerformanceFrequency(pf);
+  QueryPerformanceCounter(pc1);
+  st:= args[0].Evaluate(Context);
+  QueryPerformanceCounter(pc2);
+
+  Result:= TValueList.CreateAs([TValueNumber.Create((pc2-pc1) / pf), st]);
+end;
 
 initialization
   GetLocaleFormatSettings(GetThreadLocale, NeutralFormatSettings);
