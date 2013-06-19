@@ -9,7 +9,7 @@ uses
 type
   TFunctionPackage = class;
 
-  TOperatorOptions = set of (ooUnary, ooUnparsed, ooFlat);
+  TOperatorOptions = set of (ooUnary, ooUnparsed, ooFlat, ooUnpackInArguments, ooHoldPackedArguments);
   TMathSystem  = class(TIntfNoRefCount, IMathSystem)
   private
     fOutput: IOutputProvider;
@@ -17,17 +17,21 @@ type
     fInfixTable,
     fOperatorTable: TList;
     fPackages: TObjectList;
-    fContext: IContext;       
+    fContext,
+    fConstants: IContext;
   protected
     FEvaluationStack: TStringList;
     procedure EvaluationBegin(varname: string);
     procedure EvaluationEnd;
+    procedure PredefineConstants(const Context: IContext);
   public
     constructor Create(const Output: IOutputProvider);
     destructor Destroy; override;
 
     property Output: IOutputProvider read fOutput;
     property Context: IContext read fContext;
+    procedure NewContext(const Name: string);
+    procedure DropContext;
 
     function RegisterPackage(const Package: TFunctionPackage): boolean;
     function RegisterAsInfix(Operator: String; Precedence: integer; Options: TOperatorOptions; Pack: TFunctionPackage; Func: String): boolean;
@@ -40,16 +44,19 @@ type
   TContext = class(TInterfacedObject, IContext)
   private
     FExpressions: THashedStringList;
-    FParent: TContext;
+    FParent: IContext;
     FSystem: TMathSystem;
     FSilent: boolean;
     FContextName: string;
     function GetCount: integer;
     function GetName(index: integer): string;
   public
-    constructor Create(ASystem: TMathSystem; AParent: TContext);
+    class function SystemFrom(const ref: IContext): TMathSystem;
+
+    constructor Create(ASystem: TMathSystem; AParent: TContext); overload;
+    constructor Create(AParent: IContext); overload;
     destructor Destroy; override;
-    property Parent: TContext read FParent;
+    property Parent: IContext read FParent;
     function Bake: TContext;
     property System: TMathSystem read FSystem;
     property ContextName: string read FContextName write FContextName;
@@ -70,22 +77,23 @@ type
   TExprList = array of IExpression;
   TExpression = class(TInterfacedObject, IExpression)
   private
+    procedure SetArgument(Index: integer; const Value: IExpression);
   protected
     Arguments: TExprList;
-    function SystemFrom(const ref: IContext): TMathSystem;
     function StringOfArgs(fmt: TStringFormat; Delim: String): String;
   public
     constructor Create;
     // IExpression
     function NativeObject: TObject;
     function Evaluate(const Context: IContext): IExpression; virtual; abstract;
+    function Clone(Deep: Boolean): IExpression; virtual; abstract;
     function Represents(const IID: TGUID; out Intf): boolean;
     function IsClass(const Cls: TClass): Boolean;
 
     procedure SetArgs(const aArgs: array of IExpression);
     function ArgCount: Integer;
-    function Argument(Index: Integer): IExpression;
-    property Arg[Index: integer]: IExpression read Argument;
+    function GetArgument(Index: Integer): IExpression;
+    property Arg[Index: integer]: IExpression read GetArgument write SetArgument;
   end;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -115,9 +123,12 @@ type
   TFunctionPackageClass = class of TFunctionPackage;
   TFunctionPackage = class
   protected
-    procedure OnImport(const MS: TMathSystem); virtual; abstract;
+    procedure OnImport(const MS: TMathSystem); virtual;
     procedure PublishedMethods(Names: TStringList);
-    function EvaluateToNumber(Context: IContext; ex: IExpression; out n: Number): Boolean;
+    function EvaluateToNumber(Context: IContext; ex: IExpression; out n: Number): Boolean; overload;     
+    function EvaluateToNumber(Context: IContext; ex: IExpression): Number; overload;
+    function EvaluateToString(Context: IContext; ex: IExpression; out s: string): Boolean; overload;
+    function EvaluateToString(Context: IContext; ex: IExpression): String; overload;
   public
     function FunctionExists(FunctionName: string; ParamCount: integer): boolean;
     function GetFunction(FunctionName: string; ParamCount: integer; out DynFrom: integer): TUDFHeader;
@@ -135,6 +146,7 @@ type
     constructor Create(AName: string);
     property Name: string read FName;
     function Evaluate(const Context: IContext): IExpression; override;
+    function Clone(Deep: Boolean): IExpression; override;
     // IStringConvertible
     function AsString(const Format: TStringFormat): String;
   end;
@@ -150,18 +162,20 @@ type
   public
     constructor Create(AName: string);
     property Name: string read FName;
-    function Evaluate(const Context: IContext): IExpression; override;    
+    function Evaluate(const Context: IContext): IExpression; override;  
+    function Clone(Deep: Boolean): IExpression; override;  
     // IStringConvertible
     function AsString(const Format: TStringFormat): String;
   end;
 
-  TE_Subcontext = class(TExpression)
+  TE_Subcontext = class(TExpression, IStringConvertible)
   private
     FName: string;
   public
     constructor Create(AName: string);
     property Name: string read FName;
-    function Evaluate(const Context: IContext): IExpression; override;    
+    function Evaluate(const Context: IContext): IExpression; override;
+    function Clone(Deep: Boolean): IExpression; override;
     // IStringConvertible
     function AsString(const Format: TStringFormat): String;
   end;
@@ -170,21 +184,40 @@ type
 //   Internal Packages
 ////////////////////////////////////////////////////////////////////////////////
 
-  TPackageAlgebra = class(TFunctionPackage)
+  TPackageCore = class(TFunctionPackage)
   protected
     procedure OnImport(const MS: TMathSystem); override;
   published
     function _dump_1(Context: IContext; Args: TExprList): IExpression;
     function _describe_1(Context: IContext; Args: TExprList): IExpression;
+
+    function Undef_1(Context: IContext; args: TExprList): IExpression;
+    function New_0(Context: IContext; args: TExprList): IExpression;
+    function New_1(Context: IContext; args: TExprList): IExpression;
+    function Drop_0(Context: IContext; args: TExprList): IExpression;
+    function Clear_0(Context: IContext; args: TExprList): IExpression;
+
+    function const_1(Context: IContext; args: TExprList): IExpression;
+    function constinfo_0(Context: IContext; args: TExprList): IExpression;
+    function constinfo_1(Context: IContext; args: TExprList): IExpression;
+
+    //function nvl_2(Context: IContext; args: TExprList): IExpression;
+    function Hold_1(Context: IContext; args: TExprList): IExpression;
+  end;
+
+  TPackageAlgebra = class(TFunctionPackage)
+  protected
+    procedure OnImport(const MS: TMathSystem); override;
+  published
     function _char_1(Context: IContext; Args: TExprList): IExpression;
     function _negate_1(Context: IContext; Args: TExprList): IExpression;
-//    function _index_2(Context: IContext; Args: TExprList): IExpression;
     function _pow_2(Context: IContext; Args: TExprList): IExpression;
     function _mult_N(Context: IContext; Args: TExprList): IExpression;
     function _div_2(Context: IContext; Args: TExprList): IExpression;
     function _mod_2(Context: IContext; Args: TExprList): IExpression;
     function _plus_N(Context: IContext; Args: TExprList): IExpression;
     function _subtract_N(Context: IContext; Args: TExprList): IExpression;
+
     function _assign_2(Context: IContext; Args: TExprList): IExpression;
     function _define_2(Context: IContext; Args: TExprList): IExpression;
     function _comma_N(Context: IContext; Args: TExprList): IExpression;
@@ -202,7 +235,7 @@ function NumberToStr(const Value: Number; FS: TFormatSettings; ShowThousands: bo
 implementation
 
 uses
-  StrUtils, uMathValues;
+  StrUtils, uMathValues, uMathConstants;
 
 type
   TInfixDefinition = record
@@ -263,11 +296,17 @@ begin
   fPackages:= TObjectList.Create(true);
   fInfixTable:= TList.Create;
   fOperatorTable:= TList.Create;
+
   ctx:= TContext.Create(Self, nil);
   ctx.ContextName:= sConstants;
-  fContext:= ctx;
+  FContext:= ctx;
+  FConstants:= ctx;
 
+  NewContext(sWork);
+
+  RegisterPackage(TPackageCore.Create);
   RegisterPackage(TPackageAlgebra.Create);
+  PredefineConstants(fConstants);
 end;
 
 destructor TMathSystem.Destroy;
@@ -325,6 +364,23 @@ begin
   fInfixTable.Sort(LSC_InfixByLength);
   fOperatorTable.Add(inf);
   fOperatorTable.Sort(LSC_OperatorByPrecedence);
+end;
+
+procedure TMathSystem.DropContext;
+begin
+  if TContext(FContext.NativeObject).Parent <> FConstants then begin
+    fContext:= TContext(FContext.NativeObject).Parent;
+  end else
+    raise EMathSysError.Create('Cannot drop this context.');
+end;
+
+procedure TMathSystem.NewContext(const Name: string);
+var
+  cont: TContext;
+begin
+  cont:= TContext.Create(FContext);
+  cont.ContextName:= Name;
+  FContext:= cont as IContext;
 end;
 
 procedure TMathSystem.EvaluationBegin(varname: string);
@@ -643,10 +699,7 @@ var
             A:= NextR(i);
             if (A>=0) then begin
               if Tokens[A].Kind <> tokEmpty then begin
-                if Tokens[A].Expr.IsClass(TE_Call) and (TE_Call(Tokens[A].Expr.NativeObject).Name='_comma') then
-                  tmp.SetArgs(TE_Call(Tokens[A].Expr.NativeObject).Arguments)
-                else
-                  tmp.SetArgs([Tokens[A].Expr]);
+                tmp.SetArgs([Tokens[A].Expr]);
               end;
               Tokens[A].Expr:= nil;
               Tokens[a].Kind:= tokVoid;
@@ -659,10 +712,7 @@ var
             A:= NextR(i);
             if (A>=0) then begin
               if Tokens[A].Kind <> tokEmpty then begin
-                if Tokens[A].Expr.IsClass(TE_Call) and (TE_Call(Tokens[A].Expr.NativeObject).Name='_comma') then
-                  tmp.SetArgs(TE_Call(Tokens[A].Expr.NativeObject).Arguments)
-                else
-                  tmp.SetArgs([Tokens[A].Expr]);
+                tmp.SetArgs([Tokens[A].Expr]);
               end;
               Tokens[A].Expr:= nil;
               Tokens[a].Kind:= tokVoid;
@@ -675,10 +725,7 @@ var
             A:= NextR(i);
             if (A=I+1) then begin
               if Tokens[A].Kind <> tokEmpty then begin
-                if Tokens[A].Expr.IsClass(TE_Call) and (TE_Call(Tokens[A].Expr.NativeObject).Name='_comma') then
-                  tmp.SetArgs(TE_Call(Tokens[A].Expr.NativeObject).Arguments)
-                else
-                  tmp.SetArgs([Tokens[A].Expr]);
+                tmp.SetArgs([Tokens[A].Expr]);
               end;
               Tokens[A].Expr:= nil;
               Tokens[a].Kind:= tokVoid;
@@ -766,7 +813,8 @@ var
       // find any node that consists entirely of "inf" by first flattening out children, then see if anything happened
       for k:= 0 to x.ArgCount-1 do
         Flatten(TExpression(x.NativeObject).Arguments[k]);
-      if x.IsClass(TE_Call) and (TE_Call(x.NativeObject).Name = inf.Func) then begin
+      if x.IsClass(TE_Call) and
+         ((TE_Call(x.NativeObject).Name = inf.Func)) then begin
         SetLength(el,0);
         for k:= 0 to x.ArgCount-1 do begin
           if x.Arg[k].IsClass(TE_Call) and (TE_Call(x.Arg[k].NativeObject).Name = inf.Func) then begin
@@ -781,7 +829,17 @@ var
             el[c]:= x.Arg[k];
           end;
         end;
+
         x.SetArgs(el);
+      end;
+
+      // should we unpack, or is x one that will never be unpacked?
+      if (ooUnpackInArguments in inf.Options) and
+         (x.ArgCount = 1) and
+         (x.Arg[0].IsClass(TE_Call) and (TE_Call(x.Arg[0].NativeObject).Name = inf.Func)) and
+         not (x.IsClass(TE_Call) and Assigned(TE_Call(x.NativeObject).FCreatedFrom) and (ooHoldPackedArguments in PInfixDefinition(TE_Call(x.NativeObject).FCreatedFrom).Options)) then begin
+        u:= TE_Call(x.Arg[0].NativeObject);
+        x.SetArgs(u.Arguments);
       end;
     end;
   begin
@@ -848,7 +906,25 @@ begin
   end;
 end;
 
+procedure TMathSystem.PredefineConstants(const Context: IContext);
+var
+  setter: IExpression;
+  code: string;
+begin
+  Code:= '0';
+  Code:= Code + Format(',%s=const(''%0:s'')',['tau']);   
+  Code:= Code + Format(',%s=const(''%0:s'')',['pi']);
+  Code:= Code + Format(',%s=const(''%0:s'')',['e']);
+  setter:= Parse(Code);
+  setter.Evaluate(Context);
+end;
+
 { TContext }
+
+class function TContext.SystemFrom(const ref: IContext): TMathSystem;
+begin
+  Result:= TContext(ref.NativeObject).System;
+end;
 
 constructor TContext.Create(ASystem: TMathSystem; AParent: TContext);
 begin
@@ -857,6 +933,11 @@ begin
   FParent:= AParent;
   FSystem:= ASystem;
   FSilent:= false;
+end;
+
+constructor TContext.Create(AParent: IContext);
+begin
+  Create(SystemFrom(AParent), TContext(AParent.NativeObject));
 end;
 
 destructor TContext.Destroy;
@@ -937,7 +1018,7 @@ function TContext.Bake: TContext;
     n: string;
   begin
     if Assigned(C.Parent) then
-      Cook(C.Parent);
+      Cook(TContext(C.Parent.NativeObject));
     for i:= 0 to C.Count - 1 do begin
       n:= C.Name[i];
       Result.Define(n, C.Definition(n));
@@ -965,20 +1046,20 @@ end;
 
 { TExpression }
 
+constructor TExpression.Create;
+begin
+  inherited Create;
+  SetLength(Arguments, 0);
+end;
+
 function TExpression.ArgCount: Integer;
 begin
   Result:= length(Arguments);
 end;
 
-function TExpression.Argument(Index: Integer): IExpression;
+function TExpression.GetArgument(Index: Integer): IExpression;
 begin
   Result:= Arguments[Index];
-end;
-
-constructor TExpression.Create;
-begin
-  inherited Create;
-  SetLength(Arguments, 0);
 end;
 
 function TExpression.IsClass(const Cls: TClass): Boolean;
@@ -1025,9 +1106,9 @@ begin
   end;
 end;
 
-function TExpression.SystemFrom(const ref: IContext): TMathSystem;
+procedure TExpression.SetArgument(Index: integer; const Value: IExpression);
 begin
-  Result:= TContext(ref.NativeObject).System;
+  Arguments[Index]:= Value;
 end;
 
 { TDynamicArguments }
@@ -1035,19 +1116,15 @@ end;
 constructor TDynamicArguments.Create(Args: TExprList; FromIndex: integer; Context: IContext);
 var
   i: integer;
-  ex: IExpression;
   ass: TE_Call;
 begin
   for i:= FromIndex to High(Args) do begin
     if Args[i].IsClass(TE_SymbolRef) then
       Add((Args[i].NativeObject as TE_SymbolRef).Name, TValueNull.Create)
-    else if Args[i].IsClass(TE_SymbolRef) then begin
-      ex:= Args[i].Arg[0];
-      if ex.IsClass(TE_Call) then begin
-         ass:= ex.NativeObject as TE_Call;
-        if (ass.Name='_assign') and (ass.Arg[0].IsClass(TE_SymbolRef)) then
-          Add((ass.Arg[0].NativeObject as TE_SymbolRef).Name, ex.Arg[1].Evaluate(Context));
-      end;
+    else if Args[i].IsClass(TE_Call) then begin
+      ass:= Args[i].NativeObject as TE_Call;
+      if (ass.Name='_assign') and (ass.Arg[0].IsClass(TE_SymbolRef)) then
+        Add((ass.Arg[0].NativeObject as TE_SymbolRef).Name, ass.Arg[1].Evaluate(Context));
     end;
   end;
 end;
@@ -1185,16 +1262,37 @@ begin
     n:= v.Value;
 end;
 
+function TFunctionPackage.EvaluateToNumber(Context: IContext; ex: IExpression): Number;
+begin
+  Result:= CastToNumber(ex.Evaluate(Context));
+end;
+
+function TFunctionPackage.EvaluateToString(Context: IContext; ex: IExpression; out s: string): Boolean;
+var
+  e: IExpression;
+  v: IValueString;
+begin
+  e:= ex.Evaluate(Context);
+  Result:= Assigned(e) and e.Represents(IValueString, v);
+  if Result then
+    s:= v.Value;
+end;
+
+function TFunctionPackage.EvaluateToString(Context: IContext; ex: IExpression): String;
+begin
+  Result:= CastToString(ex.Evaluate(Context));
+end;
+
+procedure TFunctionPackage.OnImport(const MS: TMathSystem);
+begin
+end;
+
 { TPackageAlgebra }
 
 procedure TPackageAlgebra.OnImport(const MS: TMathSystem);
 begin
-  MS.RegisterAsInfix('??', 0,[ooUnary],Self,'_dump');
-  MS.RegisterAsInfix('?', 10,[ooUnary],Self,'_describe');  
   MS.RegisterAsInfix('#', 15,[ooUnary],Self,'_char');
   MS.RegisterAsInfix('-', 15,[ooUnary, ooUnparsed],Self,'_negate'); // Done by Parse/Fold if it finds a Subtraction with no LHS
-
-  MS.RegisterAsInfix('@', 18,[],Self,'_index');
 
   MS.RegisterAsInfix('^', 19,[],Self,'_pow');
   MS.RegisterAsInfix('*', 20,[ooFlat],Self,'_mult');
@@ -1206,54 +1304,7 @@ begin
 
   MS.RegisterAsInfix('=', 100,[],Self,'_assign');
   MS.RegisterAsInfix(':=', 105,[],Self,'_define');
-  MS.RegisterAsInfix(',', 110,[ooFlat],Self,'_comma');
-end;
-
-function TPackageAlgebra._dump_1(Context: IContext; Args: TExprList): IExpression;
-  procedure DumpNode(ex: IExpression; Lv: Integer);
-  var
-    str: IStringConvertible;
-    s: string;
-    i: integer;
-  begin
-    s:= '';
-    if ex.IsClass(TE_Atom) and ex.Represents(IStringConvertible, str) then
-      s:= str.AsString(STR_FORMAT_DEFAULT)
-    else
-    if ex.IsClass(TE_SymbolRef) then
-      s:= TE_SymbolRef(ex.NativeObject).Name
-    else
-    if ex.IsClass(TE_Subcontext) then
-      s:= TE_Subcontext(ex.NativeObject).Name + '[]'
-    else
-    if ex.IsClass(TE_Call) then
-      s:= TE_Call(ex.NativeObject).Name + '()'
-    else
-      s:= ex.NativeObject.ClassName;
-    Context.Output.Hint('%*s%s',[Lv*2, '', s]);
-    for i:= 0 to ex.ArgCount-1 do
-      DumpNode(ex.Arg[i], lv+1);
-  end;
-begin
-  DumpNode(Args[0], 0);
-  Result:= Args[0];
-end;
-
-function TPackageAlgebra._describe_1(Context: IContext; Args: TExprList): IExpression;
-var
-  name: string;
-  e: IExpression;
-  s: IStringConvertible;
-begin
-  if Args[0].IsClass(TE_SymbolRef) then begin
-    name:= TE_SymbolRef(Args[0].NativeObject).Name;
-    e:= Context.Definition(name);
-  end else
-    e:= Args[0];
-  if Assigned(e) and e.Represents(IStringConvertible, s) then
-    Result:= TValueString.Create(s.AsString(STR_FORMAT_INPUT))
-  else
-    Result:= TValueString.Create('<Unknown>');
+  MS.RegisterAsInfix(',', 110,[ooFlat, ooUnpackInArguments],Self,'_comma');
 end;
 
 function TPackageAlgebra._char_1(Context: IContext; Args: TExprList): IExpression;
@@ -1290,33 +1341,34 @@ end;
 function TPackageAlgebra._mult_N(Context: IContext; Args: TExprList): IExpression;
 var
   i: integer;
-  v,r: Number;
+  r: Number;
 begin
   if Length(Args)=0 then
     Result:= TValueUnassigned.Create
   else begin
-    if EvaluateToNumber(Context, Args[0], v) then
-      r:= v
-    else
-      raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+    r:= EvaluateToNumber(Context, Args[0]);
 
-    for i:= 1 to high(Args) do begin
-      if EvaluateToNumber(Context, Args[i], v) then
-        r:= r * v
-      else
-        raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
-    end;
+    for i:= 1 to high(Args) do 
+      r:= r * EvaluateToNumber(Context, Args[i]);
     Result:= TValueNumber.Create(r);
   end;
 end;
 
 function TPackageAlgebra._div_2(Context: IContext; Args: TExprList): IExpression;
 var
-  a,b: Number;
+  a,d: Number;
 begin
   if EvaluateToNumber(Context, Args[0], a) and
-     EvaluateToNumber(Context, Args[1], b) then
-    Result:= TValueNumber.Create(a / b)
+     EvaluateToNumber(Context, Args[1], d) then
+    if IsZero(d) then begin
+      if IsZero(a) then
+        Result:= TValueNumber.Create(NaN)
+      else if a < 0 then
+        Result:= TValueNumber.Create(NegInfinity)
+      else if a > 0 then
+        Result:= TValueNumber.Create(Infinity);
+    end else
+      Result:= TValueNumber.Create(a / d)
   else
     raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
 end;
@@ -1342,22 +1394,15 @@ end;
 function TPackageAlgebra._plus_N(Context: IContext; Args: TExprList): IExpression;
 var
   i: integer;
-  v,r: Number;
+  r: Number;
 begin
   if Length(Args)=0 then
     Result:= TValueUnassigned.Create
   else begin
-    if EvaluateToNumber(Context, Args[0], v) then
-      r:= v
-    else
-      raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+    r:= EvaluateToNumber(Context, Args[0]);
 
-    for i:= 1 to high(Args) do begin
-      if EvaluateToNumber(Context, Args[i], v) then
-        r:= r + v
-      else
-        raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
-    end;      
+    for i:= 1 to high(Args) do
+      r:= r + EvaluateToNumber(Context, Args[i]);
     Result:= TValueNumber.Create(r);
   end;
 end;
@@ -1365,22 +1410,15 @@ end;
 function TPackageAlgebra._subtract_N(Context: IContext; Args: TExprList): IExpression;
 var
   i: integer;
-  v,r: Number;
+  r: Number;
 begin
   if Length(Args)=0 then
     Result:= TValueUnassigned.Create
   else begin
-    if EvaluateToNumber(Context, Args[0], v) then
-      r:= v
-    else
-      raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+    r:= EvaluateToNumber(Context, Args[0]);
 
-    for i:= 1 to high(Args) do begin
-      if EvaluateToNumber(Context, Args[i], v) then
-        r:= r - v
-      else
-        raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
-    end;   
+    for i:= 1 to high(Args) do
+      r:= r - EvaluateToNumber(Context, Args[i]);
     Result:= TValueNumber.Create(r);
   end;
 end;
@@ -1389,13 +1427,29 @@ function TPackageAlgebra._assign_2(Context: IContext; Args: TExprList): IExpress
 var
   name: string;
   v: IExpression;
+  l,d: IValueList;
+  i: integer;
 begin
-  if not Args[0].IsClass(TE_SymbolRef) then
-    raise ESyntaxError.Create('LHS of assignment needs to be a symbol reference');
-  name:= TE_SymbolRef(Args[0].NativeObject).Name;
-  v:= Args[1].Evaluate(Context);
-  Context.Define(name, v);
-  Result:= v;
+  if Args[0].IsClass(TE_SymbolRef) then begin
+    name:= TE_SymbolRef(Args[0].NativeObject).Name;
+    v:= Args[1].Evaluate(Context);
+    Context.Define(name, v);
+    Result:= v;
+  end else if Args[0].Represents(IValueList, d) then begin
+    for i:= 0 to d.Length-1 do
+      if not d.Item[i].IsClass(TE_SymbolRef) then
+        raise ESyntaxError.Create('LHS of assignment needs to be a list of symbol references');
+    v:= Args[1].Evaluate(Context);
+    if v.Represents(IValueList, l) then begin
+      for i:= 0 to min(l.Length, d.Length)-1 do begin
+        Context.Define(TE_SymbolRef(d.Item[i].NativeObject).Name, l.Item[i]);
+      end;
+    end else
+      if d.Length>0 then
+        Context.Define(TE_SymbolRef(d.Item[0].NativeObject).Name, v);
+    Result:= v;
+  end else
+    raise ESyntaxError.Create('LHS of assignment needs to be a symbol reference or a list of symbol references');
 end;
 
 function TPackageAlgebra._define_2(Context: IContext; Args: TExprList): IExpression;
@@ -1435,8 +1489,27 @@ begin
 end;
 
 function TE_SymbolRef.Evaluate(const Context: IContext): IExpression;
+var
+  x: IExpression;
 begin
-  Result:= Context.Definition(FName);
+  x:= Context.Definition(FName);
+  if Assigned(x) then begin
+    TContext.SystemFrom(Context).EvaluationBegin(FName);
+    try
+      Result:= x.Evaluate(Context)
+    finally
+      TContext.SystemFrom(Context).EvaluationEnd;
+    end;
+  end
+  else begin
+    Result:= TValueUnassigned.Create;
+    raise EMathSysError.CreateFmt('Expression unknown in current Context: %s', [Name]);
+  end;;
+end;
+
+function TE_SymbolRef.Clone(Deep: Boolean): IExpression;
+begin
+  Result:= TE_SymbolRef.Create(FName);
 end;
 
 { TE_Call }
@@ -1452,11 +1525,13 @@ function TE_Call.Evaluate(const Context: IContext): IExpression;
 var
   i: integer;
   dyn: TDynamicArguments;
+  pks: TObjectList;
 begin
   if not FFunctionBound then begin
     FFunctionBound:= True;
-    for i:= 0 to SystemFrom(Context).fPackages.Count-1 do begin
-      FFunction:= TFunctionPackage(SystemFrom(Context).fPackages[i]).GetFunction(FName, Length(Arguments), FFirstDynamic);
+    pks:= TContext.SystemFrom(Context).fPackages;
+    for i:= 0 to pks.Count-1 do begin
+      FFunction:= TFunctionPackage(pks[i]).GetFunction(FName, Length(Arguments), FFirstDynamic);
       if Assigned(FFunction) then
         break;
     end;
@@ -1512,6 +1587,23 @@ begin
   end;
 end;
 
+function TE_Call.Clone(Deep: Boolean): IExpression;
+var
+  sc: TE_Call;
+  i: integer;
+begin
+  sc:= TE_Call.Create(FName);
+  sc.FCreatedFrom:= FCreatedFrom;
+
+  if Deep then begin
+    SetLength(sc.Arguments, Length(Arguments));
+    for i:= 0 to High(Arguments) do
+      sc.Arguments[i]:= Arguments[i].Clone(Deep);
+  end else
+    sc.SetArgs(Arguments);
+  Result:= sc as IExpression;
+end;
+
 { TE_Subcontext }
 
 function TE_Subcontext.AsString(const Format: TStringFormat): String;
@@ -1521,6 +1613,22 @@ begin
   else
     Result:= Name + '['+StringOfArgs(Format, ',')+']';
   end;
+end;
+
+function TE_Subcontext.Clone(Deep: Boolean): IExpression;
+var
+  sc: TE_Subcontext;
+  i: integer;
+begin
+  sc:= TE_Subcontext.Create(FName);
+
+  if Deep then begin
+    SetLength(sc.Arguments, Length(Arguments));
+    for i:= 0 to High(Arguments) do
+      sc.Arguments[i]:= Arguments[i].Clone(Deep);
+  end else
+    sc.SetArgs(Arguments);
+  Result:= sc as IExpression;
 end;
 
 constructor TE_Subcontext.Create(AName: string);
@@ -1535,7 +1643,7 @@ var
   target: IExpression;
   i: integer;
 begin
-  ctx:= TContext.Create(SystemFrom(Context), TContext(Context.NativeObject));
+  ctx:= TContext.Create(TContext.SystemFrom(Context), TContext(Context.NativeObject));
   try
     target:= Context.Definition(FName);
     for i:= 0 to high(Arguments) do
@@ -1545,6 +1653,173 @@ begin
     ctx:= nil;
   end;
 end;
+
+{ TPackageCore }
+
+procedure TPackageCore.OnImport(const MS: TMathSystem);
+begin
+  MS.RegisterAsInfix('??', 0,[ooUnary,ooHoldPackedArguments],Self,'_dump');
+  MS.RegisterAsInfix('?', 10,[ooUnary],Self,'_describe');
+end;
+
+function TPackageCore._dump_1(Context: IContext; Args: TExprList): IExpression;
+  procedure DumpNode(ex: IExpression; Lv: Integer);
+  var
+    str: IStringConvertible;
+    s: string;
+    i: integer;
+  begin
+    s:= '';
+    if ex.IsClass(TE_Atom) and ex.Represents(IStringConvertible, str) then
+      s:= str.AsString(STR_FORMAT_DEFAULT)
+    else
+    if ex.IsClass(TE_SymbolRef) then
+      s:= TE_SymbolRef(ex.NativeObject).Name
+    else
+    if ex.IsClass(TE_Subcontext) then
+      s:= TE_Subcontext(ex.NativeObject).Name + '[]'
+    else
+    if ex.IsClass(TE_Call) then
+      s:= TE_Call(ex.NativeObject).Name + '()'
+    else
+      s:= ex.NativeObject.ClassName;
+    Context.Output.Hint('%*s%s',[Lv*2, '', s]);
+    for i:= 0 to ex.ArgCount-1 do
+      DumpNode(ex.Arg[i], lv+1);
+  end;
+begin
+  DumpNode(Args[0], 0);
+  Result:= Args[0];
+end;
+
+function TPackageCore._describe_1(Context: IContext; Args: TExprList): IExpression;
+var
+  name: string;
+  e: IExpression;
+  s: IStringConvertible;
+begin
+  if Args[0].IsClass(TE_SymbolRef) then begin
+    name:= TE_SymbolRef(Args[0].NativeObject).Name;
+    e:= Context.Definition(name);
+  end else
+    e:= Args[0];
+  if Assigned(e) and e.Represents(IStringConvertible, s) then
+    Result:= TValueString.Create(s.AsString(STR_FORMAT_INPUT))
+  else
+    Result:= TValueString.Create('<Unknown>');
+end;
+
+function TPackageCore.New_0(Context: IContext; args: TExprList): IExpression;
+begin
+  TContext.SystemFrom(Context).NewContext('');
+end;
+
+function TPackageCore.New_1(Context: IContext; args: TExprList): IExpression;
+begin
+  TContext.SystemFrom(Context).NewContext(EvaluateToString(Context, args[0]));
+end;
+
+function TPackageCore.Drop_0(Context: IContext; args: TExprList): IExpression;
+begin
+  TContext.SystemFrom(Context).DropContext();
+end;
+
+function TPackageCore.Undef_1(Context: IContext; args: TExprList): IExpression;
+begin
+  Context.Undefine(EvaluateToString(Context, Args[0]));
+end;
+
+function TPackageCore.Clear_0(Context: IContext; args: TExprList): IExpression;
+begin
+  Context.Output.Clear;
+  Result:= TValueUnassigned.Create;
+end;
+
+function FindConstant(Name: string; out Definition: TConstantDef): boolean;
+type
+  TConstDefRef = array[0..0] of TConstantDef;
+  PConstDef = ^TConstDefRef;
+  function FindIn(List: PConstDef; Lo, Hi: integer): Boolean;
+  var
+    i: integer;
+  begin
+    Result:= false;
+    for i:= lo to hi do begin
+      if SameText(List^[i].LongName, Name) then begin
+        Result:= true;
+        Definition:= List^[i];
+        break;
+      end;
+    end;
+  end;
+begin
+  Result:= FindIn(@MathematicalConstants, Low(MathematicalConstants), high(MathematicalConstants)) or
+    FindIn(@PhysicalConstants, Low(PhysicalConstants), high(PhysicalConstants));
+end;
+
+function FormatConstInfo(def: TConstantDef): string;
+var
+  val: IValueString;
+begin
+  val:= TValueString.Create(NumberToStr(def.Value, NeutralFormatSettings, False));
+  Result:= Format('%s = %s', [def.LongName, val.Value]);
+  if def.Uni > '' then
+    Result:= Format('%s [%s]', [Result, def.Uni]);
+  if def.Comment > '' then
+    Result:= Format('%s (%s)', [Result, def.Comment]);
+end;
+
+function TPackageCore.const_1(Context: IContext; args: TExprList): IExpression;
+var
+  nm: string;
+  res: TConstantDef;
+begin
+  nm:= EvaluateToString(Context, args[0]);
+  if FindConstant(nm, res) then
+    Result:= TValueNumber.Create(res.Value)
+  else
+    raise EMathSysError.CreateFmt('Unknown Constant: %s', [nm]);
+end;
+
+function TPackageCore.constinfo_0(Context: IContext; args: TExprList): IExpression;
+type
+  TConstDefRef = array[0..0] of TConstantDef;
+  PConstDef = ^TConstDefRef;
+var
+  Count: integer;
+  procedure ListIn(List: PConstDef; Lo, Hi: integer);
+  var
+    i: integer;
+  begin
+    for i:= lo to hi do begin
+      Context.Output.Hint(FormatConstInfo(List^[i]), []);
+      Inc(Count);
+    end;
+  end;
+begin
+  Count:= 0;
+  ListIn(@MathematicalConstants, Low(MathematicalConstants), high(MathematicalConstants));
+  ListIn(@PhysicalConstants, Low(PhysicalConstants), high(PhysicalConstants));
+  Result:= TValueNumber.Create(Count);
+end;
+
+function TPackageCore.constinfo_1(Context: IContext; args: TExprList): IExpression;
+var
+  nm: string;
+  res: TConstantDef;
+begin
+  nm:= EvaluateToString(Context, args[0]);
+  if FindConstant(nm, res) then begin
+    Result:= TValueString.Create(FormatConstInfo(res));
+  end else
+    raise EMathSysError.CreateFmt('Unknown Constant: %s', [nm]);
+end;
+
+function TPackageCore.Hold_1(Context: IContext; args: TExprList): IExpression;
+begin
+  Result:= args[0];
+end;
+
 
 initialization
   GetLocaleFormatSettings(GetThreadLocale, NeutralFormatSettings);

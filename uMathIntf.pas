@@ -30,6 +30,7 @@ type
 
   IContext = interface['{AA415A3A-AA57-4361-8D23-95F9959CBA3B}']  
     function NativeObject: TObject;
+
     procedure Define(const Name: string; Expression: IExpression);
     procedure Undefine(const Name: string);
     function Definition(const Name: string): IExpression;
@@ -43,9 +44,10 @@ type
     function IsClass(const Cls: TClass): boolean;
     procedure SetArgs(const aArgs: array of IExpression);
     function ArgCount: integer;
-    function Argument(Index: Integer): IExpression;
-    property Arg[Index: integer]: IExpression read Argument;
+    function GetArgument(Index: Integer): IExpression;                          
+    property Arg[Index: integer]: IExpression read GetArgument;
     function Evaluate(const Context: IContext): IExpression;
+    function Clone(Deep: boolean): IExpression;
   end;
 
   TStringFormat = type Word;

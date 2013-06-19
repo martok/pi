@@ -2,29 +2,32 @@ unit uFunctionsStatistics;
 
 interface
 
-uses SysUtils, Classes, Graphics, uMath, Math;
+uses SysUtils, uMathIntf, uMath;
 
 type
   TPackageStatistics = class(TFunctionPackage)
   published
     // http://en.wikipedia.org/wiki/Error_function
-    function Erf_1(Context: TContext; args: TExprList): IValue;
-    function ErfC_1(Context: TContext; args: TExprList): IValue;
+    function Erf_1(Context: IContext; args: TExprList): IExpression;
+    function ErfC_1(Context: IContext; args: TExprList): IExpression;
 
     // f(x,my,sigma^2) = 1/(sigma sqrt(2pi)) exp(-(x-my)²/(2sigma²))
-    function NormPDF_3(Context: TContext; args: TExprList): IValue;
-    function StdNormPDF_1(Context: TContext; args: TExprList): IValue;  //phi
+    function NormPDF_3(Context: IContext; args: TExprList): IExpression;
+    function StdNormPDF_1(Context: IContext; args: TExprList): IExpression;  //phi
     // PHI(x) = 1/2 * (1 + erf(x/sqrt(2)) )
-    function StdNormCDF_1(Context: TContext; args: TExprList): IValue;  //PHI
+    function StdNormCDF_1(Context: IContext; args: TExprList): IExpression;  //PHI
 
     // ^PHI http://en.wikipedia.org/wiki/Probit_function
     //      http://home.online.no/~pjacklam/notes/invnorm/
-    function InvStdNormCDF_1(Context: TContext; args: TExprList): IValue;
+    function InvStdNormCDF_1(Context: IContext; args: TExprList): IExpression;
 
-    function StdNormRand_0(Context: TContext; args: TExprList): IValue;
+    function StdNormRand_0(Context: IContext; args: TExprList): IExpression;
   end;
 
 implementation
+
+uses
+  Math, uMathValues;
 
 function fac(const X: Int64): Int64;
 var
@@ -143,46 +146,44 @@ end;
 
 { TPackageStatistics }
 
-function TPackageStatistics.Erf_1(Context: TContext; args: TExprList): IValue;
+function TPackageStatistics.Erf_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(erf(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(erf(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageStatistics.ErfC_1(Context: TContext; args: TExprList): IValue;
+function TPackageStatistics.ErfC_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(erfc(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(erfc(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageStatistics.StdNormCDF_1(Context: TContext; args: TExprList): IValue;
+function TPackageStatistics.StdNormCDF_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(0.5 * (1 + erf(args[0].Evaluate(Context).GetNumber/sqrt(2))));
+  Result:= TValueNumber.Create(0.5 * (1 + erf(EvaluateToNumber(Context, args[0])/sqrt(2))));
 end;
 
-function TPackageStatistics.StdNormPDF_1(Context: TContext; args: TExprList): IValue;
+function TPackageStatistics.StdNormPDF_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(stdnormdist(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(stdnormdist(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageStatistics.NormPDF_3(Context: TContext; args: TExprList): IValue;
+function TPackageStatistics.NormPDF_3(Context: IContext; args: TExprList): IExpression;
 var
   x,s,u: Number;
 begin
-  x:= args[0].Evaluate(Context).GetNumber;
-  u:= args[1].Evaluate(Context).GetNumber;
-  s:= args[2].Evaluate(Context).GetNumber;
-  Result:= TValue.Create(1/s * stdnormdist((x-u)/s));
+  x:= EvaluateToNumber(Context, args[0]);
+  u:= EvaluateToNumber(Context, args[1]);
+  s:= EvaluateToNumber(Context, args[2]);
+  Result:= TValueNumber.Create(1/s * stdnormdist((x-u)/s));
 end;
 
-function TPackageStatistics.InvStdNormCDF_1(Context: TContext; args: TExprList): IValue;
+function TPackageStatistics.InvStdNormCDF_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(invstdnormdist(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(invstdnormdist(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageStatistics.StdNormRand_0(Context: TContext; args: TExprList): IValue;
+function TPackageStatistics.StdNormRand_0(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(invstdnormdist(random));
+  Result:= TValueNumber.Create(invstdnormdist(random));
 end;
 
-initialization
-  TFunctionPackage.RegisterPackage(TPackageStatistics);
 end.

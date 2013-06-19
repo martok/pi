@@ -2,95 +2,97 @@ unit uFunctions;
 
 interface
 
-uses SysUtils, Classes, uMath;
+uses SysUtils, Classes, uMathIntf, uMath, uMathValues;
 
 type
   TPackageTrig = class(TFunctionPackage)
   published
-    function Deg2Rad_1(Context: TContext; args: TExprList): IValue;
-    function Rad2Deg_1(Context: TContext; args: TExprList): IValue;
-    function Sin_1(Context: TContext; args: TExprList): IValue;
-    function Cos_1(Context: TContext; args: TExprList): IValue;
-    function Tan_1(Context: TContext; args: TExprList): IValue;
-    function ArcSin_1(Context: TContext; args: TExprList): IValue;
-    function ArcCos_1(Context: TContext; args: TExprList): IValue;
-    function ArcTan_1(Context: TContext; args: TExprList): IValue;
-    function ArcTan_2(Context: TContext; args: TExprList): IValue;
-    function Sinh_1(Context: TContext; args: TExprList): IValue;
-    function Cosh_1(Context: TContext; args: TExprList): IValue;
-    function Tanh_1(Context: TContext; args: TExprList): IValue;
-    function ArSinh_1(Context: TContext; args: TExprList): IValue;
-    function ArCosh_1(Context: TContext; args: TExprList): IValue;
-    function ArTanh_1(Context: TContext; args: TExprList): IValue;
+    function Deg2Rad_1(Context: IContext; args: TExprList): IExpression;
+    function Rad2Deg_1(Context: IContext; args: TExprList): IExpression;
+    function Sin_1(Context: IContext; args: TExprList): IExpression;
+    function Cos_1(Context: IContext; args: TExprList): IExpression;
+    function Tan_1(Context: IContext; args: TExprList): IExpression;
+    function ArcSin_1(Context: IContext; args: TExprList): IExpression;
+    function ArcCos_1(Context: IContext; args: TExprList): IExpression;
+    function ArcTan_1(Context: IContext; args: TExprList): IExpression;
+    function ArcTan_2(Context: IContext; args: TExprList): IExpression;
+    function Sinh_1(Context: IContext; args: TExprList): IExpression;
+    function Cosh_1(Context: IContext; args: TExprList): IExpression;
+    function Tanh_1(Context: IContext; args: TExprList): IExpression;
+    function ArSinh_1(Context: IContext; args: TExprList): IExpression;
+    function ArCosh_1(Context: IContext; args: TExprList): IExpression;
+    function ArTanh_1(Context: IContext; args: TExprList): IExpression;
   end;
 
   TPackageElementary = class(TFunctionPackage)
   private
-    function LogPossible(Val: Number; var FailVal: IValue): boolean;
+    function LogPossible(Val: Number; var FailVal: IExpression): boolean;
   published
-    function Exp_1(Context: TContext; args: TExprList): IValue;
-    function Ln_1(Context: TContext; args: TExprList): IValue;
-    function Lg_1(Context: TContext; args: TExprList): IValue;
-    function Ld_1(Context: TContext; args: TExprList): IValue;
-    function Loga_2(Context: TContext; args: TExprList): IValue;
-    function Sqrt_1(Context: TContext; args: TExprList): IValue;
-    function NRt_2(Context: TContext; args: TExprList): IValue;
-    function Random_0(Context: TContext; args: TExprList): IValue;
+    function Exp_1(Context: IContext; args: TExprList): IExpression;
+    function Ln_1(Context: IContext; args: TExprList): IExpression;
+    function Lg_1(Context: IContext; args: TExprList): IExpression;
+    function Ld_1(Context: IContext; args: TExprList): IExpression;
+    function Loga_2(Context: IContext; args: TExprList): IExpression;
+    function Sqrt_1(Context: IContext; args: TExprList): IExpression;
+    function NRt_2(Context: IContext; args: TExprList): IExpression;
+    function Random_0(Context: IContext; args: TExprList): IExpression;
   end;
 
   TPackageNumerical = class(TFunctionPackage)
   private
-    function Base_atoi(base: integer; Param: IValue): IValue;
-    function Base_itoa(base: integer; Param: IValue): IValue;
+    function Base_atoi(base: integer; Param: IValueString): IExpressionAtom;
+    function Base_itoa(base: integer; Param: IValueNumber): IExpressionAtom;
     function GCD(a,b: int64): int64;
   published
-    function Abs_1(Context: TContext; args: TExprList): IValue;
-    function Sign_1(Context: TContext; args: TExprList): IValue;
-    function Step_1(Context: TContext; args: TExprList): IValue;
-    function Round_1(Context: TContext; args: TExprList): IValue;
-    function Round_2(Context: TContext; args: TExprList): IValue;
-    function Fac_1(Context: TContext; args: TExprList): IValue;
-    function Binomial_2(Context: TContext; args: TExprList): IValue;
-    function Permutations_2(Context: TContext; args: TExprList): IValue;
+    function Abs_1(Context: IContext; args: TExprList): IExpression;
+    function Sign_1(Context: IContext; args: TExprList): IExpression;
+    function Step_1(Context: IContext; args: TExprList): IExpression;
+    function Round_1(Context: IContext; args: TExprList): IExpression;
+    function Round_2(Context: IContext; args: TExprList): IExpression;
+    function Fac_1(Context: IContext; args: TExprList): IExpression;
+    function Binomial_2(Context: IContext; args: TExprList): IExpression;
+    function Permutations_2(Context: IContext; args: TExprList): IExpression;
 
-    function AtoI_2(Context: TContext; args: TExprList): IValue;
-    function ItoA_2(Context: TContext; args: TExprList): IValue;
+    function AtoI_2(Context: IContext; args: TExprList): IExpression;
+    function ItoA_2(Context: IContext; args: TExprList): IExpression;
 
-    function h_1(Context: TContext; args: TExprList): IValue;
-    function b_1(Context: TContext; args: TExprList): IValue;
-    function o_1(Context: TContext; args: TExprList): IValue;
+    function h_1(Context: IContext; args: TExprList): IExpression;
+    function b_1(Context: IContext; args: TExprList): IExpression;
+    function o_1(Context: IContext; args: TExprList): IExpression;
 
-    function GCD_2(Context: TContext; args: TExprList): IValue;
-    function LCM_2(Context: TContext; args: TExprList): IValue;
-    function Fraction_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+    function GCD_2(Context: IContext; args: TExprList): IExpression;
+    function LCM_2(Context: IContext; args: TExprList): IExpression;
+    function Fraction_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
   end;
 
   TPackageLists = class(TFunctionPackage)
+  protected
+    procedure OnImport(const MS: TMathSystem); override;
   published
-    function L_N(Context: TContext; args: TExprList): IValue;
-    function Range_3(Context: TContext; args: TExprList): IValue;
-    function Each_3(Context: TContext; args: TExprList): IValue;
-    function HoldList_1(Context: TContext; args: TExprList): IValue;
-    function Flatten_1(Context: TContext; args: TExprList): IValue;
-    function Aggregate_5(Context: TContext; args: TExprList): IValue;
-    function Merge_2(Context: TContext; args: TExprList): IValue;
-    function Part_3(Context: TContext; args: TExprList): IValue;
-    function LGet_2(Context: TContext; args: TExprList): IValue;
-    function Count_1(Context: TContext; args: TExprList): IValue;
+    function L_N(Context: IContext; args: TExprList): IExpression;
+    function Range_3(Context: IContext; args: TExprList): IExpression;
+    function Each_3(Context: IContext; args: TExprList): IExpression;
+    function HoldList_1(Context: IContext; args: TExprList): IExpression;
+    function Flatten_1(Context: IContext; args: TExprList): IExpression;
+    function Aggregate_5(Context: IContext; args: TExprList): IExpression;
+    function Merge_2(Context: IContext; args: TExprList): IExpression;
+    function Part_3(Context: IContext; args: TExprList): IExpression;
+    function LGet_2(Context: IContext; args: TExprList): IExpression;
+    function Count_1(Context: IContext; args: TExprList): IExpression;
   end;
 
   TPackageData = class(TFunctionPackage)
   published
-    function PWD_0(Context: TContext; args: TExprList): IValue;
-    function CWD_1(Context: TContext; args: TExprList): IValue;
-    function CSVLoad_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
-    function Source_1(Context: TContext; args: TExprList): IValue;
-    function Table_1(Context: TContext; args: TExprList): IValue;
-    function Bucket_4(Context: TContext; args: TExprList): IValue;
-    function Min_1(Context: TContext; args: TExprList): IValue;
-    function Max_1(Context: TContext; args: TExprList): IValue;
-    function SortBy_3_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
-    function NumDerive_1(Context: TContext; args: TExprList): IValue;
+    function PWD_0(Context: IContext; args: TExprList): IExpression;
+    function CWD_1(Context: IContext; args: TExprList): IExpression;
+    function CSVLoad_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+    function Source_1(Context: IContext; args: TExprList): IExpression;
+    function Table_1(Context: IContext; args: TExprList): IExpression;
+    function Bucket_4(Context: IContext; args: TExprList): IExpression;
+    function Min_1(Context: IContext; args: TExprList): IExpression;
+    function Max_1(Context: IContext; args: TExprList): IExpression;
+    function SortBy_3_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+    function NumDerive_1(Context: IContext; args: TExprList): IExpression;
   end;
 
 implementation
@@ -99,217 +101,217 @@ uses Math, uCCSVList;
 
 { TPackageTrig }
 
-function TPackageTrig.Deg2Rad_1(Context: TContext; args: TExprList): IValue;
+function TPackageTrig.Deg2Rad_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(DegToRad(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(DegToRad(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageTrig.Rad2Deg_1(Context: TContext; args: TExprList): IValue;
+function TPackageTrig.Rad2Deg_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(RadToDeg(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(RadToDeg(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageTrig.Sin_1(Context: TContext; args: TExprList): IValue;
+function TPackageTrig.Sin_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(Sin(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(Sin(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageTrig.Cos_1(Context: TContext; args: TExprList): IValue;
+function TPackageTrig.Cos_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(Cos(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(Cos(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageTrig.Tan_1(Context: TContext; args: TExprList): IValue;
+function TPackageTrig.Tan_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(Tan(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(Tan(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageTrig.ArcSin_1(Context: TContext; args: TExprList): IValue;
+function TPackageTrig.ArcSin_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(ArcSin(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(ArcSin(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageTrig.ArcCos_1(Context: TContext; args: TExprList): IValue;
+function TPackageTrig.ArcCos_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(ArcCos(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(ArcCos(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageTrig.ArcTan_1(Context: TContext; args: TExprList): IValue;
+function TPackageTrig.ArcTan_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(ArcTan(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(ArcTan(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageTrig.ArcTan_2(Context: TContext; args: TExprList): IValue;
+function TPackageTrig.ArcTan_2(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(ArcTan2(args[0].Evaluate(Context).GetNumber, args[1].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(ArcTan2(EvaluateToNumber(Context, args[0]), EvaluateToNumber(Context, args[1])));
 end;
 
-function TPackageTrig.Sinh_1(Context: TContext; args: TExprList): IValue;
+function TPackageTrig.Sinh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(Sinh(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(Sinh(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageTrig.Cosh_1(Context: TContext; args: TExprList): IValue;
+function TPackageTrig.Cosh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(Cosh(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(Cosh(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageTrig.Tanh_1(Context: TContext; args: TExprList): IValue;
+function TPackageTrig.Tanh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(Tanh(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(Tanh(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageTrig.ArSinh_1(Context: TContext; args: TExprList): IValue;
+function TPackageTrig.ArSinh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(ArcSinh(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(ArcSinh(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageTrig.ArCosh_1(Context: TContext; args: TExprList): IValue;
+function TPackageTrig.ArCosh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(ArcCosh(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(ArcCosh(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageTrig.ArTanh_1(Context: TContext; args: TExprList): IValue;
+function TPackageTrig.ArTanh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(ArcTanh(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(ArcTanh(EvaluateToNumber(Context, args[0])));
 end;
 
 { TPackageElementary }
 
-function TPackageElementary.Exp_1(Context: TContext; args: TExprList): IValue;
+function TPackageElementary.Exp_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(System.Exp(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(System.Exp(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageElementary.LogPossible(Val: Number; var FailVal: IValue): boolean;
+function TPackageElementary.LogPossible(Val: Number; var FailVal: IExpression): boolean;
 begin
   Result:= false;
   if IsZero(Val) then
-    FailVal:= TValue.Create(NegInfinity)
+    FailVal:= TValueNumber.Create(NegInfinity)
   else if Val < 0 then
-    FailVal:= TValue.Create(NaN)
+    FailVal:= TValueNumber.Create(NaN)
   else
     Result:= true;
 end;
 
-function TPackageElementary.Ln_1(Context: TContext; args: TExprList): IValue;
+function TPackageElementary.Ln_1(Context: IContext; args: TExprList): IExpression;
 var
   a: Number;
 begin
-  a:= args[0].Evaluate(Context).GetNumber;
+  a:= EvaluateToNumber(Context, args[0]);
   if LogPossible(a, Result) then
-    Result:= TValue.Create(System.Ln(a));
+    Result:= TValueNumber.Create(System.Ln(a));
 end;
 
-function TPackageElementary.Lg_1(Context: TContext; args: TExprList): IValue;
+function TPackageElementary.Lg_1(Context: IContext; args: TExprList): IExpression;
 var
   a: Number;
 begin
-  a:= args[0].Evaluate(Context).GetNumber;
+  a:= EvaluateToNumber(Context, args[0]);
   if LogPossible(a, Result) then
-    Result:= TValue.Create(Math.Log10(a));
+    Result:= TValueNumber.Create(Math.Log10(a));
 end;
 
-function TPackageElementary.Ld_1(Context: TContext; args: TExprList): IValue;
+function TPackageElementary.Ld_1(Context: IContext; args: TExprList): IExpression;
 var
   a: Number;
 begin
-  a:= args[0].Evaluate(Context).GetNumber;
+  a:= EvaluateToNumber(Context, args[0]);
   if LogPossible(a, Result) then
-    Result:= TValue.Create(Math.Log2(a));
+    Result:= TValueNumber.Create(Math.Log2(a));
 end;
 
-function TPackageElementary.Loga_2(Context: TContext; args: TExprList): IValue;
+function TPackageElementary.Loga_2(Context: IContext; args: TExprList): IExpression;
 var
   b, a: Number;
 begin
-  b:= args[0].Evaluate(Context).GetNumber;
-  a:= args[1].Evaluate(Context).GetNumber;
+  b:= EvaluateToNumber(Context, args[0]);
+  a:= EvaluateToNumber(Context, args[1]);
   if LogPossible(a, Result) then
-    Result:= TValue.Create(Math.LogN(b, a));
+    Result:= TValueNumber.Create(Math.LogN(b, a));
 end;
 
-function TPackageElementary.Sqrt_1(Context: TContext; args: TExprList): IValue;
+function TPackageElementary.Sqrt_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(Sqrt(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(Sqrt(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageElementary.NRt_2(Context: TContext; args: TExprList): IValue;
+function TPackageElementary.NRt_2(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(Math.Power(args[1].Evaluate(Context).GetNumber, 1 / args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(Math.Power(EvaluateToNumber(Context, args[1]), 1 / EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageElementary.Random_0(Context: TContext; args: TExprList): IValue;
+function TPackageElementary.Random_0(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(Random);
+  Result:= TValueNumber.Create(Random);
 end;
 
 { TPackageNumerical }
 
-function TPackageNumerical.Abs_1(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.Abs_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(System.Abs(args[0].Evaluate(Context).GetNumber));
+  Result:= TValueNumber.Create(System.Abs(EvaluateToNumber(Context, args[0])));
 end;
 
-function TPackageNumerical.Sign_1(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.Sign_1(Context: IContext; args: TExprList): IExpression;
 var
   n, m: Number;
 begin
-  n:= args[0].Evaluate(Context).GetNumber;
+  n:= EvaluateToNumber(Context, args[0]);
   if IsZero(n) then
     m:= 0
   else if n>0 then
     m:= 1.0
   else
     m:= -1.0;
-  Result:= TValue.Create(m);
+  Result:= TValueNumber.Create(m);
 end;
 
-function TPackageNumerical.Step_1(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.Step_1(Context: IContext; args: TExprList): IExpression;
 var
   n, m: Number;
 begin
-  n:= args[0].Evaluate(Context).GetNumber;
+  n:= EvaluateToNumber(Context, args[0]);
   if IsZero(n) or (n>0) then
     m:= 1.0
   else
     m:= 0;
-  Result:= TValue.Create(m);
+  Result:= TValueNumber.Create(m);
 end;
 
-function TPackageNumerical.Round_1(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.Round_1(Context: IContext; args: TExprList): IExpression;
 var
   v: Number;
 begin
-  v:= args[0].Evaluate(Context).GetNumber;
+  v:= EvaluateToNumber(Context, args[0]);
   v:= Round(v);
-  Result:= TValue.Create(v);
+  Result:= TValueNumber.Create(v);
 end;
 
-function TPackageNumerical.Round_2(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.Round_2(Context: IContext; args: TExprList): IExpression;
 var
   pot: integer;
   f,v: Number;
 begin
-  v:= args[0].Evaluate(Context).GetNumber;
-  pot:= trunc(args[1].Evaluate(Context).GetNumber);
+  v:= EvaluateToNumber(Context, args[0]);
+  pot:= trunc(EvaluateToNumber(Context, args[1]));
   f:= IntPower(10, pot);
   v:= Round(v / f) * f;
-  Result:= TValue.Create(v);
+  Result:= TValueNumber.Create(v);
 end;
 
-function TPackageNumerical.Fac_1(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.Fac_1(Context: IContext; args: TExprList): IExpression;
 var
   accu: Number;
   desiredFact: Int64;
 begin
   accu:= 1;
-  desiredFact:= trunc(args[0].Evaluate(Context).GetNumber);
+  desiredFact:= trunc(EvaluateToNumber(Context, args[0]));
   while desiredFact >= 2 do begin
     accu:= accu * desiredFact;
     Dec(desiredFact);
   end;
-  Result:= TValue.Create(accu);
+  Result:= TValueNumber.Create(accu);
 end;
 
 function bin(n,k: int64): int64;
@@ -333,40 +335,40 @@ begin
     end;
 end;
 
-function TPackageNumerical.Binomial_2(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.Binomial_2(Context: IContext; args: TExprList): IExpression;
 var
   n,k,p: Int64;
 begin
-  n:= trunc(args[0].Evaluate(Context).GetNumber);
-  k:= trunc(args[1].Evaluate(Context).GetNumber);
+  n:= trunc(EvaluateToNumber(Context, args[0]));
+  k:= trunc(EvaluateToNumber(Context, args[1]));
   p:= bin(n,k);
-  Result:= TValue.Create(p);
+  Result:= TValueNumber.Create(p);
 end;
 
-function TPackageNumerical.Permutations_2(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.Permutations_2(Context: IContext; args: TExprList): IExpression;
 var
   n,k,p: Int64;
 begin
-  n:= trunc(args[0].Evaluate(Context).GetNumber);
-  k:= trunc(args[1].Evaluate(Context).GetNumber);
+  n:= trunc(EvaluateToNumber(Context, args[0]));
+  k:= trunc(EvaluateToNumber(Context, args[1]));
   p:= bin(n,k);
   while k >= 2 do begin
     p:= p * k;
     Dec(k);
   end;
-  Result:= TValue.Create(p);
+  Result:= TValueNumber.Create(p);
 end;
 
 const
   BaseString = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-function TPackageNumerical.Base_atoi(base: integer; Param: IValue): IValue;
+function TPackageNumerical.Base_atoi(base: integer; Param: IValueString): IExpressionAtom;
 var
   i, j: integer;
   v: int64;
   n: string;
 begin
-  n:= Param.GetString;
+  n:= Param.Value;
   n:= UpperCase(n);
   if base > Length(BaseString) then
     raise EMathSysError.CreateFmt('Base %d exceeds maximum allowed value of %d', [base, Length(BaseString)]);
@@ -377,19 +379,19 @@ begin
       raise EMathSysError.CreateFmt('Invalid numeral in base %d: ''%s''', [base, n[i]]);
     v:= v * base + j;
   end;
-  Result:= TValue.Create(v);
+  Result:= TValueNumber.Create(v);
 end;
 
-function TPackageNumerical.Base_itoa(base: integer; Param: IValue): IValue;
+function TPackageNumerical.Base_itoa(base: integer; Param: IValueNumber): IExpressionAtom;
 var
   i: integer;
   n: string;
   v: int64;
 begin
-  v:= Trunc(Param.GetNumber);
+  v:= Trunc(Param.Value);
 
   if v = 0 then begin
-    Result:= TValue.Create('0');
+    Result:= TValueString.Create('0');
     exit;
   end;
 
@@ -403,62 +405,76 @@ begin
     v:= v div base;
     n:= BaseString[i + 1] + n;
   end;
-  Result:= TValue.Create(n);
+  Result:= TValueString.Create(n);
 end;
 
-function TPackageNumerical.AtoI_2(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.AtoI_2(Context: IContext; args: TExprList): IExpression;
 var
   base: integer;
+  st: IValueString;
 begin
-  base:= Trunc(args[1].Evaluate(Context).GetNumber);
-  Result:= Base_atoi(base, args[0].Evaluate(Context));
+  base:= Trunc(EvaluateToNumber(Context, args[1]));
+  if args[0].Evaluate(Context).Represents(IValueString, st) then
+    Result:= Base_atoi(base, st) as IExpression
+  else
+    raise EMathTypeError.Create('AtoI: Input needs to be a string value.');
 end;
 
-function TPackageNumerical.ItoA_2(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.ItoA_2(Context: IContext; args: TExprList): IExpression;
 var
   base: integer;
+  st: IValueNumber;
 begin
-  base:= Trunc(args[1].Evaluate(Context).GetNumber);
-  Result:= Base_itoa(base, args[0].Evaluate(Context));
+  base:= Trunc(EvaluateToNumber(Context, args[1]));
+  if args[0].Evaluate(Context).Represents(IValueNumber, st) then
+    Result:= Base_itoa(base, st) as IExpression
+  else
+    raise EMathTypeError.Create('ItoA: Input needs to be a string value.');
 end;
 
-function TPackageNumerical.b_1(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.b_1(Context: IContext; args: TExprList): IExpression;
 var
-  v: IValue;
+  v: IExpression;
+  s: IValueString;
+  n: IValueNumber;
 begin
   v:= args[0].Evaluate(Context);
-  case v.ValueType of
-    vtNumber: Result:= Base_itoa(2, v);
-    vtString: Result:= Base_atoi(2, v);
+  if v.Represents(IValueString, s) then
+    Result:= Base_atoi(2, s) as IExpression
+  else if v.Represents(IValueNumber, n) then
+    Result:= Base_itoa(2, n) as IExpression
   else
     Result:= v;
-  end;
 end;
 
-function TPackageNumerical.h_1(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.h_1(Context: IContext; args: TExprList): IExpression;
 var
-  v: IValue;
+  v: IExpression;
+  s: IValueString;
+  n: IValueNumber;
 begin
   v:= args[0].Evaluate(Context);
-  case v.ValueType of
-    vtNumber: Result:= Base_itoa(16, v);
-    vtString: Result:= Base_atoi(16, v);
+  if v.Represents(IValueString, s) then
+    Result:= Base_atoi(16, s) as IExpression
+  else if v.Represents(IValueNumber, n) then
+    Result:= Base_itoa(16, n) as IExpression
   else
     Result:= v;
-  end;
 end;
 
-function TPackageNumerical.o_1(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.o_1(Context: IContext; args: TExprList): IExpression;
 var
-  v: IValue;
+  v: IExpression;
+  s: IValueString;
+  n: IValueNumber;
 begin
   v:= args[0].Evaluate(Context);
-  case v.ValueType of
-    vtNumber: Result:= Base_itoa(8, v);
-    vtString: Result:= Base_atoi(8, v);
+  if v.Represents(IValueString, s) then
+    Result:= Base_atoi(8, s) as IExpression
+  else if v.Represents(IValueNumber, n) then
+    Result:= Base_itoa(8, n) as IExpression
   else
     Result:= v;
-  end;
 end;
 
 function TPackageNumerical.GCD(a, b: int64): int64;
@@ -475,31 +491,31 @@ begin
   Result:= a;
 end;
 
-function TPackageNumerical.GCD_2(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.GCD_2(Context: IContext; args: TExprList): IExpression;
 var
   a,b: int64;
 begin
-  a:= Trunc(args[0].Evaluate(Context).GetNumber);
-  b:= Trunc(args[1].Evaluate(Context).GetNumber);
+  a:= Trunc(EvaluateToNumber(Context, args[0]));
+  b:= Trunc(EvaluateToNumber(Context, args[1]));
 
-  Result:= TValue.Create(GCD(a,b));
+  Result:= TValueNumber.Create(GCD(a,b));
 end;
 
-function TPackageNumerical.LCM_2(Context: TContext; args: TExprList): IValue;
+function TPackageNumerical.LCM_2(Context: IContext; args: TExprList): IExpression;
 var
   a,b,g: int64;
 begin
-  a:= Trunc(args[0].Evaluate(Context).GetNumber);
-  b:= Trunc(args[1].Evaluate(Context).GetNumber);
+  a:= Trunc(EvaluateToNumber(Context, args[0]));
+  b:= Trunc(EvaluateToNumber(Context, args[1]));
 
   g:= gcd(a,b);
   if g<>0 then
-    Result:= TValue.Create(a div g * b)
+    Result:= TValueNumber.Create(a div g * b)
   else
-    Result:= TValue.Create(0);
+    Result:= TValueNumber.Create(0);
 end;
 
-function TPackageNumerical.Fraction_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+function TPackageNumerical.Fraction_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
 var
   prec: Number;
   mixed: boolean;
@@ -507,10 +523,10 @@ var
   x, p, lastp, q, lastq, ptemp, qtemp, u, err, d: Number;
   nom,den,w: int64;
 begin
-  prec:= Options.GetDefault('precision', TValue.Create(1E-11)).GetNumber / 100;
+  prec:= EvaluateToNumber(Context, Options.GetDefault('precision', TValueNumber.Create(1E-11))) / 100;
   mixed:= Options.IsSet('mixed');
 
-  x:= Args[0].Evaluate(Context).GetNumber;
+  x:= EvaluateToNumber(Context, Args[0]);
 
   // Initialisierung
   p := 1;
@@ -560,69 +576,71 @@ begin
     if w<>0 then
       nom:= abs(nom);
     nom:= nom mod den;
-    Result:= TValueFixedList.CreateAs([TValue.Create(w),TValue.Create(Nom),TValue.Create(den)])
+    Result:= TValueList.CreateAs([TValueNumber.Create(w),TValueNumber.Create(Nom),TValueNumber.Create(den)])
   end else
-    Result:= TValueFixedList.CreateAs([TValue.Create(Nom),TValue.Create(den)]);
+    Result:= TValueList.CreateAs([TValueNumber.Create(Nom),TValueNumber.Create(den)]);
 end;
 
 
 
 { TPackageLists }
 
-function TPackageLists.L_N(Context: TContext; args: TExprList): IValue;
+function TPackageLists.L_N(Context: IContext; args: TExprList): IExpression;
 var
   i: integer;
   ls: IValueList;
 begin
-  ls:= TValueFixedList.Create;
+  ls:= TValueList.Create;
   ls.Length:= length(args);
   for i:= 0 to ls.Length - 1 do
-    ls.ListItem[i]:= args[i].Evaluate(Context);
-  ls.QueryInterface(IValue, Result);
+    ls.Item[i]:= args[i].Evaluate(Context);
+  ls.QueryInterface(IExpression, Result);
 end;
 
-function TPackageLists.Range_3(Context: TContext; args: TExprList): IValue;
+function TPackageLists.Range_3(Context: IContext; args: TExprList): IExpression;
 var
   a, max, st: Number;
 begin
-  a:= args[0].Evaluate(Context).GetNumber;
-  max:= args[1].Evaluate(Context).GetNumber;
-  st:= args[2].Evaluate(Context).GetNumber;
-  Result:= TValueRangeList.Create(a, st, max);
+  a:= EvaluateToNumber(Context, args[0]);
+  max:= EvaluateToNumber(Context, args[1]);
+  st:= EvaluateToNumber(Context, args[2]);
+  Result:= TValueRange.Create(a, st, max);
 end;
 
-function TPackageLists.Each_3(Context: TContext; args: TExprList): IValue;
+function TPackageLists.Each_3(Context: IContext; args: TExprList): IExpression;
 var
   list: IValueList;
   v: IExpression;                                           //TE_ExprRef
   ex: IExpression;
   i: integer;
-  ctx: TContext;
+  n: string;
+  ctx: IContext;
   res: IValueList;
 begin
-  if not Supports(args[0].Evaluate(Context), IValueList, list) then
+  if not args[0].Evaluate(Context).Represents(IValueList, list) then
     raise EMathSysError.Create('Function Each requires a list to work on');
   v:= args[1];
-  if v.GetClassType <> TE_ExprRef then
+  if not v.IsClass(TE_SymbolRef) then
     raise EMathSysError.Create('Function Each requires a variable reference');
   ex:= args[2];
 
-  ctx:= TContext.Create(Context.System, Context);
+  ctx:= TContext.Create(Context);
   try
-    ctx.Silent:= true;
-    res:= TValueFixedList.Create;
+    TContext(ctx.NativeObject).Silent:= true;
+    res:= TValueList.Create;
     res.Length:= list.Length;
+    n:= TE_SymbolRef(v.NativeObject).Name;
     for i:= 0 to list.length - 1 do begin
-      ctx.DefineValue(TE_ExprRef(v.GetObject).Name, list.ListItem[i]);
-      res.ListItem[i]:= ex.Evaluate(ctx);
+      ctx.Define(n, list.Item[i]);
+      res.Item[i]:= ex.Evaluate(ctx);
     end;
-    Result:= res as IValue;
+    Result:= res as IExpression;
   finally
-    FreeAndNil(ctx);
+    ctx:= nil;
   end;
 end;
 
-function TPackageLists.HoldList_1(Context: TContext; args: TExprList): IValue;
+function TPackageLists.HoldList_1(Context: IContext; args: TExprList): IExpression;
 var
   list: IValueList;
   i: integer;
@@ -631,14 +649,14 @@ begin
   if not Supports(args[0].Evaluate(Context), IValueList, list) then
     raise EMathSysError.Create('Function Hold requires a list to work on');
 
-  res:= TValueFixedList.Create;
+  res:= TValueList.Create;
   res.Length:= list.Length;
   for i:= 0 to list.length - 1 do
-    res.ListItem[i]:= list.ListItem[i];
-  Result:= res as IValue;
+    res.Item[i]:= list.Item[i];
+  Result:= res as IExpression;
 end;
 
-function TPackageLists.Flatten_1(Context: TContext; args: TExprList): IValue;
+function TPackageLists.Flatten_1(Context: IContext; args: TExprList): IExpression;
 var
   list, it: IValueList;
   i, j: integer;
@@ -647,23 +665,23 @@ begin
   if not Supports(args[0].Evaluate(Context), IValueList, list) then
     raise EMathSysError.Create('Function Flatten requires a list to work on');
 
-  res:= TValueFixedList.Create;
+  res:= TValueList.Create;
   res.Length:= 0;
   for i:= 0 to list.length - 1 do begin
-    if Supports(list.ListItem[i], IValueList, it) then begin
+    if Supports(list.Item[i], IValueList, it) then begin
       for j:= 0 to it.Length-1 do begin
         res.Length:= res.Length+1;
-        res.ListItem[res.Length-1]:= it.ListItem[j];
+        res.Item[res.Length-1]:= it.Item[j];
       end;
     end else begin
       res.Length:= res.Length+1;
-      res.ListItem[res.Length-1]:= list.ListItem[i];
+      res.Item[res.Length-1]:= list.Item[i];
     end;
   end;
-  Result:= res as IValue;
+  Result:= res as IExpression;
 end;
 
-function TPackageLists.Aggregate_5(Context: TContext; args: TExprList): IValue;
+function TPackageLists.Aggregate_5(Context: IContext; args: TExprList): IExpression;
 var
   list: IValueList;
   agg: IExpression;                                         //TE_ExprRef
@@ -671,53 +689,53 @@ var
   v: IExpression;                                           //TE_ExprRef
   ex: IExpression;
   i: integer;
-  ctx: TContext;
+  ctx: IContext;
 begin
   if not Supports(args[0].Evaluate(Context), IValueList, list) then
     raise EMathSysError.Create('Function Aggregate requires a list to work on');
   agg:= args[1];
-  if agg.GetClassType <> TE_ExprRef then
+  if not agg.IsClass(TE_SymbolRef) then
     raise EMathSysError.Create('Function Aggregate requires a variable reference as aggregate');
   init:= args[2];
   v:= args[3];
-  if v.GetClassType <> TE_ExprRef then
+  if not v.IsClass(TE_SymbolRef) then
     raise EMathSysError.Create('Function Aggregate requires a variable reference');
   ex:= args[4];
 
-  ctx:= TContext.Create(Context.System, Context);
+  ctx:= TContext.Create(Context);
   try
-    ctx.Silent:= true;
-    ctx.DefineValue(TE_ExprRef(agg.GetObject).Name, init.Evaluate(ctx));
+    TContext(ctx.NativeObject).Silent:= true;
+    ctx.Define(TE_SymbolRef(agg.NativeObject).Name, init.Evaluate(ctx));
 
     for i:= 0 to list.length - 1 do begin
-      ctx.DefineValue(TE_ExprRef(v.GetObject).Name, list.ListItem[i]);
-      ctx.DefineValue(TE_ExprRef(agg.GetObject).Name, ex.Evaluate(ctx));
+      ctx.Define(TE_SymbolRef(v.NativeObject).Name, list.Item[i]);
+      ctx.Define(TE_SymbolRef(agg.NativeObject).Name, ex.Evaluate(ctx));
     end;
-    Result:= ctx.Value(TE_ExprRef(agg.GetObject).Name);
+    Result:= ctx.Definition(TE_SymbolRef(agg.NativeObject).Name).Evaluate(Context);
   finally
-    FreeAndNil(ctx);
+    ctx:= nil;
   end;
 end;
 
-function TPackageLists.Merge_2(Context: TContext; args: TExprList): IValue;
+function TPackageLists.Merge_2(Context: IContext; args: TExprList): IExpression;
 var
   i: integer;
   a, b: IValueList;
   res: IValueList;
 begin
-  if not Supports(args[0].Evaluate(Context), IValueList, a) or
-    not Supports(args[1].Evaluate(Context), IValueList, b) then
+  if not args[0].Evaluate(Context).Represents(IValueList, a) or
+    not args[1].Evaluate(Context).Represents(IValueList, b) then
     raise EMathSysError.Create('Merge requires 2 lists.');
-  res:= TValueFixedList.Create;
+  res:= TValueList.Create;
   res.Length:= a.Length + b.Length;
   for i:= 0 to a.Length - 1 do
-    res.ListItem[i]:= a.ListItem[i];
+    res.Item[i]:= a.Item[i];
   for i:= 0 to b.Length - 1 do
-    res.ListItem[a.Length + i]:= b.ListItem[i];
-  Result:= res as IValue;
+    res.Item[a.Length + i]:= b.Item[i];
+  Result:= res as IExpression;
 end;
 
-function TPackageLists.Part_3(Context: TContext; args: TExprList): IValue;
+function TPackageLists.Part_3(Context: IContext; args: TExprList): IExpression;
 var
   i, f, l: integer;
   a: IValueList;
@@ -725,8 +743,8 @@ var
 begin
   if not Supports(args[0].Evaluate(Context), IValueList, a) then
     raise EMathSysError.Create('Part requires a list.');
-  f:= trunc(args[1].Evaluate(Context).GetNumber);
-  l:= trunc(args[2].Evaluate(Context).GetNumber);
+  f:= trunc(EvaluateToNumber(Context, args[1]));
+  l:= trunc(EvaluateToNumber(Context, args[2]));
   if f >= a.Length then
     f:= a.Length - 1;
   if l >= a.Length then
@@ -739,55 +757,61 @@ begin
     l:= a.Length + l;
   if l < 0 then
     l:= 0;
-  res:= TValueFixedList.Create;
+  res:= TValueList.Create;
   res.Length:= l - f + 1;
   for i:= f to l do
-    res.ListItem[i - f]:= a.ListItem[i];
-  Result:= res as IValue;
+    res.Item[i - f]:= a.Item[i];
+  Result:= res as IExpression;
 end;
 
-function TPackageLists.LGet_2(Context: TContext; args: TExprList): IValue;
+function TPackageLists.LGet_2(Context: IContext; args: TExprList): IExpression;
 var
   a: IValueList;
   f: integer;
 begin
-  if not Supports(args[0].Evaluate(Context), IValueList, a) then
+  if not args[0].Evaluate(Context).Represents(IValueList, a) then
     raise EMathSysError.Create('LGet requires a list.');
-  f:= trunc(args[1].Evaluate(Context).GetNumber);
+  f:= trunc(EvaluateToNumber(Context, args[1]));
   if f < 0 then
     f:= a.Length + f;
   if f < 0 then
     f:= 0;
-  Result:= a.ListItem[f].AsNative;
+  Result:= a.Item[f];
 end;
 
-function TPackageLists.Count_1(Context: TContext; args: TExprList): IValue;
+function TPackageLists.Count_1(Context: IContext; args: TExprList): IExpression;
 var
   a: IValueList;
 begin
   if not Supports(args[0].Evaluate(Context), IValueList, a) then
     raise EMathSysError.Create('Count requires a list.');
-  Result:= TValue.Create(a.Length);
+  Result:= TValueNumber.Create(a.Length);
+end;
+
+procedure TPackageLists.OnImport(const MS: TMathSystem);
+begin
+  MS.RegisterAsInfix('@', 18,[],Self,'lget');
 end;
 
 { TPackageData }
 
-function TPackageData.CWD_1(Context: TContext; args: TExprList): IValue;
+function TPackageData.CWD_1(Context: IContext; args: TExprList): IExpression;
 begin
-  SetCurrentDir(args[0].Evaluate(Context).GetString);
+  SetCurrentDir(EvaluateToString(Context, args[0]));
 end;
 
-function TPackageData.PWD_0(Context: TContext; args: TExprList): IValue;
+function TPackageData.PWD_0(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValue.Create(GetCurrentDir);
+  Result:= TValueString.Create(GetCurrentDir);
 end;
 
-function TPackageData.CSVLoad_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+function TPackageData.CSVLoad_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
 var
   list, line: TCSVStringList;
+  d: string;
   i, j, first, last: integer;
   res, row: IValueList;
-  cn: IValue;
+  cn: IExpression;
   o_fs: TFormatSettings;
   skip, count: integer;
 begin
@@ -795,47 +819,54 @@ begin
   line:= TCSVStringList.Create;
   o_fs:= NeutralFormatSettings;
   try
-    if Options.IsSet('Delimiter') and (Options['Delimiter'].GetString > '') then
-      line.Delimiter:= Options['Delimiter'].GetString[1]
-    else
+    if Options.IsSet('Delimiter') then begin
+      d:= CastToString(Options['Delimiter']);
+      if d > '' then
+        line.Delimiter:= d[1];
+    end else
       line.Delimiter:= ';';
-    if Options.IsSet('QuoteChar') and (Options['QuoteChar'].GetString > '') then
-      line.QuoteChar:= Options['QuoteChar'].GetString[1]
-    else
+    if Options.IsSet('QuoteChar') then begin
+      d:= CastToString(Options['QuoteChar']);
+      if d > '' then
+        line.QuoteChar:= d[1];
+    end else
       line.QuoteChar:= '"';
-    if Options.IsSet('Decimal') and (Options['Decimal'].GetString > '') then
-      NeutralFormatSettings.DecimalSeparator:= Options['Decimal'].GetString[1];
+    if Options.IsSet('Decimal') then begin
+      d:= CastToString(Options['Decimal']);
+      if d > '' then
+        NeutralFormatSettings.DecimalSeparator:= d[1];
+    end;
 
-    list.LoadFromFile(args[0].Evaluate(Context).GetString);
+    list.LoadFromFile(EvaluateToString(Context, args[0]));
 
     if Options.IsSet('Skip') then
-      skip:= trunc(Options['Skip'].GetNumber)
+      skip:= trunc(CastToNumber(Options['Skip']))
     else
       skip:= 0;
 
     first:= skip;
     if Options.IsSet('Count') then begin
-      count:= trunc(Options['Count'].GetNumber);
+      count:= trunc(CastToNumber(Options['Count']));
       last:= first + count - 1;
       if last>List.Count-1 then
         last:= List.Count-1;
     end else
       last:= List.Count - 1;
 
-    res:= TValueFixedList.Create;
+    res:= TValueList.Create;
     res.Length:= last - first + 1;
     for i:= first to last do begin
       line.StrictDelimitedText:= list[i];
-      row:= TValueFixedList.Create;
+      row:= TValueList.Create;
       row.Length:= line.Count;
       for j:= 0 to row.Length - 1 do begin
-        cn:= TValue.Create(line[j]);
-        row.ListItem[j]:= cn.AsNative;
+        cn:= TValueNumber.Create(StrToFloat(Line[j], NeutralFormatSettings));
+        row.Item[j]:= cn;
       end;
-      res.ListItem[i - first]:= row as IValue;
+      res.Item[i - first]:= row as IExpression;
     end;
 
-    Result:= res as IValue;
+    Result:= res as IExpression;
   finally
     NeutralFormatSettings:= o_fs;
     FreeAndNil(list);
@@ -843,7 +874,7 @@ begin
   end;
 end;
 
-function TPackageData.Source_1(Context: TContext; args: TExprList): IValue;
+function TPackageData.Source_1(Context: IContext; args: TExprList): IExpression;
 var
   list: TStringList;
   i: integer;
@@ -851,7 +882,7 @@ var
 begin
   list:= TStringList.Create;
   try
-    s:= args[0].Evaluate(Context).GetString;
+    s:= EvaluateToString(Context, args[0]);
     if not FileExists(s) and FileExists(s+'.pi') then
       s:= s+'.pi';
     list.LoadFromFile(s);
@@ -859,10 +890,10 @@ begin
       s:= trim(list[i]);
       if (Length(s)>0) and (s[1]<>';') then begin
         try
-          Context.System.Run(s);
+          TContext.SystemFrom(Context).Run(s);
         except
           on e: Exception do begin
-            Context.System.Output.Error('%s: %s',[e.ClassName, e.Message]);
+            Context.Output.Error('%s: %s',[e.ClassName, e.Message]);
             raise;
           end;
         end;
@@ -873,38 +904,41 @@ begin
   end;
 end;
 
-function TPackageData.Table_1(Context: TContext; args: TExprList): IValue;
+function TPackageData.Table_1(Context: IContext; args: TExprList): IExpression;
 var
   a, b: IValueList;
   s: IStringConvertible;
   i, j, total: integer;
   l: string;
 begin
-  if not Supports(args[0].Evaluate(Context), IValueList, a) then
+  if not args[0].Evaluate(Context).Represents(IValueList, a) then
     raise EMathSysError.Create('Table requires a list.');
   total:= 0;
   for i:= 0 to a.Length - 1 do begin
-    if Supports(a.ListItem[i], IValueList, b) then begin
+    if a.Item[i].Represents(IValueList, b) then begin
       l:= '';
       for j:= 0 to b.Length - 1 do begin
         if l > '' then
           l:= l + #9;
-        if Supports(b.ListItem[j], IStringConvertible, s) then
-          l:= l + s.OutputForm
+        if b.Item[j].Represents(IStringConvertible, s) then
+          l:= l + s.AsString(STR_FORMAT_OUTPUT)
         else
-          l:= l + b.ListItem[j].GetString;
+          l:= l + CastToString(b.Item[j]);
         inc(total);
       end;
     end else begin
-      l:= a.ListItem[i].GetString;
+      if a.Item[i].Represents(IStringConvertible, s) then
+        l:= s.AsString(STR_FORMAT_OUTPUT)
+      else
+        l:= CastToString(a.Item[i]);
       inc(total);
     end;
-    Context.System.Output.Hint('%s', [l]);
+    Context.Output.Hint('%s', [l]);
   end;
-  Result:= TValue.Create(total);
+  Result:= TValueNumber.Create(total);
 end;
 
-function TPackageData.Bucket_4(Context: TContext; args: TExprList): IValue;
+function TPackageData.Bucket_4(Context: IContext; args: TExprList): IExpression;
 var
   a, r, e: IValueList;
   mi, mx, count, width: Number;
@@ -912,53 +946,53 @@ var
   nn: Number;
   i: integer;
 begin
-  if not Supports(args[0].Evaluate(Context), IValueList, a) then
+  if not args[0].Evaluate(Context).Represents(IValueList, a) then
     raise EMathSysError.Create('Bucket requires a list.');
-  mi:= args[1].Evaluate(Context).GetNumber;
-  mx:= args[2].Evaluate(Context).GetNumber;
-  count:= args[3].Evaluate(Context).GetNumber;
+  mi:= EvaluateToNumber(Context, args[1]);
+  mx:= EvaluateToNumber(Context, args[2]);
+  count:= EvaluateToNumber(Context, args[3]);
   SetLength(Counter, trunc(count));
   for i:= 0 to high(Counter) do
     Counter[i]:= 0;
   width:= (mx - mi) / count;
-  Context.System.Output.Hint('Bucket Width: %n', [width]);
+  Context.Output.Hint('Bucket Width: %n', [width]);
   for i:= 0 to a.Length - 1 do begin
-    nn:= a.ListItem[i].GetNumber;
+    nn:= CastToNumber(a.Item[i]);
     if IsNan(nn) or (nn < mi) or (nn > mx) then
       continue;
     Inc(Counter[trunc((nn - mi) / width)]);
   end;
-  r:= TValueFixedList.Create;
+  r:= TValueList.Create;
   r.Length:= length(counter);
   for i:= 0 to high(Counter) do begin
-    e:= TValueFixedList.Create;
+    e:= TValueList.Create;
     e.Length:= 2;
-    e.ListItem[0]:= TValue.Create(mi + width * (i + 0.5));
-    e.ListItem[1]:= TValue.Create(Counter[i]);
+    e.Item[0]:= TValueNumber.Create(mi + width * (i + 0.5));
+    e.Item[1]:= TValueNumber.Create(Counter[i]);
 
-    r.ListItem[i]:= e as IValue;
+    r.Item[i]:= e as IExpression;
   end;
-  Result:= r as IValue;
+  Result:= r as IExpression;
 end;
 
-function TPackageData.Max_1(Context: TContext; args: TExprList): IValue;
+function TPackageData.Max_1(Context: IContext; args: TExprList): IExpression;
 var
   a: IValueList;
   n, m: Number;
   i: integer;
 begin
-  if not Supports(args[0].Evaluate(Context), IValueList, a) then
+  if not args[0].Evaluate(Context).Represents(IValueList, a) then
     raise EMathSysError.Create('Max requires a list.');
   m:= MinExtended;
   for i:= 0 to a.Length - 1 do begin
-    n:= a.ListItem[i].GetNumber;
+    n:= CastToNumber(a.Item[i]);
     if n > m then
       m:= n;
   end;
-  Result:= TValue.Create(m);
+  Result:= TValueNumber.Create(m);
 end;
 
-function TPackageData.Min_1(Context: TContext; args: TExprList): IValue;
+function TPackageData.Min_1(Context: IContext; args: TExprList): IExpression;
 var
   a: IValueList;
   n, m: Number;
@@ -968,11 +1002,11 @@ begin
     raise EMathSysError.Create('Min requires a list.');
   m:= MaxExtended;
   for i:= 0 to a.Length - 1 do begin
-    n:= a.ListItem[i].GetNumber;
+    n:= CastToNumber(a.Item[i]);
     if n < m then
       m:= n;
   end;
-  Result:= TValue.Create(m);
+  Result:= TValueNumber.Create(m);
 end;
 
 type
@@ -981,7 +1015,7 @@ type
     StringCompare: boolean;
   end;
   TSortByListElement = class
-    Key: IValue;
+    Key: IExpression;
     OriginalIndex: integer;
     SortConfig: TSortByConfig;
   end;
@@ -997,10 +1031,10 @@ begin
   c:= L.SortConfig;
 
   if c.StringCompare then begin
-    Result:= AnsiCompareText(L.Key.GetString, R.Key.GetString);
+    Result:= AnsiCompareText(CastToString(L.Key), CastToString(R.Key));
   end else begin
-    X:= L.Key.GetNumber;
-    Y:= R.Key.GetNumber;
+    X:= CastToNumber(L.Key);
+    Y:= CastToNumber(R.Key);
     if X<Y then Result:= -1
     else if X>Y then Result:= +1
     else Result:= 0;
@@ -1009,13 +1043,13 @@ begin
     Result:= - Result;
 end;
 
-function TPackageData.SortBy_3_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+function TPackageData.SortBy_3_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
 var
   list: IValueList;
   v: IExpression;                                           //TE_ExprRef
   ex: IExpression;
   i: integer;
-  ctx: TContext;
+  ctx: IContext;
   res: IValueList;
   sortList: TList;
   sbc: TSortByConfig;
@@ -1024,7 +1058,7 @@ begin
   if not Supports(args[0].Evaluate(Context), IValueList, list) then
     raise EMathSysError.Create('Function SortBy requires a list to work on');
   v:= args[1];
-  if v.GetClassType <> TE_ExprRef then
+  if not v.IsClass(TE_SymbolRef) then
     raise EMathSysError.Create('Function SortBy requires a variable reference');
   ex:= args[2];
 
@@ -1036,15 +1070,15 @@ begin
     sortList:= TList.Create;
     try
       sortList.Capacity:= list.Length;
-      ctx:= TContext.Create(Context.System, Context);
+      ctx:= TContext.Create(Context);
       try
-        ctx.Silent:= true;
+        TContext(ctx.NativeObject).Silent:= true;
         for i:= 0 to list.length - 1 do begin
           sle:= TSortByListElement.Create;
           try
             sle.OriginalIndex:= i;
             sle.SortConfig:= sbc;
-            ctx.DefineValue(TE_ExprRef(v.GetObject).Name, list.ListItem[i]);
+            ctx.Define(TE_SymbolRef(v.NativeObject).Name, list.Item[i]);
             sle.Key:= ex.Evaluate(ctx);
             sortList.Add(sle);
           except
@@ -1054,12 +1088,12 @@ begin
 
         sortList.Sort(ListSortCompare_SortBy);
 
-        res:= TValueFixedList.Create;
+        res:= TValueList.Create;
         try
           res.Length:= list.Length;
           for i:= 0 to sortList.Count-1 do
-            res.ListItem[i]:= list.ListItem[TSortByListElement(sortList.Items[i]).OriginalIndex];
-         Result:= res as IValue;
+            res.Item[i]:= list.Item[TSortByListElement(sortList.Items[i]).OriginalIndex];
+         Result:= res as IExpression;
         except
           FreeAndNil(res);
         end;
@@ -1079,7 +1113,7 @@ begin
   end;
 end;
 
-function TPackageData.NumDerive_1(Context: TContext; args: TExprList): IValue;
+function TPackageData.NumDerive_1(Context: IContext; args: TExprList): IExpression;
 var
   l: IValueList;
   res,tup: IValueList;
@@ -1087,37 +1121,32 @@ var
   i: integer;
   a,b,x,y: Number;
 begin
-  if not TValue.CheckForTuples(args[0].Evaluate(Context), 2) then
-    raise EMathSysError.Create('Function XYPlot requires a list of 2-tuples');
+  if not args[0].Evaluate(Context).Represents(IValueList, l) or
+     not CheckForTuples(l, 2) then
+    raise EMathSysError.Create('Function NumDerive requires a list of 2-tuples');
 
-  Supports(args[0].Evaluate(Context), IValueList, l);
-  res:= TValueFixedList.Create;
+  res:= TValueList.Create;
 
   res.Length:= l.Length-1;
-  tup:= l.ListItem[0] as IValueList;
-  a:= tup.ListItem[0].GetNumber;
-  b:= tup.ListItem[1].GetNumber;
+  tup:= l.Item[0] as IValueList;
+  a:= CastToNumber(tup.Item[0]);
+  b:= CastToNumber(tup.Item[1]);
   for i:= 1 to l.Length-1 do begin
-    tup:= l.ListItem[i] as IValueList;
-    x:= tup.ListItem[0].GetNumber;
-    y:= tup.ListItem[1].GetNumber;
-    tup:= TValueFixedList.Create;
+    tup:= l.Item[i] as IValueList;
+    x:= CastToNumber(tup.Item[0]);
+    y:= CastToNumber(tup.Item[1]);
+    tup:= TValueList.Create;
     tup.Length:= 2;
-    tup.ListItem[0]:= TValue.Create((x+a) / 2);
-    tup.ListItem[1]:= TValue.Create((y-b) / (x-a));
-    Res.ListItem[i-1]:= tup as IValue;
+    tup.Item[0]:= TValueNumber.Create((x+a) / 2);
+    tup.Item[1]:= TValueNumber.Create((y-b) / (x-a));
+    Res.Item[i-1]:= tup as IExpression;
     a:= x;
     b:= y;
   end;
-  Result:= res as IValue;
+  Result:= res as IExpression;
 end;
 
 initialization
   Randomize;
-  TFunctionPackage.RegisterPackage(TPackageTrig);
-  TFunctionPackage.RegisterPackage(TPackageElementary);
-  TFunctionPackage.RegisterPackage(TPackageNumerical);
-  TFunctionPackage.RegisterPackage(TPackageLists);
-  TFunctionPackage.RegisterPackage(TPackageData);
 end.
 
