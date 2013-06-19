@@ -108,6 +108,12 @@ function CastToNumber(const Exp: IExpression): Number;
 function CastToString(const Exp: IExpression): String;
 function CheckForTuples(Param: IValueList; count: integer): boolean;
 
+function EvaluateToNumber(Context: IContext; ex: IExpression; out n: Number): Boolean; overload;     
+function EvaluateToNumber(Context: IContext; ex: IExpression): Number; overload;
+function EvaluateToString(Context: IContext; ex: IExpression; out s: string): Boolean; overload;
+function EvaluateToString(Context: IContext; ex: IExpression): String; overload;
+
+
 implementation
 
 function CastToNumber(const Exp: IExpression): Number;
@@ -153,6 +159,39 @@ begin
          exit;
        end;
 end;
+
+function EvaluateToNumber(Context: IContext; ex: IExpression; out n: Number): Boolean;
+var
+  e: IExpression;
+  v: IValueNumber;
+begin
+  e:= ex.Evaluate(Context);
+  Result:= Assigned(e) and e.Represents(IValueNumber, v);
+  if Result then
+    n:= v.Value;
+end;
+
+function EvaluateToNumber(Context: IContext; ex: IExpression): Number;
+begin
+  Result:= CastToNumber(ex.Evaluate(Context));
+end;
+
+function EvaluateToString(Context: IContext; ex: IExpression; out s: string): Boolean;
+var
+  e: IExpression;
+  v: IValueString;
+begin
+  e:= ex.Evaluate(Context);
+  Result:= Assigned(e) and e.Represents(IValueString, v);
+  if Result then
+    s:= v.Value;
+end;
+
+function EvaluateToString(Context: IContext; ex: IExpression): String;
+begin
+  Result:= CastToString(ex.Evaluate(Context));
+end;
+
 
 { TE_Atom }
 

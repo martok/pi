@@ -125,10 +125,6 @@ type
   protected
     procedure OnImport(const MS: TMathSystem); virtual;
     procedure PublishedMethods(Names: TStringList);
-    function EvaluateToNumber(Context: IContext; ex: IExpression; out n: Number): Boolean; overload;     
-    function EvaluateToNumber(Context: IContext; ex: IExpression): Number; overload;
-    function EvaluateToString(Context: IContext; ex: IExpression; out s: string): Boolean; overload;
-    function EvaluateToString(Context: IContext; ex: IExpression): String; overload;
   public
     function FunctionExists(FunctionName: string; ParamCount: integer): boolean;
     function GetFunction(FunctionName: string; ParamCount: integer; out DynFrom: integer): TUDFHeader;
@@ -1249,38 +1245,6 @@ var
   k: integer;
 begin
   Result:= Assigned(GetFunction(FunctionName, ParamCount, k));
-end;
-
-function TFunctionPackage.EvaluateToNumber(Context: IContext; ex: IExpression; out n: Number): Boolean;
-var
-  e: IExpression;
-  v: IValueNumber;
-begin
-  e:= ex.Evaluate(Context);
-  Result:= Assigned(e) and e.Represents(IValueNumber, v);
-  if Result then
-    n:= v.Value;
-end;
-
-function TFunctionPackage.EvaluateToNumber(Context: IContext; ex: IExpression): Number;
-begin
-  Result:= CastToNumber(ex.Evaluate(Context));
-end;
-
-function TFunctionPackage.EvaluateToString(Context: IContext; ex: IExpression; out s: string): Boolean;
-var
-  e: IExpression;
-  v: IValueString;
-begin
-  e:= ex.Evaluate(Context);
-  Result:= Assigned(e) and e.Represents(IValueString, v);
-  if Result then
-    s:= v.Value;
-end;
-
-function TFunctionPackage.EvaluateToString(Context: IContext; ex: IExpression): String;
-begin
-  Result:= CastToString(ex.Evaluate(Context));
 end;
 
 procedure TFunctionPackage.OnImport(const MS: TMathSystem);
