@@ -13,7 +13,8 @@ uses
   uGraphWindow in 'uGraphWindow.pas' {GraphWindow},
   uFunctionsStatistics in 'uFunctionsStatistics.pas',
   uMathIntf in 'uMathIntf.pas',
-  uMathConstants in 'uMathConstants.pas';
+  uMathConstants in 'uMathConstants.pas',
+  uMathValues in 'uMathValues.pas';
 
 {$R *.res}
 

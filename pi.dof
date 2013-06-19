@@ -94,7 +94,7 @@ OutputDir=.\bin\
 UnitOutputDir=.\bin\
 PackageDLLOutputDir=
 PackageDCPOutputDir=
-SearchPath=$(DELPHI)\Lib\Debug;F:\Unit\Jedi\jcl\lib\D7\debug;F:\Unit\Jedi\jcl\jcl\lib\d7\debug
+SearchPath=F:\Unit\Jedi\jcl\lib\D7\debug;F:\Unit\Jedi\jcl\jcl\lib\d7\debug
 Packages=vcl;rtl;vclx;inet;xmlrtl;vclie;inetdbbde;inetdbxpress;dbrtl;vcldb;VclSmp;inetdb;bdertl;webdsnap;websnap;vclactnband;vclshlctrls;Rave50CLX;Rave50VCL;png;IcsDel70;p_gnutella;Indy70
 Conditionals=
 DebugSourceDirs=
@@ -130,17 +130,13 @@ OriginalFilename=
 ProductName=
 ProductVersion=
 Comments=
-[Excluded Packages]
-f:\delphi7\Bin\DCLIB70.bpl=InterBase Datenzugriffskomponenten
-C:\WINNT\System32\ibevnt70.bpl=Borland Interbase-Event Alerter-Komponente
-f:\delphi7\Bin\DBWEBXPRT.BPL=Borland Package für Web-Experten
-F:\delphi7\Projects\Bpl\XWEBBROWSER.bpl=TWebBrowser
 [HistoryLists\hlUnitAliases]
 Count=1
 Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
 [HistoryLists\hlSearchPath]
-Count=1
-Item0=$(DELPHI)\Lib\Debug;F:\Unit\Jedi\jcl\lib\D7\debug;F:\Unit\Jedi\jcl\jcl\lib\d7\debug
+Count=2
+Item0=F:\Unit\Jedi\jcl\lib\D7\debug;F:\Unit\Jedi\jcl\jcl\lib\d7\debug
+Item1=$(DELPHI)\Lib\Debug;F:\Unit\Jedi\jcl\lib\D7\debug;F:\Unit\Jedi\jcl\jcl\lib\d7\debug
 [HistoryLists\hlUnitOutputDirectory]
 Count=1
 Item0=.\bin\

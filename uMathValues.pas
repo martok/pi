@@ -73,6 +73,8 @@ type
   end;
 
   TValueList = class(TE_Atom, IValueList, IStringConvertible)
+  protected
+    function GetStringMaxLen(MaxLen: integer; Fmt: TStringFormat): String;
   public
     constructor Create;
     constructor CreateAs(Items: array of IExpression);
@@ -312,7 +314,7 @@ end;
 function TValueList.AsString(const Format: TStringFormat): String;
 begin
   case Format of
-    $FFFF: ;
+    STR_FORMAT_OUTPUT: Result:= GetStringMaxLen(200, Format);
   else
     Result:= '{'+StringOfArgs(Format, ',')+'}';
   end;
@@ -344,6 +346,34 @@ begin
       vl.SetItem(i, GetItem(i).Clone(Deep));
     Result:= vl as IExpression;
   end;
+end;
+
+function TValueList.GetStringMaxLen(MaxLen: integer; Fmt: TStringFormat): String;
+var
+  i: integer;
+  function gets(index: integer): string;
+  var
+    s: IStringConvertible;
+  begin
+    if Supports(GetItem(index), IStringConvertible, s) then
+      Result:= s.AsString(Fmt)
+    else
+      Result:= '<Unknown>';
+  end;
+begin
+  if GetLength = 0 then
+    Result:= ''
+  else begin
+    Result:= gets(0);
+    for i:= 1 to GetLength - 1 do begin
+      if Length(Result) > MaxLen then begin
+        Result:= Result + ', ... (' + IntToStr(GetLength - i + 1) + ')';
+        break;
+      end else
+        Result:= Result + ', ' + gets(i);
+    end;
+  end;
+  Result:= '{' + Result + '}';
 end;
 
 { TValueRange }

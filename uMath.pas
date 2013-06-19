@@ -236,11 +236,11 @@ uses
 
 type
   TInfixDefinition = record
-    Operator: String;
+    Operator: String[16];
     Precedence: integer;
     Options: TOperatorOptions;
     Pack: TFunctionPackage;
-    Func: String;
+    Func: String[64];
   end;
   PInfixDefinition = ^TInfixDefinition;
 
