@@ -6,7 +6,7 @@ uses
   SysUtils, Math, uMath, uMathIntf;
 
 type
-  IExpressionAtom = interface['{EC6BC9B9-A248-4765-8F62-2BF378A869AB}']
+  IExpressionAtom = interface(IExpression)['{EC6BC9B9-A248-4765-8F62-2BF378A869AB}']    
   end;
 
   IValueUnassigned = interface(IExpressionAtom)['{3352D0C9-D960-43D5-A09A-5D5B4C97F663}']
@@ -242,8 +242,12 @@ var
 begin
   inherited Create;
   System.SetLength(Arguments, Length(Items));
-  for i:= 0 to high(Items) do
-    Arguments[i]:= Items[i];
+  for i:= 0 to high(Items) do begin
+    if Assigned(Items[i]) then
+      Arguments[i]:= Items[i]
+    else
+      Arguments[i]:= TValueUnassigned.Create;
+  end;
 end;
 
 function TValueList.GetLength: Integer;

@@ -39,6 +39,7 @@ begin
     mk.RegisterPackage(TPackageLists.Create);
     mk.RegisterPackage(TPackageData.Create);
     mk.RegisterPackage(TPackageStatistics.Create);
+    mk.RegisterPackage(TPackageSymbolics.Create);
     cmd:= GetInput;
     while cmd>'' do begin
       Writeln('');
