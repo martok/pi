@@ -2,19 +2,22 @@ unit uFunctionsGraphing;
 
 interface
 
-uses SysUtils, Classes, Graphics, uMath;
+uses SysUtils, Classes, Graphics, uMathIntf, uMathValues, uMath;
 
 type
   TPlotRange = record
     XMin, XMax, YMin, YMax: Number;
   end;
 
-  TPlotBase = class
+  IPlotObject = interface(IExpressionAtom)['{C5255A30-8718-4A84-9569-3CF8FE47F5C3}']
+  end;
+
+  TPlotBase = class(TE_Atom, IPlotObject)
   private
     FSize: Single;
     FColor: TColor;
     FCaption: String;
-    FContext: TContext;
+    FContext: IContext;
     function GetCaption: string;
   protected
     procedure PlotOptions(D: TDynamicArguments); virtual;
@@ -23,7 +26,7 @@ type
     destructor Destroy; override;
     function GetRange: TPlotRange; virtual; abstract;
     function GetLegend: string; virtual; abstract;
-    property Context: TContext read FContext;
+    property Context: IContext read FContext;
     property Color: TColor read FColor;
     property Size: Single read FSize;
     property Caption: string read GetCaption;
@@ -80,10 +83,10 @@ type
 
   TPackageGraph = class(TFunctionPackage)
   published
-    function Plot_3_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
-    function Histogram_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
-    function XYPlot_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
-    function Show_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+    function Plot_3_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+    function Histogram_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+    function XYPlot_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+    function Show_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
   end;
 
 implementation
@@ -92,7 +95,7 @@ uses Math, uGraphWindow, TypInfo;
 
 { TPackageGraph }
 
-function TPackageGraph.Plot_3_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+function TPackageGraph.Plot_3_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
 var
   ex, v: IExpression;
   va: string;
@@ -101,87 +104,85 @@ var
 begin
   ex:= args[0];
   v:= args[1];
-  if v.GetClassType <> TE_ExprRef then
+  if not v.IsClass(TE_SymbolRef) then
     raise EMathSysError.Create('Function Plot requires a variable reference');
-  va:= TE_ExprRef(v.GetObject).Name;
-  if not Supports(args[2].Evaluate(Context), IValueList, l) then
+  va:= TE_SymbolRef(v.NativeObject).Name;
+  if not args[2].Evaluate(Context).Represents(IValueList, l) then
     raise EMathSysError.Create('Function Plot requires a plot range');
 
   plot:= TPlot.Create(ex, va);
   try
-    plot.FMin:= l.ListItem[0].GetNumber;
-    plot.FMax:= l.ListItem[1].GetNumber;
-    plot.FContext:= Context.Bake;
+    plot.FMin:= CastToNumber(l.Item[0]);
+    plot.FMax:= CastToNumber(l.Item[1]);
+    plot.FContext:= TContext(Context.NativeObject).Bake;
     plot.PlotOptions(Options);
     plot.PreCalculate;
+    Result:= Plot as IExpression;
   except
     FreeAndNil(Plot);
     raise;
   end;
-  Result:= TValueObject.Create(plot);
 end;
 
-function TPackageGraph.Histogram_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+function TPackageGraph.Histogram_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
 var
   l: IValueList;
   plot: THistogram;
 begin
-  if not TValue.CheckForTuples(args[0].Evaluate(Context), 2) then
+  if not (args[0].Evaluate(Context).Represents(IValueList, l) and CheckForTuples(l, 2)) then
     raise EMathSysError.Create('Function ListPlot requires a list of 2-tuples');
 
-  Supports(args[0].Evaluate(Context), IValueList, l);
   plot:= THistogram.Create(l);
-  plot.FContext:= Context.Bake;
+  plot.FContext:= TContext(Context.NativeObject).Bake;
   try
     plot.PlotOptions(Options);
+    Result:= plot as IExpression;
   except
     FreeAndNil(Plot);
     raise;
   end;
-  Result:= TValueObject.Create(plot);
 end;
 
-function TPackageGraph.XYPlot_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+function TPackageGraph.XYPlot_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
 var
   l: IValueList;
   plot: TXYPlot;
 begin
-  if not TValue.CheckForTuples(args[0].Evaluate(Context), 2) then
+  if not (args[0].Evaluate(Context).Represents(IValueList, l) and CheckForTuples(l, 2)) then
     raise EMathSysError.Create('Function XYPlot requires a list of 2-tuples');
 
-  Supports(args[0].Evaluate(Context), IValueList, l);
   plot:= TXYPlot.Create(l);
-  plot.FContext:= Context.Bake;
+  plot.FContext:= TContext(Context.NativeObject).Bake;
   try
     plot.PlotOptions(Options);
+    Result:= Plot as IExpression;
   except
     FreeAndNil(Plot);
     raise;
   end;
-  Result:= TValueObject.Create(plot);
 end;
 
-function TPackageGraph.Show_1_opt(Context: TContext; args: TExprList; Options: TDynamicArguments): IValue;
+function TPackageGraph.Show_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
 var
-  par: IValue;
+  par: IExpression;
   pl: IValueList;
-  plots: array of IValueObject;
+  plots: array of IPlotObject;
   gr: TGraphWindow;
   pr,PaintRange: TPlotRange;
-  vo: IValueObject;
+  vo: IPlotObject;
   i: integer;
   a, b, axes: string;
 begin
   par:= args[0].Evaluate(Context);
-  if Supports(par, IValueList, pl) then begin
+  if par.Represents(IValueList, pl) then begin
     SetLength(Plots, pl.Length);
     for i:= 0 to high(plots) do
-      if Supports(pl.ListItem[i], IValueObject, vo) and (vo.GetObject is TPlotBase) then begin
+      if pl.Item[i].Represents(IPlotObject, vo) then begin
         plots[i]:= vo;
       end else
         raise EMathSysError.CreateFmt('Show: Element %d is not a plot object', [i]);
   end else
-    if Supports(par, IValueObject, vo) and (vo.GetObject is TPlotBase) then begin
+    if par.Represents(IPlotObject, vo) then begin
       SetLength(Plots, 1);
       plots[0]:= vo;
     end else
@@ -190,7 +191,7 @@ begin
   gr:= TGraphWindow.CreateGraph(plots);
 
   if Options.IsSet('Axes') then begin
-    axes:= Options.Value['Axes'].GetString;
+    axes:= CastToString(Options.Value['Axes']);
     a:= Copy(LowerCase(axes), 1, 3);
     b:= Copy(LowerCase(axes), 4, 3);
     i:= GetEnumValue(TypeInfo(TScaleMode),'sm'+a);
@@ -212,13 +213,13 @@ begin
   gr.YMax:= NAN;
 
   if Options.IsSet('XRange') and Supports(Options.Value['XRange'], IValueList, pl) then begin
-    gr.XMin:= pl.ListItem[0].GetNumber;
-    gr.XMax:= pl.ListItem[1].GetNumber;
+    gr.XMin:= CastToNumber(pl.Item[0]);
+    gr.XMax:= CastToNumber(pl.Item[1]);
   end;
 
   if Options.IsSet('YRange') and Supports(Options.Value['YRange'], IValueList, pl) then begin
-    gr.YMin:= pl.ListItem[0].GetNumber;
-    gr.YMax:= pl.ListItem[1].GetNumber;
+    gr.YMin:= CastToNumber(pl.Item[0]);
+    gr.YMax:= CastToNumber(pl.Item[1]);
   end;
 
   if IsNan(gr.XMin) or IsNan(gr.XMax) or IsNan(gr.YMin) or IsNan(gr.YMax) then begin
@@ -227,7 +228,7 @@ begin
     PaintRange.XMax:= NegInfinity;
     PaintRange.YMax:= NegInfinity;
     for i:= 0 to high(Plots) do begin
-      pr:= TPlot(plots[i].GetObject).GetRange;
+      pr:= TPlot(plots[i].NativeObject).GetRange;
       if pr.XMin < PaintRange.XMin then PaintRange.XMin:= pr.XMin;
       if pr.YMin < PaintRange.YMin then PaintRange.YMin:= pr.YMin;
       if pr.XMax > PaintRange.XMax then PaintRange.XMax:= pr.XMax;
@@ -242,19 +243,19 @@ begin
   if gr.XScale = smLog then begin
     if (gr.XMin <= 0) or IsZero(gr.XMin) then begin
       gr.XMin:= 2000E-19;
-      Context.System.Output.Hint('XRange Minimum %.3f <= 0, autocorrecting.', [gr.YMin]);
+      Context.Output.Hint('XRange Minimum %.3f <= 0, autocorrecting.', [gr.YMin]);
     end;
   end;
 
   if gr.YScale = smLog then begin
     if (gr.YMin <= 0) or IsZero(gr.YMin) then begin
       gr.YMin:= 2000E-19;
-      Context.System.Output.Hint('YRange Minimum %.3f <= 0, autocorrecting.', [gr.YMin]);
+      Context.Output.Hint('YRange Minimum %.3f <= 0, autocorrecting.', [gr.YMin]);
     end;
   end;
 
   gr.Show;
-  Context.System.Output.Result('['+gr.Caption+']');
+  Context.Output.Result('['+gr.Caption+']');
 end;
 
 { TPlotBase }
@@ -269,7 +270,6 @@ end;
 
 destructor TPlotBase.Destroy;
 begin
-  FreeAndNil(FContext);
   inherited;
 end;
 
@@ -284,11 +284,11 @@ end;
 procedure TPlotBase.PlotOptions(D: TDynamicArguments);
 begin
   if D.IsSet('Color') then
-    FColor:= StringToColor(D.Value['Color'].GetString);
+    FColor:= StringToColor(CastToString(D.Value['Color']));
   if D.IsSet('Size') then
-    FSize:= D.Value['Size'].GetNumber;
+    FSize:= CastToNumber(D.Value['Size']);
   if D.IsSet('Caption') then
-    FCaption:= D.Value['Caption'].GetString;
+    FCaption:= CastToString(D.Value['Caption']);
 end;
 
 { TPlot }
@@ -304,9 +304,15 @@ begin
 end;
 
 function TPlot.GetLegend: String;
+var
+  sc: IStringConvertible;
 begin
-  if FEx<>nil then
-    Result:= FEx.StringForm
+  if FEx<>nil then begin
+    if FEx.Represents(IStringConvertible, sc) then
+      Result:= sc.AsString(STR_FORMAT_INPUT)
+    else
+      Result:= '<'+fEx.NativeObject.ClassName+'>'
+  end
   else
     Result:= '-';
 end;
@@ -327,7 +333,7 @@ const
 var
   mi, ma, n, x, dx: Number;
 begin
-  FContext.Silent:= true;
+  TContext(FContext.NativeObject).Silent:= true;
 
   FCacheRange.XMin:= FMin;
   FCacheRange.XMax:= FMax;
@@ -349,8 +355,8 @@ end;
 
 function TPlot.ValueAt(Param: Number): Number;
 begin
-  FContext.DefineValue(Variable, TValue.Create(Param));
-  Result:= Expression.Evaluate(FContext).GetNumber;
+  FContext.Define(Variable, TValueNumber.Create(Param));
+  Result:= EvaluateToNumber(FContext as IContext, FEx);
 end;
 
 
@@ -359,16 +365,16 @@ end;
 constructor THistogram.Create(AList: IValueList);
 var
   md,k: Number;
-  v1,v2: IValue;
+  v1,v2: IExpression;
   i: integer;
 begin
   inherited Create;
   FList:= AList;
   md:= Infinity;
   for i:= 0 to FList.Length-2 do begin
-    v1:= (FList.ListItem[i] as IValueList).ListItem[0];
-    v2:= (FList.ListItem[i+1] as IValueList).ListItem[0];
-    k:= v2.GetNumber-v1.GetNumber;
+    v1:= (FList.Item[i] as IValueList).Item[0];
+    v2:= (FList.Item[i+1] as IValueList).Item[0];
+    k:= CastToNumber(v2)-CastToNumber(v1);
     if k < md then
       md:= k;
   end;
@@ -378,7 +384,7 @@ end;
 function THistogram.GetRange: TPlotRange;
 var
   i: integer;
-  v: IValue;
+  v: IExpression;
   n: Number;
 begin
   Result.XMin:= Infinity;
@@ -386,13 +392,13 @@ begin
   Result.XMax:= NegInfinity;
   Result.YMax:= 0;
   for i:= 0 to FList.Length - 1 do begin
-    v:= (FList.ListItem[i] as IValueList).ListItem[0];
-    n:= v.GetNumber;
+    v:= (FList.Item[i] as IValueList).Item[0];
+    n:= CastToNumber(v);
     if Result.XMin>n then Result.XMin:= n;
     if Result.XMax<n then Result.XMax:= n;
 
-    v:= (FList.ListItem[i] as IValueList).ListItem[1];
-    n:= v.GetNumber;
+    v:= (FList.Item[i] as IValueList).Item[1];
+    n:= CastToNumber(v);
     if Result.YMin>n then Result.YMin:= n;
     if Result.YMax<n then Result.YMax:= n;
   end;
@@ -428,7 +434,7 @@ end;
 function TXYPlot.GetRange: TPlotRange;
 var
   i: integer;
-  v: IValue;
+  v: IExpression;
   n: Number;
 begin
   Result.XMin:= Infinity;
@@ -436,15 +442,15 @@ begin
   Result.XMax:= NegInfinity;
   Result.YMax:= NegInfinity;
   for i:= 0 to FList.Length - 1 do begin
-    v:= (FList.ListItem[i] as IValueList).ListItem[0];
-    n:= v.GetNumber;
+    v:= (FList.Item[i] as IValueList).Item[0];
+    n:= CastToNumber(v);
     if IsNan(n) then
       continue;
     if Result.XMin>n then Result.XMin:= n;
     if Result.XMax<n then Result.XMax:= n;
 
-    v:= (FList.ListItem[i] as IValueList).ListItem[1];
-    n:= v.GetNumber;
+    v:= (FList.Item[i] as IValueList).Item[1];
+    n:= CastToNumber(v);
     if IsNan(n) then
       continue;
     if Result.YMin>n then Result.YMin:= n;
@@ -458,22 +464,20 @@ var
 begin
   inherited;
   if D.IsSet('points') then begin
-    i:= GetEnumValue(TypeInfo(TXYPointStyle), 'ps' + D.Value['points'].GetString);
+    i:= GetEnumValue(TypeInfo(TXYPointStyle), 'ps' + CastToString(D.Value['points']));
     if i < 0 then
-      raise EMathSysError.CreateFmt('Invalid Point Style name: %s', [D.Value['points'].GetString])
+      raise EMathSysError.CreateFmt('Invalid Point Style name: %s', [CastToString(D.Value['points'])])
     else
       FPoints:= TXYPointStyle(i)
   end;
   if D.IsSet('lines') then begin
-    i:= GetEnumValue(TypeInfo(TXYLineStyle), 'ls' + D.Value['lines'].GetString);
+    i:= GetEnumValue(TypeInfo(TXYLineStyle), 'ls' + CastToString(D.Value['lines']));
     if i < 0 then
-      raise EMathSysError.CreateFmt('Invalid Line Style name: %s', [D.Value['lines'].GetString])
+      raise EMathSysError.CreateFmt('Invalid Line Style name: %s', [CastToString(D.Value['lines'])])
     else
       FLines:= TXYLineStyle(i);
   end;
 end;
 
-initialization
-  TFunctionPackage.RegisterPackage(TPackageGraph);
 end.
 

@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
-  Dialogs, uFunctionsGraphing, uMath, Menus, ExtDlgs;
+  Dialogs, uFunctionsGraphing, uMath, uMathIntf, uMathValues, Menus, ExtDlgs;
 
 type
   TScaleMode = (smLin, smLog);
@@ -49,7 +49,7 @@ type
     procedure miSaveEMFClick(Sender: TObject);
   private
     { Private-Deklarationen }
-    FPlots: array of IValueObject;
+    FPlots: array of IPlotObject;
     FXMin, FXMax, FYMin, FYMax: Number;
     FSXMin, FSXMax, FSYMin, FSYMax: Number;
     FXScale, FYScale: TScaleMode;
@@ -60,7 +60,7 @@ type
     procedure PaintGraph(Canvas: TCanvas; DrawRect: TRect);
   public
     { Public-Deklarationen }
-    constructor CreateGraph(Plots: array of IValueObject);
+    constructor CreateGraph(Plots: array of IPlotObject);
     destructor Destroy; override;
     property XMin: Number read FXMin write FXMin;
     property XMax: Number read FXMax write FXMax;
@@ -215,7 +215,7 @@ end;
 
 { TGraphWindow }
 
-constructor TGraphWindow.CreateGraph(Plots: array of IValueObject);
+constructor TGraphWindow.CreateGraph(Plots: array of IPlotObject);
 var
   i: integer;
 begin
@@ -531,12 +531,12 @@ var
     x,y: Number;
   begin
     for j:= 0 to ob.List.Length - 1 do begin
-      tup:= ob.List.ListItem[j] as IValueList;
-      x:= tup.ListItem[0].GetNumber;
+      tup:= ob.List.Item[j] as IValueList;
+      x:= CastToNumber(tup.Item[0]);
       if IsNan(x) then continue;
       if ((ax is TLogScale) and ((x <= 0) or IsZero(x))) then
         continue;
-      y:= tup.ListItem[1].GetNumber;
+      y:= CastToNumber(tup.Item[1]);
       if IsNan(y) then continue;
       if ((ay is TLogScale) and ((y <= 0) or IsZero(y))) then
         continue;
@@ -562,12 +562,12 @@ var
       tup: IValueList;
     begin
       Result:= false;
-      tup:= ob.List.ListItem[indx] as IValueList;
-      x:= tup.ListItem[0].GetNumber;
+      tup:= ob.List.Item[indx] as IValueList;
+      x:= CastToNumber(tup.Item[0]);
       if IsNan(x) then exit;
       if ((ax is TLogScale) and ((x <= 0) or IsZero(x))) then
         exit;
-      y:= tup.ListItem[1].GetNumber;
+      y:= CastToNumber(tup.Item[1]);
       if IsNan(y) then exit;
       if ((ay is TLogScale) and ((y <= 0) or IsZero(y))) then
         exit;
@@ -673,7 +673,7 @@ var
     SelectClipRgn(Canvas.Handle, clipr);
     try
       for i:= 0 to high(FPlots) do begin
-        ob:= TPlotBase(FPlots[i].GetObject);
+        ob:= TPlotBase(FPlots[i].NativeObject);
         if ob is TPlot then
           DrawFunction_Plot(TPlot(ob))
         else if ob is THistogram then
@@ -715,7 +715,7 @@ var
     try
       y:= leg.Top+10;
       for i:= 0 to high(FPlots) do begin
-        ob:= TPlotBase(FPlots[i].GetObject);
+        ob:= TPlotBase(FPlots[i].NativeObject);
         Canvas.Pen.Color:= ob.Color;
         Canvas.Pen.Width:= 5;
         Canvas.MoveTo(leg.Left+5, y);

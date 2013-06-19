@@ -7,13 +7,13 @@ uses
   Forms,
   uMain in 'uMain.pas' {fmPiMain},
   uMath in 'uMath.pas',
-  uTests in 'uTests.pas',
   uFunctions in 'uFunctions.pas',
   uCCSVList in 'uCCSVList.pas',
   uFunctionsGraphing in 'uFunctionsGraphing.pas',
   uGraphWindow in 'uGraphWindow.pas' {GraphWindow},
   uFunctionsStatistics in 'uFunctionsStatistics.pas',
-  uMathIntf in 'uMathIntf.pas';
+  uMathIntf in 'uMathIntf.pas',
+  uMathConstants in 'uMathConstants.pas';
 
 {$R *.res}
 

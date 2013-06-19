@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, uMath, ImgList, ActnList, StdCtrls, ComCtrls, ToolWin, ExtCtrls;
+  Dialogs, uMath, uMathOutputRichedit, ImgList, ActnList, StdCtrls, ComCtrls, ToolWin, ExtCtrls;
 
 type
   TfmPiMain = class(TForm)
@@ -32,7 +32,6 @@ type
     procedure cbInputKeyPress(Sender: TObject; var Key: Char);
     procedure acRunCmdExecute(Sender: TObject);
     procedure acExitExecute(Sender: TObject);
-    procedure acRunTestExecute(Sender: TObject);
     procedure trContextCollapsing(Sender: TObject; Node: TTreeNode;
       var AllowCollapse: Boolean);
     procedure acHelpExecute(Sender: TObject);
@@ -40,6 +39,7 @@ type
     procedure trContextEditing(Sender: TObject; Node: TTreeNode; var AllowEdit: Boolean);
   private
     { Private-Deklarationen }
+    fOutput: TOutputRichEdit;
     procedure UpdateContext;
   public
     { Public-Deklarationen }
@@ -51,11 +51,14 @@ var
 
 implementation
 
-uses uTests, ShellAPI;
+uses
+  ShellAPI,
+  uMathIntf,
+  uFunctions, uFunctionsStatistics, uFunctionsGraphing, uFunctionsSymbolics;
 
 const
   sProgramTitle = 'pi - Tiny Math Tool';
-  sProgramVersionStr = 'V 6';
+  sProgramVersionStr = 'tau - Preview 1';
 
 {$R *.dfm}
 
@@ -63,8 +66,19 @@ procedure TfmPiMain.FormCreate(Sender: TObject);
 begin
   Application.Title:= sProgramTitle;
   Caption:= Format('%s   (%s)',[sProgramTitle, sProgramVersionStr]);
-  MathS:= TMathSystem.Create;
-  MathS.Output.Render:= reOutput;
+  fOutput:= TOutputRichEdit.Create;
+  fOutput.Render:= reOutput;
+  MathS:= TMathSystem.Create(fOutput);
+  with MathS do begin
+    RegisterPackage(TPackageTrig.Create);
+    RegisterPackage(TPackageElementary.Create);
+    RegisterPackage(TPackageNumerical.Create);
+    RegisterPackage(TPackageLists.Create);
+    RegisterPackage(TPackageData.Create);
+    RegisterPackage(TPackageStatistics.Create);
+    RegisterPackage(TPackageGraph.Create);
+    RegisterPackage(TPackageSymbolics.Create);
+  end;
   reOutput.Clear;
   cbInput.Clear;
 end;
@@ -72,26 +86,38 @@ end;
 procedure TfmPiMain.FormDestroy(Sender: TObject);
 begin
   FreeAndNil(MathS);
+  FreeAndNil(fOutput);
 end;
 
 procedure TfmPiMain.UpdateContext;
-var ct:TContext;
+var ct: TContext;
     j: integer;
     n: TTreeNode;
     s: string;
+    x: IExpression;
+    sc: IStringConvertible;
 begin
   trContext.Items.BeginUpdate;
   try
     trContext.Items.Clear;
-    ct:= MathS.Context;
+    ct:= TContext(MathS.Context.NativeObject);
     while ct<>nil do begin
       s:= ct.ContextName;
       if s='' then
         s:= 'Context';
       n:= trContext.Items.AddObject(nil, format('%s (%d)',[s,ct.Count]), ct);
-      for j:= 0 to ct.Count-1 do
-        trContext.Items.AddChild(n, format('%s = %s', [ct.Name[j], ct.Definition(ct.Name[j]).StringForm]));
-      ct:= ct.Parent;
+      for j:= 0 to ct.Count-1 do begin
+        x:= ct.Definition(ct.Name[j]); 
+        if x.Represents(IStringConvertible, sc) then
+          s:= sc.AsString(STR_FORMAT_OUTPUT)
+        else
+          s:= '<'+x.NativeObject.ClassName+'>';
+
+        trContext.Items.AddChild(n, format('%s = %s', [ct.Name[j], s]));
+      end;
+      if not Assigned(ct.Parent) then
+        break;
+      ct:= TContext(ct.Parent.NativeObject);
     end;
     trContext.FullExpand;
   finally
@@ -143,17 +169,6 @@ end;
 procedure TfmPiMain.acExitExecute(Sender: TObject);
 begin
   Close;
-end;
-
-procedure TfmPiMain.acRunTestExecute(Sender: TObject);
-var testsys: TMathSysTest;
-begin
-  testsys:= TMathSysTest.Create(reOutput);
-  try
-    testsys.Run;
-  finally
-    testsys.Free;
-  end;
 end;
 
 procedure TfmPiMain.trContextEdited(Sender: TObject; Node: TTreeNode; var S: String);
