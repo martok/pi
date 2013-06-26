@@ -14,7 +14,10 @@ uses
   uFunctionsStatistics in 'uFunctionsStatistics.pas',
   uMathIntf in 'uMathIntf.pas',
   uMathConstants in 'uMathConstants.pas',
-  uMathValues in 'uMathValues.pas';
+  uMathValues in 'uMathValues.pas',
+  uFunctionsSymbolics in 'uFunctionsSymbolics.pas',
+  uMathOutputRichEdit in 'uMathOutputRichEdit.pas',
+  uMathOutputStdout in 'uMathOutputStdout.pas';
 
 {$R *.res}
 

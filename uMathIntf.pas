@@ -55,6 +55,17 @@ type
     function AsString(const Format: TStringFormat): string;
   end;
 
+  ISymbolReference = interface(IExpression)['{1B46951B-6531-4499-B251-6C59A3E21B0A}']
+    function GetName: string;
+    property Name: string read GetName;
+  end;
+
+  IFunctionCall = interface(IExpression)['{F717E01E-6329-4326-91B2-CC7F742D9493}']  
+    function GetName: string;
+    property Name: string read GetName;
+  end;
+
+
 const
   STR_FORMAT_DEFAULT = TStringFormat(0);
 

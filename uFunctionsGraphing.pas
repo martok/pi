@@ -21,6 +21,7 @@ type
     function GetCaption: string;
   protected
     procedure PlotOptions(D: TDynamicArguments); virtual;
+    function Clone(Deep: Boolean): IExpression; override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -97,16 +98,16 @@ uses Math, uGraphWindow, TypInfo;
 
 function TPackageGraph.Plot_3_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
 var
-  ex, v: IExpression;
+  ex: IExpression;
+  v: ISymbolReference;
   va: string;
   plot: TPlot;
   l: IValueList;
 begin
   ex:= args[0];
-  v:= args[1];
-  if not v.IsClass(TE_SymbolRef) then
+  if not args[1].Represents(ISymbolReference, v) then
     raise EMathSysError.Create('Function Plot requires a variable reference');
-  va:= TE_SymbolRef(v.NativeObject).Name;
+  va:= v.Name;
   if not args[2].Evaluate(Context).Represents(IValueList, l) then
     raise EMathSysError.Create('Function Plot requires a plot range');
 
@@ -259,6 +260,11 @@ begin
 end;
 
 { TPlotBase }
+
+function TPlotBase.Clone(Deep: Boolean): IExpression;
+begin
+  raise EMathTypeError.CreateFmt('Cannot modify object of class %s.',[ClassName]);
+end;
 
 constructor TPlotBase.Create;
 begin

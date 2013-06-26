@@ -28,10 +28,11 @@ var
   procedure Replace(var x: IExpression);
   var
     r: IExpression;
+    s: ISymbolReference;
     j: integer;
   begin
-    if x.IsClass(TE_SymbolRef) then begin
-      r:= rc.Definition(TE_SymbolRef(x.NativeObject).Name);
+    if x.Represents(ISymbolReference, s) then begin
+      r:= rc.Definition(s.Name);
       if Assigned(r) then begin
         x:= r;
         exit;

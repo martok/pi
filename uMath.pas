@@ -135,19 +135,21 @@ type
 //   Expression Primitives
 ////////////////////////////////////////////////////////////////////////////////
 
-  TE_SymbolRef = class(TExpression, IStringConvertible)
+  TE_SymbolRef = class(TExpression, ISymbolReference, IStringConvertible)
   private
     FName: string;
+    function GetName: string;
   public
     constructor Create(AName: string);
-    property Name: string read FName;
     function Evaluate(const Context: IContext): IExpression; override;
     function Clone(Deep: Boolean): IExpression; override;
+    // ISymbolReference
+    property Name: string read GetName;
     // IStringConvertible
     function AsString(const Format: TStringFormat): String;
   end;
 
-  TE_Call = class(TExpression, IStringConvertible)
+  TE_Call = class(TExpression, IFunctionCall, IStringConvertible)
   private
     FName: string;      
     FFunctionBound: Boolean;      
@@ -155,11 +157,13 @@ type
     FFirstDynamic: Integer;
     FCreatedFrom: Pointer;
     class function CheckSysCalls(StringForm: string): Boolean;
+    function GetName: string;
   public
     constructor Create(AName: string);
-    property Name: string read FName;
-    function Evaluate(const Context: IContext): IExpression; override;  
-    function Clone(Deep: Boolean): IExpression; override;  
+    function Evaluate(const Context: IContext): IExpression; override;
+    function Clone(Deep: Boolean): IExpression; override;
+    // IFunctionCall
+    property Name: string read GetName;
     // IStringConvertible
     function AsString(const Format: TStringFormat): String;
   end;
@@ -805,21 +809,19 @@ var
     var
       k,m,c: integer;
       el: TExprList;
-      u: TE_Call;
+      xc,ac: IFunctionCall;
     begin
       // find any node that consists entirely of "inf" by first flattening out children, then see if anything happened
       for k:= 0 to x.ArgCount-1 do
         Flatten(TExpression(x.NativeObject).Arguments[k]);
-      if x.IsClass(TE_Call) and
-         ((TE_Call(x.NativeObject).Name = inf.Func)) then begin
+      if x.Represents(IFunctionCall, xc) and ((xc.Name = inf.Func)) then begin
         SetLength(el,0);
         for k:= 0 to x.ArgCount-1 do begin
-          if x.Arg[k].IsClass(TE_Call) and (TE_Call(x.Arg[k].NativeObject).Name = inf.Func) then begin
-            u:= TE_Call(x.Arg[k].NativeObject);
+          if x.Arg[k].Represents(IFunctionCall, ac) and (ac.Name = inf.Func) then begin
             c:= Length(el);
-            SetLength(el, c + u.ArgCount);
-            for m:= 0 to u.ArgCount-1 do
-              el[c + m]:= u.Arguments[m];
+            SetLength(el, c + ac.ArgCount);
+            for m:= 0 to ac.ArgCount-1 do
+              el[c + m]:= ac.Arg[m];
           end else begin
             c:= Length(el);
             SetLength(el, c + 1);
@@ -833,10 +835,9 @@ var
       // should we unpack, or is x one that will never be unpacked?
       if (ooUnpackInArguments in inf.Options) and
          (x.ArgCount = 1) and
-         (x.Arg[0].IsClass(TE_Call) and (TE_Call(x.Arg[0].NativeObject).Name = inf.Func)) and
+         (x.Arg[0].Represents(IFunctionCall, ac) and (ac.Name = inf.Func)) and
          not (x.IsClass(TE_Call) and Assigned(TE_Call(x.NativeObject).FCreatedFrom) and (ooHoldPackedArguments in PInfixDefinition(TE_Call(x.NativeObject).FCreatedFrom).Options)) then begin
-        u:= TE_Call(x.Arg[0].NativeObject);
-        x.SetArgs(u.Arguments);
+        x.SetArgs(TE_Call(ac.NativeObject).Arguments);
       end;
     end;
   begin
@@ -1390,28 +1391,28 @@ end;
 
 function TPackageAlgebra._assign_2(Context: IContext; Args: TExprList): IExpression;
 var
-  name: string;
+  r: ISymbolReference;
   v: IExpression;
   l,d: IValueList;
   i: integer;
 begin
-  if Args[0].IsClass(TE_SymbolRef) then begin
-    name:= TE_SymbolRef(Args[0].NativeObject).Name;
+  if Args[0].Represents(ISymbolReference, r) then begin
     v:= Args[1].Evaluate(Context);
-    Context.Define(name, v);
+    Context.Define(r.name, v);
     Result:= v;
   end else if Args[0].Represents(IValueList, d) then begin
     for i:= 0 to d.Length-1 do
-      if not d.Item[i].IsClass(TE_SymbolRef) then
+      if not d.Item[i].Represents(ISymbolReference, r) then
         raise ESyntaxError.Create('LHS of assignment needs to be a list of symbol references');
     v:= Args[1].Evaluate(Context);
     if v.Represents(IValueList, l) then begin
       for i:= 0 to min(l.Length, d.Length)-1 do begin
-        Context.Define(TE_SymbolRef(d.Item[i].NativeObject).Name, l.Item[i]);
+        d.Item[i].Represents(ISymbolReference, r);
+        Context.Define(r.Name, l.Item[i]);
       end;
     end else
-      if d.Length>0 then
-        Context.Define(TE_SymbolRef(d.Item[0].NativeObject).Name, v);
+      if (d.Length>0) and (d.Item[0].Represents(ISymbolReference, r)) then
+        Context.Define(r.Name, v);
     Result:= v;
   end else
     raise ESyntaxError.Create('LHS of assignment needs to be a symbol reference or a list of symbol references');
@@ -1475,6 +1476,11 @@ end;
 function TE_SymbolRef.Clone(Deep: Boolean): IExpression;
 begin
   Result:= TE_SymbolRef.Create(FName);
+end;
+
+function TE_SymbolRef.GetName: string;
+begin
+  Result:= FName;
 end;
 
 { TE_Call }
@@ -1567,6 +1573,11 @@ begin
   end else
     sc.SetArgs(Arguments);
   Result:= sc as IExpression;
+end;
+
+function TE_Call.GetName: string;
+begin
+  Result:= FName;
 end;
 
 { TE_Subcontext }

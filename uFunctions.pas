@@ -610,7 +610,7 @@ end;
 function TPackageLists.Each_3(Context: IContext; args: TExprList): IExpression;
 var
   list: IValueList;
-  v: IExpression;                                           //TE_ExprRef
+  v: ISymbolReference;
   ex: IExpression;
   i: integer;
   n: string;
@@ -619,8 +619,7 @@ var
 begin
   if not args[0].Evaluate(Context).Represents(IValueList, list) then
     raise EMathSysError.Create('Function Each requires a list to work on');
-  v:= args[1];
-  if not v.IsClass(TE_SymbolRef) then
+  if not args[1].Represents(ISymbolReference, v) then
     raise EMathSysError.Create('Function Each requires a variable reference');
   ex:= args[2];
 
@@ -629,7 +628,7 @@ begin
     TContext(ctx.NativeObject).Silent:= true;
     res:= TValueList.Create;
     res.Length:= list.Length;
-    n:= TE_SymbolRef(v.NativeObject).Name;
+    n:= v.Name;
     for i:= 0 to list.length - 1 do begin
       ctx.Define(n, list.Item[i]);
       res.Item[i]:= ex.Evaluate(ctx);
@@ -684,21 +683,19 @@ end;
 function TPackageLists.Aggregate_5(Context: IContext; args: TExprList): IExpression;
 var
   list: IValueList;
-  agg: IExpression;                                         //TE_ExprRef
+  agg: ISymbolReference;                                    //TE_ExprRef
   init: IExpression;
-  v: IExpression;                                           //TE_ExprRef
+  v: ISymbolReference;                                      //TE_ExprRef
   ex: IExpression;
   i: integer;
   ctx: IContext;
 begin
   if not Supports(args[0].Evaluate(Context), IValueList, list) then
     raise EMathSysError.Create('Function Aggregate requires a list to work on');
-  agg:= args[1];
-  if not agg.IsClass(TE_SymbolRef) then
+  if not args[1].Represents(ISymbolReference, agg) then
     raise EMathSysError.Create('Function Aggregate requires a variable reference as aggregate');
   init:= args[2];
-  v:= args[3];
-  if not v.IsClass(TE_SymbolRef) then
+  if not args[3].Represents(ISymbolReference, v) then
     raise EMathSysError.Create('Function Aggregate requires a variable reference');
   ex:= args[4];
 
@@ -879,6 +876,9 @@ var
   list: TStringList;
   i: integer;
   s: string;
+  sys: TMathSystem;
+  X: IExpression;
+  sc: IStringConvertible;
 begin
   list:= TStringList.Create;
   try
@@ -890,7 +890,17 @@ begin
       s:= trim(list[i]);
       if (Length(s)>0) and (s[1]<>';') then begin
         try
-          TContext.SystemFrom(Context).Run(s);
+          sys:= TContext.SystemFrom(Context);
+
+          x:= sys.Parse(s);
+          if Assigned(x) then begin
+            x:= x.Evaluate(Context);
+            if Assigned(x) then begin
+              Context.Define('ans', x);
+              if x.Represents(IStringConvertible, sc) then
+                Context.Output.Result(sc.AsString(STR_FORMAT_OUTPUT));
+            end;
+          end;
         except
           on e: Exception do begin
             Context.Output.Error('%s: %s',[e.ClassName, e.Message]);
@@ -1046,7 +1056,7 @@ end;
 function TPackageData.SortBy_3_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
 var
   list: IValueList;
-  v: IExpression;                                           //TE_ExprRef
+  v: ISymbolReference;                                           //TE_ExprRef
   ex: IExpression;
   i: integer;
   ctx: IContext;
@@ -1057,8 +1067,7 @@ var
 begin
   if not Supports(args[0].Evaluate(Context), IValueList, list) then
     raise EMathSysError.Create('Function SortBy requires a list to work on');
-  v:= args[1];
-  if not v.IsClass(TE_SymbolRef) then
+  if not args[1].Represents(ISymbolReference, v) then
     raise EMathSysError.Create('Function SortBy requires a variable reference');
   ex:= args[2];
 
