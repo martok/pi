@@ -17,7 +17,8 @@ uses
   uMathValues in 'uMathValues.pas',
   uFunctionsSymbolics in 'uFunctionsSymbolics.pas',
   uMathOutputRichEdit in 'uMathOutputRichEdit.pas',
-  uMathOutputStdout in 'uMathOutputStdout.pas';
+  uMathOutputStdout in 'uMathOutputStdout.pas',
+  uMathDimensions in 'uMathDimensions.pas';
 
 {$R *.res}
 

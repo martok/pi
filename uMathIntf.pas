@@ -78,6 +78,14 @@ type
     function Value: Number;
   end;
 
+  TMathBaseUnit = (siM, siKG, siS, siK, siMOL, siA, siCD);
+  TMathUnits = array[TMathBaseUnit] of Shortint;
+  IValueDimension = interface(IExpressionAtom)['{90EC8315-7C53-4306-A724-A68A611E0BDB}']
+    function Value: Number;
+    function Units: TMathUnits;
+    function IsCompatible(const Units: TMathUnits): boolean;
+  end;
+
   IValueString = interface(IExpressionAtom)['{6B954DBB-0C95-4CD1-A533-4E28204B71DB}']
     function Value: String;
   end;
@@ -94,6 +102,9 @@ type
 
 const
   STR_FORMAT_DEFAULT = TStringFormat(0);
+
+const
+  MATH_UNIT_NAME : array[TMathBaseUnit] of string = ('m', 'kg', 's', 'K', 'mol', 'A', 'cd');
 
 type
   TIntfNoRefCount = class(TInterfacedObject, IUnknown)

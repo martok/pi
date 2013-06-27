@@ -54,7 +54,7 @@ implementation
 uses
   ShellAPI,
   uMathIntf,
-  uFunctions, uFunctionsStatistics, uFunctionsGraphing, uFunctionsSymbolics;
+  uFunctions, uFunctionsStatistics, uFunctionsGraphing, uFunctionsSymbolics, uMathDimensions;
 
 const
   sProgramTitle = 'pi - Tiny Math Tool';
@@ -77,10 +77,12 @@ begin
     RegisterPackage(TPackageData.Create);
     RegisterPackage(TPackageStatistics.Create);
     RegisterPackage(TPackageGraph.Create);
-    RegisterPackage(TPackageSymbolics.Create);
+    RegisterPackage(TPackageSymbolics.Create);   
+    RegisterPackage(TPackageDimensions.Create);
   end;
   reOutput.Clear;
   cbInput.Clear;
+  cbInput.Text:= 'unit(1,''m^-3'')';
 end;
 
 procedure TfmPiMain.FormDestroy(Sender: TObject);
