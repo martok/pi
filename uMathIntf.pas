@@ -65,6 +65,32 @@ type
     property Name: string read GetName;
   end;
 
+  IExpressionAtom = interface(IExpression)['{EC6BC9B9-A248-4765-8F62-2BF378A869AB}']
+  end;
+
+  IValueUnassigned = interface(IExpressionAtom)['{3352D0C9-D960-43D5-A09A-5D5B4C97F663}']
+  end;
+
+  IValueNull = interface(IExpressionAtom)['{915EE73F-F88E-4806-B04D-66C5B0836D85}']
+  end;
+
+  IValueNumber = interface(IExpressionAtom)['{915EE73F-F88E-4806-B04D-66C5B0836D85}']
+    function Value: Number;
+  end;
+
+  IValueString = interface(IExpressionAtom)['{6B954DBB-0C95-4CD1-A533-4E28204B71DB}']
+    function Value: String;
+  end;
+
+  IValueList = interface(IExpressionAtom)['{C63F0621-9E52-408C-867B-501691E859EB}']
+    function GetLength: integer;
+    procedure SetLength(const NewLength: integer);
+    property Length: integer read GetLength write SetLength;
+    procedure SetItem(Index: integer; val: IExpression);
+    function GetItem(Index: integer): IExpression;
+    property Item[Index: integer]: IExpression read GetItem write SetItem;
+  end;
+
 
 const
   STR_FORMAT_DEFAULT = TStringFormat(0);
