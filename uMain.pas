@@ -82,7 +82,6 @@ begin
   end;
   reOutput.Clear;
   cbInput.Clear;
-  cbInput.Text:= 'unit(1,''m^-3'')';
 end;
 
 procedure TfmPiMain.FormDestroy(Sender: TObject);

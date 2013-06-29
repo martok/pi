@@ -84,6 +84,7 @@ type
     function Value: Number;
     function Units: TMathUnits;
     function IsCompatible(const Units: TMathUnits): boolean;
+    function IsScalar: boolean;
   end;
 
   IValueString = interface(IExpressionAtom)['{6B954DBB-0C95-4CD1-A533-4E28204B71DB}']

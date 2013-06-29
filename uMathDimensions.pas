@@ -31,6 +31,7 @@ type
     function Value: Number;
     function Units: TMathUnits;
     function IsCompatible(const Units: TMathUnits): boolean;
+    function IsScalar: boolean;
     // IStringConvertible
     function AsString(const Format: TStringFormat): string;
   end;
@@ -44,6 +45,9 @@ type
 function GetUnitString(const Units: TMathUnits; const UseExponents: boolean): string;
 function ParseUnitString(const US: string; out ConversionFactor: Number): TMathUnits;
 function MakeDimension(const Dim: array of Shortint): TMathUnits;
+function MultDimensions(const A, B: TMathUnits): TMathUnits;
+function InverseDimensions(const A: TMathUnits): TMathUnits;
+function PowerDimensions(const A: TMathUnits; const Expo: integer): TMathUnits;
 
 implementation
 
@@ -196,7 +200,7 @@ var
       // is there a single unit named exactly like what we look for?
       for j:= 0 to high(UnitDimTable) do
         if un = UnitDimTable[j].Sign then begin
-          PrefixI:= i;
+          PrefixI:= 0;
           UnitI:= j;
           inc(k);
         end;
@@ -291,6 +295,33 @@ begin
   end;
 end;
 
+function MultDimensions(const A, B: TMathUnits): TMathUnits;
+var
+  d: TMathBaseUnit;
+begin
+  for d:= low(d) to high(d) do begin
+    Result[d]:= A[d] + B[d];
+  end;
+end;
+
+function InverseDimensions(const A: TMathUnits): TMathUnits;
+var
+  d: TMathBaseUnit;
+begin
+  for d:= low(d) to high(d) do begin
+    Result[d]:= -A[d];
+  end;
+end;
+
+function PowerDimensions(const A: TMathUnits; const Expo: integer): TMathUnits;
+var
+  d: TMathBaseUnit;
+begin
+  for d:= low(d) to high(d) do begin
+    Result[d]:= A[d] * Expo;
+  end;
+end;
+
 { TValueDimension }
 
 constructor TValueDimension.Create(const aVal: Number; const aUnits: TMathUnits; const aCreatedAs: String);
@@ -341,14 +372,30 @@ end;
 function TValueDimension.AsString(const Format: TStringFormat): string;
 begin
   case Format of
-    STR_FORMAT_OUTPUT: Result:=
-      (TValueNumber.Create(NumberValue) as IStringConvertible).AsString(Format) + ' ' +
-      FCreatedAs;
+    STR_FORMAT_OUTPUT: begin
+      Result:= (TValueNumber.Create(NumberValue) as IStringConvertible).AsString(Format);
+      if FCreatedAs >'' then
+         Result:= Result + ' ' + FCreatedAs
+      else
+         Result:= Result + ' ' + GetUnitString(FUnits, false);
+    end;
   else
     Result:=
       (TValueNumber.Create(FSIValue) as IStringConvertible).AsString(Format) + ' ' +
       GetUnitString(FUnits, true);
   end;
+end;
+
+function TValueDimension.IsScalar: boolean;
+var
+  d: TMathBaseUnit;
+begin
+  Result:= true;
+  for d:= low(d) to high(d) do
+    if FUnits[d]<>0 then begin
+      Result:= false;
+      exit;
+    end;
 end;
 
 { TPackageDimensions }
@@ -426,6 +473,7 @@ initialization
   DefineUnit('t'      , 'tonne'                 , 1e3             , [  0,  1,  0,  0,  0,  0,  0]);
   DefineUnit('oz'     , 'ounce'                 , 28.349523125e-3 , [  0,  1,  0,  0,  0,  0,  0]);
   DefineUnit('lb'     , 'pound'                 , 453.59237e-3    , [  0,  1,  0,  0,  0,  0,  0]);
+  DefineUnit('amu'    , 'atomic unit'           , 1.660539E-27    , [  0,  1,  0,  0,  0,  0,  0]);
   // Time
   DefineUnit('min'    , 'minute'                , 60              , [  0,  0,  1,  0,  0,  0,  0]);
   DefineUnit('h'      , 'hour'                  , 3600            , [  0,  0,  1,  0,  0,  0,  0]);

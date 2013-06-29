@@ -97,7 +97,7 @@ type
 
 implementation
 
-uses Math, uCCSVList;
+uses Math, uCCSVList, uMathDimensions;
 
 { TPackageTrig }
 
@@ -232,13 +232,50 @@ begin
 end;
 
 function TPackageElementary.Sqrt_1(Context: IContext; args: TExprList): IExpression;
+var
+  el: TExprList;
 begin
-  Result:= TValueNumber.Create(Sqrt(EvaluateToNumber(Context, args[0])));
+  SetLength(el,2);
+  el[0]:= TValueNumber.Create(2);
+  el[1]:= args[0];
+  Result:= NRt_2(Context, el);
 end;
 
 function TPackageElementary.NRt_2(Context: IContext; args: TExprList): IExpression;
+  function DivideDimensions(const A: TMathUnits; const Expo: integer): TMathUnits;
+  var
+    d: TMathBaseUnit;
+  begin
+    for d:= low(d) to high(d) do begin
+      if A[d] mod Expo = 0 then
+        Result[d]:= A[d] div Expo
+      else
+        raise EMathDimensionError.Create('Cannot take root because dimensions don''t allow it.');
+    end;
+  end;
+var
+  x: Number;
+  a: IExpression;
+  ua: IValueDimension;
+  na: IValueNumber;
 begin
-  Result:= TValueNumber.Create(Math.Power(EvaluateToNumber(Context, args[1]), 1 / EvaluateToNumber(Context, args[0])));
+  x:= EvaluateToNumber(Context, args[0]);
+  if IsZero(x) then begin
+    Result:= TValueNumber.Create(NaN);
+    exit;
+  end;
+
+  a:= args[1].Evaluate(Context);
+  if a.Represents(IValueDimension, ua) then begin
+    if IsZero(frac(x)) then
+      Result:= TValueDimension.Create(Math.Power(ua.Value, 1 / x), DivideDimensions(ua.Units, trunc(x)))
+    else
+      raise EMathDimensionError.Create('Root has to be a whole number');
+  end else
+  if a.Represents(IValueNumber, na) then begin
+    Result:= TValueNumber.Create(Math.Power(na.Value, 1 / x));
+  end else
+    raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
 end;
 
 function TPackageElementary.Random_0(Context: IContext; args: TExprList): IExpression;

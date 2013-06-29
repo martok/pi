@@ -207,6 +207,10 @@ type
   end;
 
   TPackageAlgebra = class(TFunctionPackage)
+  private
+    function Divide(a, d: Number): Number;
+    function Multiply(a, b: IExpression): IExpression;
+    function Add(a, b: IExpression; Premul: integer): IExpression;
   protected
     procedure OnImport(const MS: TMathSystem); override;
   published
@@ -233,10 +237,16 @@ var
 
 function NumberToStr(const Value: Number; FS: TFormatSettings; ShowThousands: boolean): string;
 
+resourcestring
+  sConstants = 'Constants';
+  sWork = 'Work';
+
+  sCannotConvertExpression = 'Cannot convert expression to type %s';
+
 implementation
 
 uses
-  StrUtils, uMathValues, uMathConstants;
+  StrUtils, uMathValues, uMathConstants, uMathDimensions;
 
 type
   TInfixDefinition = record
@@ -247,12 +257,6 @@ type
     Func: String[64];
   end;
   PInfixDefinition = ^TInfixDefinition;
-
-resourcestring
-  sConstants = 'Constants';
-  sWork = 'Work';
-
-  sCannotConvertExpression = 'Cannot convert expression to type %s';
 
 function NumberToStr(const Value: Number; FS: TFormatSettings; ShowThousands: boolean): string;
 var
@@ -1285,57 +1289,116 @@ end;
 
 function TPackageAlgebra._negate_1(Context: IContext; Args: TExprList): IExpression;
 var
-  v: Number;
+  e: IExpression;
+  ua: IValueDimension;
+  na: IValueNumber;
 begin
-  if EvaluateToNumber(Context, Args[0], v) then
-    Result:= TValueNumber.Create(-v)
+  e:= Args[0].Evaluate(Context);
+  if e.Represents(IValueDimension, ua) then
+    Result:= TValueDimension.Create(-ua.Value, ua.Units)
+  else
+  if e.Represents(IValueNumber, na) then
+    Result:= TValueNumber.Create(-na.Value)
   else
     raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
 end;
 
 function TPackageAlgebra._pow_2(Context: IContext; Args: TExprList): IExpression;
 var
-  a,b: Number;
+  ea: IExpression;
+  b: Number;
+  ua: IValueDimension;
 begin
-  if EvaluateToNumber(Context, Args[0], a) and
-     EvaluateToNumber(Context, Args[1], b) then
-    Result:= TValueNumber.Create(Power(a, b))
-  else
+  ea:= args[0].Evaluate(Context);
+  if EvaluateToNumber(Context, Args[1], b) then begin
+    if ea.Represents(IValueDimension, ua) then begin
+      if IsZero(frac(b)) then
+        Result:= TValueDimension.Create(IntPower(ua.Value, trunc(b)), PowerDimensions(ua.Units, trunc(b)))
+      else
+        raise EMathDimensionError.Create('Exponent has to be a whole number');
+    end else
+      Result:= TValueNumber.Create(Power(CastToNumber(ea), b));
+  end else
+    raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+end;
+
+function TPackageAlgebra.Multiply(a, b: IExpression): IExpression;
+var
+  na,nb: IValueNumber;
+  ua,ub: IValueDimension;
+begin
+  if a.Represents(IValueDimension, ua) then begin
+    if b.Represents(IValueDimension, ub) then
+      Result:= TValueDimension.Create(ua.Value * ub.Value, MultDimensions(ua.Units, ub.Units))
+    else if b.Represents(IValueNumber, nb) then
+      Result:= TValueDimension.Create(ua.Value * nb.Value, ua.Units)
+    else
+      raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+  end else
+  if a.Represents(IValueNumber, na) then begin
+    if b.Represents(IValueDimension, ub) then
+      Result:= TValueDimension.Create(na.Value*ub.Value, ub.Units)
+    else if b.Represents(IValueNumber, nb) then
+      Result:= TValueNumber.Create(na.Value*nb.Value)
+    else
+      raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+  end else
     raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
 end;
 
 function TPackageAlgebra._mult_N(Context: IContext; Args: TExprList): IExpression;
 var
   i: integer;
-  r: Number;
 begin
   if Length(Args)=0 then
     Result:= TValueUnassigned.Create
   else begin
-    r:= EvaluateToNumber(Context, Args[0]);
+    Result:= Args[0].Evaluate(Context);
 
     for i:= 1 to high(Args) do 
-      r:= r * EvaluateToNumber(Context, Args[i]);
-    Result:= TValueNumber.Create(r);
+      Result:= Multiply(Result, Args[1].Evaluate(Context));
   end;
+end;
+
+function TPackageAlgebra.Divide(a, d: Number): Number;
+begin
+  Result:= 0;
+  if IsZero(d) then begin
+    if IsZero(a) then
+      Result:= NaN
+    else if a < 0 then
+      Result:= NegInfinity
+    else if a > 0 then
+      Result:= Infinity;
+  end else
+    Result:= a / d;
 end;
 
 function TPackageAlgebra._div_2(Context: IContext; Args: TExprList): IExpression;
 var
-  a,d: Number;
+  n,d: IExpression;
+  na,nd: IValueNumber;
+  ua,ud: IValueDimension;
 begin
-  if EvaluateToNumber(Context, Args[0], a) and
-     EvaluateToNumber(Context, Args[1], d) then
-    if IsZero(d) then begin
-      if IsZero(a) then
-        Result:= TValueNumber.Create(NaN)
-      else if a < 0 then
-        Result:= TValueNumber.Create(NegInfinity)
-      else if a > 0 then
-        Result:= TValueNumber.Create(Infinity);
-    end else
-      Result:= TValueNumber.Create(a / d)
-  else
+  n:= Args[0].Evaluate(Context);
+  d:= Args[1].Evaluate(Context);
+
+  if n.Represents(IValueDimension, ua) then begin
+    if d.Represents(IValueDimension, ud) then
+      Result:= TValueDimension.Create(Divide(ua.Value, ud.Value), MultDimensions(ua.Units, InverseDimensions(ud.Units)))
+    else if d.Represents(IValueNumber, nd) then
+      Result:= TValueDimension.Create(Divide(ua.Value, nd.Value), ua.Units)
+    else
+      raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+  end else
+  if n.Represents(IValueNumber, na) then begin
+    if d.Represents(IValueDimension, ud) then
+      Result:= TValueDimension.Create(Divide(na.Value, ud.Value), InverseDimensions(ud.Units))
+    else if d.Represents(IValueNumber, nd) then
+      Result:= TValueNumber.Create(Divide(na.Value, nd.Value))
+    else
+      raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+  end else
     raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
 end;
 
@@ -1357,35 +1420,63 @@ begin
     raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
 end;
 
+function TPackageAlgebra.Add(a, b: IExpression; Premul: integer): IExpression;
+var
+  na,nb: IValueNumber;
+  ua,ub: IValueDimension;
+begin
+  if a.Represents(IValueDimension, ua) then begin
+    if b.Represents(IValueDimension, ub) then begin
+      if ua.IsCompatible(ub.Units) then
+        Result:= TValueDimension.Create(ua.Value + ub.Value * Premul, ua.Units)
+      else
+        raise EMathDimensionError.Create('Only objects of the same dimension can be added');
+    end else
+      if b.Represents(IValueNumber, nb) then begin
+        if ua.IsScalar then
+          Result:= TValueNumber.Create(ua.Value + nb.Value * Premul)
+        else
+          raise EMathDimensionError.Create('Only objects of the same dimension can be added');
+      end else
+        raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+  end else
+  if a.Represents(IValueNumber, na) then begin
+    if b.Represents(IValueDimension, ub) then begin
+      if ub.IsScalar then
+        Result:= TValueNumber.Create(na.Value + ub.Value * Premul)
+      else
+        raise EMathDimensionError.Create('Only objects of the same dimension can be added');
+    end else
+      if b.Represents(IValueNumber, nb) then
+        Result:= TValueNumber.Create(na.Value + nb.Value * Premul);
+  end;
+end;
+
 function TPackageAlgebra._plus_N(Context: IContext; Args: TExprList): IExpression;
 var
   i: integer;
-  r: Number;
 begin
   if Length(Args)=0 then
     Result:= TValueUnassigned.Create
   else begin
-    r:= EvaluateToNumber(Context, Args[0]);
+    Result:= Args[0].Evaluate(Context);
 
-    for i:= 1 to high(Args) do
-      r:= r + EvaluateToNumber(Context, Args[i]);
-    Result:= TValueNumber.Create(r);
+    for i:= 1 to high(Args) do 
+      Result:= Add(Result, Args[i].Evaluate(Context), 1);
   end;
 end;
 
 function TPackageAlgebra._subtract_N(Context: IContext; Args: TExprList): IExpression;
 var
   i: integer;
-  r: Number;
 begin
   if Length(Args)=0 then
     Result:= TValueUnassigned.Create
   else begin
-    r:= EvaluateToNumber(Context, Args[0]);
+    Result:= Args[0].Evaluate(Context);
 
-    for i:= 1 to high(Args) do
-      r:= r - EvaluateToNumber(Context, Args[i]);
-    Result:= TValueNumber.Create(r);
+    for i:= 1 to high(Args) do 
+      Result:= Add(Result, Args[i].Evaluate(Context), -1);
   end;
 end;
 
