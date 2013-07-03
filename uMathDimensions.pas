@@ -14,7 +14,7 @@ uses
 type
   EMathDimensionError = class(EMathSysError);
 
-  TValueDimension = class(TE_Atom, IValueNumber, IValueDimension, IStringConvertible)
+  TValueDimension = class(TE_Atom, IValueNumber, IValueDimension, IStringConvertible, IOperationAddition, IOperationMultiplication, IOperationPower)
   private
     FSIValue: Number;
     FUnits: TMathUnits;
@@ -34,6 +34,16 @@ type
     function IsScalar: boolean;
     // IStringConvertible
     function AsString(const Format: TStringFormat): string;
+    // IOperationAddition;
+    function OpAdd(const B: IExpression): IExpression;
+    function OpSubtract(const B: IExpression): IExpression;
+    // IOperationMultiplication
+    function OpDivide(const B: IExpression): IExpression;
+    function OpMultiply(const B: IExpression): IExpression;
+    function OpNegate: IExpression;
+    // IOperationPower
+    function OpPower(const B: Number): IExpression;
+    function OpRoot(const B: Number): IExpression;
   end;
 
   TPackageDimensions = class(TFunctionPackage)
@@ -48,6 +58,7 @@ function MakeDimension(const Dim: array of Shortint): TMathUnits;
 function MultDimensions(const A, B: TMathUnits): TMathUnits;
 function InverseDimensions(const A: TMathUnits): TMathUnits;
 function PowerDimensions(const A: TMathUnits; const Expo: integer): TMathUnits;
+function RootDimensions(const A: TMathUnits; const Expo: integer): TMathUnits;
 
 implementation
 
@@ -322,6 +333,19 @@ begin
   end;
 end;
 
+function RootDimensions(const A: TMathUnits; const Expo: integer): TMathUnits;
+var
+  d: TMathBaseUnit;
+begin
+  for d:= low(d) to high(d) do begin
+    if A[d] mod Expo = 0 then
+      Result[d]:= A[d] div Expo
+    else
+      raise EMathDimensionError.CreateFmt('Cannot take %dth root of unit.',[Expo]);
+  end;
+end;
+
+
 { TValueDimension }
 
 constructor TValueDimension.Create(const aVal: Number; const aUnits: TMathUnits; const aCreatedAs: String);
@@ -369,6 +393,18 @@ begin
   Result:= FSIValue;
 end;
 
+function TValueDimension.IsScalar: boolean;
+var
+  d: TMathBaseUnit;
+begin
+  Result:= true;
+  for d:= low(d) to high(d) do
+    if FUnits[d]<>0 then begin
+      Result:= false;
+      exit;
+    end;
+end;
+
 function TValueDimension.AsString(const Format: TStringFormat): string;
 begin
   case Format of
@@ -386,16 +422,93 @@ begin
   end;
 end;
 
-function TValueDimension.IsScalar: boolean;
+function TValueDimension.OpAdd(const B: IExpression): IExpression;
 var
-  d: TMathBaseUnit;
+  nb: IValueNumber;
+  ub: IValueDimension;
 begin
-  Result:= true;
-  for d:= low(d) to high(d) do
-    if FUnits[d]<>0 then begin
-      Result:= false;
-      exit;
-    end;
+   if b.Represents(IValueDimension, ub) then begin
+      if IsCompatible(ub.Units) then
+        Result:= TValueDimension.Create(FSIValue + ub.Value, FUnits)
+      else
+        raise EMathDimensionError.Create('Only objects of the same dimension can be added');
+    end else begin
+      if b.Represents(IValueNumber, nb) then begin
+        if IsScalar then
+          Result:= TValueNumber.Create(FSIValue + nb.Value)
+        else
+          raise EMathDimensionError.Create('Only objects of the same dimension can be added');
+      end else
+        raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+   end;
+end;
+
+function TValueDimension.OpSubtract(const B: IExpression): IExpression;
+var
+  nb: IValueNumber;
+  ub: IValueDimension;
+begin
+   if b.Represents(IValueDimension, ub) then begin
+      if IsCompatible(ub.Units) then
+        Result:= TValueDimension.Create(FSIValue - ub.Value, FUnits)
+      else
+        raise EMathDimensionError.Create('Only objects of the same dimension can be subtracted');
+    end else begin
+      if b.Represents(IValueNumber, nb) then begin
+        if IsScalar then
+          Result:= TValueNumber.Create(FSIValue - nb.Value)
+        else
+          raise EMathDimensionError.Create('Only objects of the same dimension can be subtracted');
+      end else
+        raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+   end;
+end;
+
+function TValueDimension.OpDivide(const B: IExpression): IExpression;
+var
+  nd: IValueNumber;
+  ud: IValueDimension;
+begin
+  if B.Represents(IValueDimension, ud) then
+    Result:= TValueDimension.Create(DivideNumber(FSIValue, ud.Value), MultDimensions(FUnits, InverseDimensions(ud.Units)))
+  else if B.Represents(IValueNumber, nd) then
+    Result:= TValueDimension.Create(DivideNumber(FSIValue, nd.Value), FUnits)
+  else
+    raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+end;
+
+function TValueDimension.OpMultiply(const B: IExpression): IExpression;
+var
+  nb: IValueNumber;
+  ub: IValueDimension;
+begin
+  if b.Represents(IValueDimension, ub) then
+    Result:= TValueDimension.Create(FSIValue * ub.Value, MultDimensions(FUnits, ub.Units))
+  else if b.Represents(IValueNumber, nb) then
+    Result:= TValueDimension.Create(FSIValue * nb.Value, FUnits)
+  else
+    raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+end;
+
+function TValueDimension.OpNegate: IExpression;
+begin
+  Result:= TValueDimension.Create(-FSIValue, FUnits, FCreatedAs);
+end;
+
+function TValueDimension.OpPower(const B: Number): IExpression;
+begin
+  if IsZero(frac(b)) then
+    Result:= TValueDimension.Create(IntPower(FSIValue, trunc(b)), PowerDimensions(FUnits, trunc(b)))
+  else
+    raise EMathDimensionError.Create('Exponent has to be a whole number');
+end;
+
+function TValueDimension.OpRoot(const B: Number): IExpression;
+begin
+  if IsZero(frac(B)) then
+    Result:= TValueDimension.Create(Math.Power(FSIValue, 1 / B), RootDimensions(FUnits, trunc(B)))
+  else
+    raise EMathDimensionError.Create('Root has to be a whole number');
 end;
 
 { TPackageDimensions }
@@ -490,10 +603,12 @@ initialization
   DefineUnit('at'     , 'technical atm'         , 0.980665e5      , [ -1,  1, -2,  0,  0,  0,  0]);
   DefineUnit('Torr'   , 'Torr'                  , 133.322         , [ -1,  1, -2,  0,  0,  0,  0]);
   DefineUnit('psi'    , 'pound per sq inch'     , 6.895e3         , [ -1,  1, -2,  0,  0,  0,  0]);
-  // Energy                                                       
+  // Energy
   DefineUnit('cal'    , 'Calories'              , 4.1868          , [  2,  1, -2,  0,  0,  0,  0]);
   DefineUnit('btu'    , 'british thermal unit'  , 1055.056        , [  2,  1, -2,  0,  0,  0,  0]);
   DefineUnit('erg'    , 'Erg'                   , 1e-7            , [  2,  1, -2,  0,  0,  0,  0]);
-  DefineUnit('eV'     , 'Electronvolt'          , 1.6021766e-19   , [  2,  1, -2,  0,  0,  0,  0]);
+  DefineUnit('eV'     , 'Electronvolt'          , 1.6021766e-19   , [  2,  1, -2,  0,  0,  0,  0]);     
+  // Power
+  DefineUnit('hp'      , 'Horsepower'           , 745.7           , [  2,  1, -3,  0,  0,  0,  0]);
 end.
 

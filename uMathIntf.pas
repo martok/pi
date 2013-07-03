@@ -55,6 +55,30 @@ type
     function AsString(const Format: TStringFormat): string;
   end;
 
+  IOperationAddition = interface['{4BBFAF74-4630-4B05-8732-888C1D9C5A24}']
+    // Result = This + B
+    function OpAdd(const B: IExpression): IExpression;
+    // Result = This - B
+    function OpSubtract(const B: IExpression): IExpression;
+  end;
+
+  IOperationMultiplication = interface['{F1559788-3942-4195-BB99-90CF6E6E901B}']
+    // Result = This * B
+    function OpMultiply(const B: IExpression): IExpression;
+    // Result = This / B
+    function OpDivide(const B: IExpression): IExpression;
+    // Result = -B
+    function OpNegate: IExpression;
+  end;
+
+  IOperationPower = interface['{B59CF38E-1800-4BF6-8FCB-20B687FEB17E}']
+    // Result = This ^ B
+    function OpPower(const B: Number): IExpression;
+    // Result = This ^ (1 / B)
+    function OpRoot(const B: Number): IExpression;
+  end;
+
+
   ISymbolReference = interface(IExpression)['{1B46951B-6531-4499-B251-6C59A3E21B0A}']
     function GetName: string;
     property Name: string read GetName;

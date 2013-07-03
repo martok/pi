@@ -256,8 +256,7 @@ function TPackageElementary.NRt_2(Context: IContext; args: TExprList): IExpressi
 var
   x: Number;
   a: IExpression;
-  ua: IValueDimension;
-  na: IValueNumber;
+  op: IOperationPower;
 begin
   x:= EvaluateToNumber(Context, args[0]);
   if IsZero(x) then begin
@@ -266,16 +265,10 @@ begin
   end;
 
   a:= args[1].Evaluate(Context);
-  if a.Represents(IValueDimension, ua) then begin
-    if IsZero(frac(x)) then
-      Result:= TValueDimension.Create(Math.Power(ua.Value, 1 / x), DivideDimensions(ua.Units, trunc(x)))
-    else
-      raise EMathDimensionError.Create('Root has to be a whole number');
-  end else
-  if a.Represents(IValueNumber, na) then begin
-    Result:= TValueNumber.Create(Math.Power(na.Value, 1 / x));
-  end else
-    raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+  if a.Represents(IOperationPower, op) then
+    Result:= op.OpRoot(x)
+  else
+    raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Root']);
 end;
 
 function TPackageElementary.Random_0(Context: IContext; args: TExprList): IExpression;

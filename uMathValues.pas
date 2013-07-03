@@ -20,7 +20,7 @@ type
     function Clone(Deep: Boolean): IExpression; override;
   end;
 
-  TValueNumber = class(TE_Atom, IValueNumber, IStringConvertible)
+  TValueNumber = class(TE_Atom, IValueNumber, IStringConvertible, IOperationAddition, IOperationMultiplication, IOperationPower)
   private
     FValue: Number;
   public
@@ -31,6 +31,16 @@ type
     function Value: Number;
     // IStringConvertible
     function AsString(const Format: TStringFormat): String;
+    // IOperationAddition;
+    function OpAdd(const B: IExpression): IExpression;
+    function OpSubtract(const B: IExpression): IExpression;
+    // IOperationMultiplication
+    function OpDivide(const B: IExpression): IExpression;
+    function OpMultiply(const B: IExpression): IExpression;
+    function OpNegate: IExpression;
+    // IOperationPower
+    function OpPower(const B: Number): IExpression;
+    function OpRoot(const B: Number): IExpression;
   end;
 
   TValueString = class(TE_Atom, IValueString, IStringConvertible)
@@ -88,9 +98,13 @@ function EvaluateToNumber(Context: IContext; ex: IExpression; out n: Number): Bo
 function EvaluateToNumber(Context: IContext; ex: IExpression): Number; overload;
 function EvaluateToString(Context: IContext; ex: IExpression; out s: string): Boolean; overload;
 function EvaluateToString(Context: IContext; ex: IExpression): String; overload;
+function DivideNumber(a, d: Number): Number;
 
 
 implementation
+
+uses
+  uMathDimensions;
 
 function CastToNumber(const Exp: IExpression): Number;
 var
@@ -168,6 +182,20 @@ begin
   Result:= CastToString(ex.Evaluate(Context));
 end;
 
+function DivideNumber(a, d: Number): Number;
+begin
+  Result:= 0;
+  if IsZero(d) then begin
+    if IsZero(a) then
+      Result:= NaN
+    else if a < 0 then
+      Result:= NegInfinity
+    else if a > 0 then
+      Result:= Infinity;
+  end else
+    Result:= a / d;
+end;
+
 
 { TE_Atom }
 
@@ -215,6 +243,77 @@ end;
 function TValueNumber.Clone(Deep: Boolean): IExpression;
 begin
   Result:= TValueNumber.Create(FValue);
+end;
+
+function TValueNumber.OpAdd(const B: IExpression): IExpression;
+var
+  nb: IValueNumber;
+  ub: IValueDimension;
+begin
+  if B.Represents(IValueDimension, ub) then begin
+    if ub.IsScalar then
+      Result:= TValueNumber.Create(FValue + ub.Value)
+    else
+      raise EMathDimensionError.Create('Only objects of the same dimension can be added');
+  end else
+    if b.Represents(IValueNumber, nb) then
+      Result:= TValueNumber.Create(FValue + nb.Value);
+end;
+
+function TValueNumber.OpSubtract(const B: IExpression): IExpression;
+var
+  nb: IValueNumber;
+  ub: IValueDimension;
+begin
+  if B.Represents(IValueDimension, ub) then begin
+    if ub.IsScalar then
+      Result:= TValueNumber.Create(FValue - ub.Value)
+    else
+      raise EMathDimensionError.Create('Only objects of the same dimension can be subtracted');
+  end else
+    if b.Represents(IValueNumber, nb) then
+      Result:= TValueNumber.Create(FValue - nb.Value);
+end;
+
+function TValueNumber.OpDivide(const B: IExpression): IExpression;
+var
+  ud: IValueDimension;
+  nd: IValueNumber;
+begin
+  if B.Represents(IValueDimension, ud) then
+    Result:= TValueDimension.Create(DivideNumber(FValue, ud.Value), InverseDimensions(ud.Units))
+  else if B.Represents(IValueNumber, nd) then
+    Result:= TValueNumber.Create(DivideNumber(FValue, nd.Value))
+  else
+    raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+end;
+
+function TValueNumber.OpMultiply(const B: IExpression): IExpression;
+var
+  ud: IValueDimension;
+  nd: IValueNumber;
+begin
+  if B.Represents(IValueDimension, ud) then
+    Result:= TValueDimension.Create(FValue * ud.Value, ud.Units)
+  else if B.Represents(IValueNumber, nd) then
+    Result:= TValueNumber.Create(FValue * nd.Value)
+  else
+    raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+end;
+
+function TValueNumber.OpNegate: IExpression;
+begin
+  Result:= TValueNumber.Create(-FValue);
+end;
+
+function TValueNumber.OpPower(const B: Number): IExpression;
+begin
+  Result:= TValueNumber.Create(Power(FValue, b));
+end;
+
+function TValueNumber.OpRoot(const B: Number): IExpression;
+begin
+  Result:= TValueNumber.Create(Power(FValue, 1 / B));
 end;
 
 { TValueString }

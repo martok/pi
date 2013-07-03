@@ -207,10 +207,6 @@ type
   end;
 
   TPackageAlgebra = class(TFunctionPackage)
-  private
-    function Divide(a, d: Number): Number;
-    function Multiply(a, b: IExpression): IExpression;
-    function Add(a, b: IExpression; Premul: integer): IExpression;
   protected
     procedure OnImport(const MS: TMathSystem); override;
   published
@@ -242,6 +238,7 @@ resourcestring
   sWork = 'Work';
 
   sCannotConvertExpression = 'Cannot convert expression to type %s';
+  sUnsupportedOperation = 'Unsupportedn operation: %s';
 
 implementation
 
@@ -1290,116 +1287,59 @@ end;
 function TPackageAlgebra._negate_1(Context: IContext; Args: TExprList): IExpression;
 var
   e: IExpression;
-  ua: IValueDimension;
-  na: IValueNumber;
+  op: IOperationMultiplication;
 begin
   e:= Args[0].Evaluate(Context);
-  if e.Represents(IValueDimension, ua) then
-    Result:= TValueDimension.Create(-ua.Value, ua.Units)
+  if e.Represents(IOperationMultiplication, op) then
+    Result:= op.OpNegate
   else
-  if e.Represents(IValueNumber, na) then
-    Result:= TValueNumber.Create(-na.Value)
-  else
-    raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+    raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Negate']);
 end;
 
 function TPackageAlgebra._pow_2(Context: IContext; Args: TExprList): IExpression;
 var
   ea: IExpression;
-  b: Number;
-  ua: IValueDimension;
+  op: IOperationPower;
 begin
   ea:= args[0].Evaluate(Context);
-  if EvaluateToNumber(Context, Args[1], b) then begin
-    if ea.Represents(IValueDimension, ua) then begin
-      if IsZero(frac(b)) then
-        Result:= TValueDimension.Create(IntPower(ua.Value, trunc(b)), PowerDimensions(ua.Units, trunc(b)))
-      else
-        raise EMathDimensionError.Create('Exponent has to be a whole number');
-    end else
-      Result:= TValueNumber.Create(Power(CastToNumber(ea), b));
-  end else
-    raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
-end;
 
-function TPackageAlgebra.Multiply(a, b: IExpression): IExpression;
-var
-  na,nb: IValueNumber;
-  ua,ub: IValueDimension;
-begin
-  if a.Represents(IValueDimension, ua) then begin
-    if b.Represents(IValueDimension, ub) then
-      Result:= TValueDimension.Create(ua.Value * ub.Value, MultDimensions(ua.Units, ub.Units))
-    else if b.Represents(IValueNumber, nb) then
-      Result:= TValueDimension.Create(ua.Value * nb.Value, ua.Units)
-    else
-      raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
-  end else
-  if a.Represents(IValueNumber, na) then begin
-    if b.Represents(IValueDimension, ub) then
-      Result:= TValueDimension.Create(na.Value*ub.Value, ub.Units)
-    else if b.Represents(IValueNumber, nb) then
-      Result:= TValueNumber.Create(na.Value*nb.Value)
-    else
-      raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
-  end else
-    raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+  if ea.Represents(IOperationPower, op) then
+    Result:= op.OpPower(EvaluateToNumber(Context, args[1]))
+  else
+    raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Power']);
 end;
 
 function TPackageAlgebra._mult_N(Context: IContext; Args: TExprList): IExpression;
 var
   i: integer;
+  op: IOperationMultiplication;
 begin
   if Length(Args)=0 then
     Result:= TValueUnassigned.Create
   else begin
     Result:= Args[0].Evaluate(Context);
 
-    for i:= 1 to high(Args) do 
-      Result:= Multiply(Result, Args[1].Evaluate(Context));
+    for i:= 1 to high(Args) do begin
+      if Result.Represents(IOperationMultiplication, op) then
+        Result:= op.OpMultiply(Args[i].Evaluate(Context))
+      else
+        raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Multiply']);
+    end;
   end;
-end;
-
-function TPackageAlgebra.Divide(a, d: Number): Number;
-begin
-  Result:= 0;
-  if IsZero(d) then begin
-    if IsZero(a) then
-      Result:= NaN
-    else if a < 0 then
-      Result:= NegInfinity
-    else if a > 0 then
-      Result:= Infinity;
-  end else
-    Result:= a / d;
 end;
 
 function TPackageAlgebra._div_2(Context: IContext; Args: TExprList): IExpression;
 var
   n,d: IExpression;
-  na,nd: IValueNumber;
-  ua,ud: IValueDimension;
+  op: IOperationMultiplication;
 begin
   n:= Args[0].Evaluate(Context);
   d:= Args[1].Evaluate(Context);
 
-  if n.Represents(IValueDimension, ua) then begin
-    if d.Represents(IValueDimension, ud) then
-      Result:= TValueDimension.Create(Divide(ua.Value, ud.Value), MultDimensions(ua.Units, InverseDimensions(ud.Units)))
-    else if d.Represents(IValueNumber, nd) then
-      Result:= TValueDimension.Create(Divide(ua.Value, nd.Value), ua.Units)
-    else
-      raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
-  end else
-  if n.Represents(IValueNumber, na) then begin
-    if d.Represents(IValueDimension, ud) then
-      Result:= TValueDimension.Create(Divide(na.Value, ud.Value), InverseDimensions(ud.Units))
-    else if d.Represents(IValueNumber, nd) then
-      Result:= TValueNumber.Create(Divide(na.Value, nd.Value))
-    else
-      raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
-  end else
-    raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
+  if n.Represents(IOperationMultiplication, op) then
+    Result:= op.OpDivide(d)
+  else
+    raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Divide']);
 end;
 
 function TPackageAlgebra._mod_2(Context: IContext; Args: TExprList): IExpression;
@@ -1420,63 +1360,41 @@ begin
     raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
 end;
 
-function TPackageAlgebra.Add(a, b: IExpression; Premul: integer): IExpression;
-var
-  na,nb: IValueNumber;
-  ua,ub: IValueDimension;
-begin
-  if a.Represents(IValueDimension, ua) then begin
-    if b.Represents(IValueDimension, ub) then begin
-      if ua.IsCompatible(ub.Units) then
-        Result:= TValueDimension.Create(ua.Value + ub.Value * Premul, ua.Units)
-      else
-        raise EMathDimensionError.Create('Only objects of the same dimension can be added');
-    end else
-      if b.Represents(IValueNumber, nb) then begin
-        if ua.IsScalar then
-          Result:= TValueNumber.Create(ua.Value + nb.Value * Premul)
-        else
-          raise EMathDimensionError.Create('Only objects of the same dimension can be added');
-      end else
-        raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
-  end else
-  if a.Represents(IValueNumber, na) then begin
-    if b.Represents(IValueDimension, ub) then begin
-      if ub.IsScalar then
-        Result:= TValueNumber.Create(na.Value + ub.Value * Premul)
-      else
-        raise EMathDimensionError.Create('Only objects of the same dimension can be added');
-    end else
-      if b.Represents(IValueNumber, nb) then
-        Result:= TValueNumber.Create(na.Value + nb.Value * Premul);
-  end;
-end;
-
 function TPackageAlgebra._plus_N(Context: IContext; Args: TExprList): IExpression;
 var
   i: integer;
+  op: IOperationAddition;
 begin
   if Length(Args)=0 then
     Result:= TValueUnassigned.Create
   else begin
     Result:= Args[0].Evaluate(Context);
 
-    for i:= 1 to high(Args) do 
-      Result:= Add(Result, Args[i].Evaluate(Context), 1);
+    for i:= 1 to high(Args) do begin
+      if Result.Represents(IOperationAddition, op) then
+        Result:= op.OpAdd(Args[i].Evaluate(Context))
+      else
+        raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Add']);
+    end;
   end;
 end;
 
 function TPackageAlgebra._subtract_N(Context: IContext; Args: TExprList): IExpression;
 var
   i: integer;
+  op: IOperationAddition;
 begin
   if Length(Args)=0 then
     Result:= TValueUnassigned.Create
   else begin
     Result:= Args[0].Evaluate(Context);
 
-    for i:= 1 to high(Args) do 
-      Result:= Add(Result, Args[i].Evaluate(Context), -1);
+    for i:= 1 to high(Args) do begin
+      if Result.Represents(IOperationAddition, op) then
+        Result:= op.OpSubtract(Args[i].Evaluate(Context))
+      else
+        raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Subtract']);
+    end;
   end;
 end;
 
