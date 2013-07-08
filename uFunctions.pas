@@ -803,7 +803,10 @@ begin
     f:= a.Length + f;
   if f < 0 then
     f:= 0;
-  Result:= a.Item[f];
+  if (f >= a.Length) then
+    Result:= TValueUnassigned.Create
+  else
+    Result:= a.Item[f];
 end;
 
 function TPackageLists.Count_1(Context: IContext; args: TExprList): IExpression;

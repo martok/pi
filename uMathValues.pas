@@ -11,13 +11,15 @@ type
     function Evaluate(const Context: IContext): IExpression; override;
   end;
 
-  TValueUnassigned = class(TE_Atom, IValueUnassigned)
+  TValueUnassigned = class(TE_Atom, IValueUnassigned, IStringConvertible)
   public
     function Clone(Deep: Boolean): IExpression; override;
+    function AsString(const Format: TStringFormat): String;
   end;
 
-  TValueNull = class(TE_Atom, IValueNull)
+  TValueNull = class(TE_Atom, IValueNull, IStringConvertible)
     function Clone(Deep: Boolean): IExpression; override;
+    function AsString(const Format: TStringFormat): String;
   end;
 
   TValueNumber = class(TE_Atom, IValueNumber, IStringConvertible, IOperationAddition, IOperationMultiplication, IOperationPower)
@@ -206,12 +208,30 @@ end;
 
 { TValueUnassigned }
 
+function TValueUnassigned.AsString(const Format: TStringFormat): String;
+begin
+  case Format of
+    STR_FORMAT_OUTPUT: Result:= '<?>';
+  else
+    Result:= '';
+  end;
+end;
+
 function TValueUnassigned.Clone(Deep: Boolean): IExpression;
 begin
   Result:= TValueUnassigned.Create;
 end;
 
 { TValueNull }
+
+function TValueNull.AsString(const Format: TStringFormat): String;
+begin
+  case Format of
+    STR_FORMAT_OUTPUT: Result:= '<NULL>';
+  else
+    Result:= '';
+  end;
+end;
 
 function TValueNull.Clone(Deep: Boolean): IExpression;
 begin
