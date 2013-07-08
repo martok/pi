@@ -1,0 +1,82 @@
+<package name="Graph">
+	<description>Das Package stellt Funktionen zum Erstellen und Anzeigen von Diagrammen und Plots zur Verfügung.<br />
+		Alle <i>range</i>-Angaben sind Listen der 2 Grenzen: <code>range={min, max}</code><br />
+		Alle Funktionen, die Plot-Objekte erstellen backen den aktuellen Kontext zum Zeitpunkt ihrer
+		Ausführung. Spätere Änderungen werden nicht übernommen. Das kann man verwenden, um Funktionsscharen
+		zu plotten</description>
+	<function name="Plot">
+		<syntax>Plot(<v>expr</v>,<v>var</v>,<v>range</v>[,options])</syntax>
+		<description>
+			Plottet eine Expression in Variable <v>var</v> über <v>range</v>
+		</description>
+		<options>
+			<option name="Color" default="*random*">
+				<description>Linienfarbe, Angabe als TColor (clRed, clBlue etc) oder Hexadezimal '$bbggrr'</description>
+			</option>
+			<option name="Size" default="1">
+				<description>Linienbreite in Pixel</description>
+			</option>
+			<option name="Caption" default="*auto*">
+				<description>Titel, sonst StringForm</description>
+			</option>
+		</options>
+	</function>
+	<function name="Histogram">
+		<syntax>Histogram(<v>list</v>[,options])</syntax>
+		<description>
+			Plottet eine Liste von {Mittelwert,Anzahl}-Tupeln
+		</description>
+		<options>
+			<option name="Color" default="*random*">
+				<description>Linienfarbe, Angabe als TColor (clRed, clBlue etc) oder Hexadezimal '$bbggrr'</description>
+			</option>
+			<option name="Size" default="1">
+				<description>Balkenbreite, automatisch schmalster Abstand zwischen zwei Mittelwerten</description>
+			</option>
+			<option name="Caption" default="*auto*">
+				<description>Titel, sonst Anzahl der Elemente</description>
+			</option>
+		</options>
+	</function>
+	<function name="XYPlot">
+		<syntax>XYPlot(<v>list</v>[,options])</syntax>
+		<description>
+			Plottet eine Liste von {X,Y}-Punkten
+		</description>
+		<options>
+			<option name="Color" default="*random*">
+				<description>Linienfarbe, Angabe als TColor (clRed, clBlue etc) oder Hexadezimal '$bbggrr'</description>
+			</option>
+			<option name="Size" default="1">
+				<description>Durchmesser der Punktmarkierungen</description>
+			</option>
+			<option name="Points" default="'Cross'">
+				<description>Art der Punktmarker</description>
+				<value value="'None'">Keine Punkte</value>
+				<value value="'Dot'">Punkt</value>
+				<value value="'Cross'">Kreuz (X)</value>
+				<value value="'Plus'">Kreuz (+)</value>
+				<value value="'Circle'">Kreis</value>
+				<value value="'Square'">Quadrat</value>
+			</option>
+		</options>
+	</function>
+	<function name="Show">
+		<syntax>Show(<v>plots</v>[,options])</syntax>
+		<description>
+			Stellt mehrere Plot-Objekte dar. <i>plots</i> muss eine Liste von Plot-Objekten oder ein Plot-Objekt sein.<br/>
+			Eine Legende mit der Zuordnung der Farben wird bei gedrückter Maustaste angezeigt.
+		</description>
+		<options>
+			<option name="XRange" default="*auto*">
+				<description>X-Bereich. Automatisch so, dass alle plots dargestellt werden können</description>
+			</option>
+			<option name="YRange" default="*auto*">
+				<description>Y-Bereich. Automatisch nach Achsen-Modus: 0.1..10 für logarithmisch und -5..5 für linear</description>
+			</option>
+			<option name="Axes" default="'linlin'">
+				<description>Modus der X und Y-Achsen. Paare von 'Lin' oder 'Log'</description>
+			</option>
+		</options>
+	</function>
+</package>

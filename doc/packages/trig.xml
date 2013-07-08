@@ -1,0 +1,91 @@
+<package name="Trig">
+	<description>Das Package stellt trigonometrische und hyperbolische Funktionen zur Verfügung.</description>
+	<function name="Deg2Rad">
+		<syntax>Deg2Rad(<v>Number</v>)</syntax>
+		<description>
+			Grad in Radiant
+		</description>
+	</function>
+	<function name="Rad2Deg">
+		<syntax>Rad2Deg(<v>number</v>)</syntax>
+		<description>
+			Radiant in Grad
+		</description>
+	</function>
+	<function name="Sin">
+		<syntax>Sin(<v>number</v>)</syntax>
+		<description>
+			Sinus
+		</description>
+	</function>
+	<function name="Cos">
+		<syntax>Cos(<v>number</v>)</syntax>
+		<description>
+			Cosinus
+		</description>
+	</function>
+	<function name="Tan">
+		<syntax>Tan(<v>number</v>)</syntax>
+		<description>
+			Tangens
+		</description>
+	</function>
+	<function name="ArcSin">
+		<syntax>ArcSin(<v>number</v>)</syntax>
+		<description>
+			Inverse zu Sin
+		</description>
+	</function>
+	<function name="ArcCos">
+		<syntax>ArcCos(<v>number</v>)</syntax>
+		<description>
+			Inverse zu Cos
+		</description>
+	</function>
+	<function name="ArcTan">
+		<syntax>ArcTan(<v>number</v>)</syntax>
+		<description>
+			Inverse zu Tan
+		</description>
+		<syntax>ArcTan(<v>Y</v>, <v>X</v>)</syntax>
+		<description>
+			Delphi's <a href="http://docwiki.embarcadero.com/VCL/en/Math.ArcTan2">ArcTan2</a>: ArcTan im korrekten Quadranten
+		</description>
+	</function>
+	<function name="Sinh">
+		<syntax>Sinh(<v>number</v>)</syntax>
+		<description>
+			Sinus Hyperbolicus
+		</description>
+	</function>
+	<function name="Cosh">
+		<syntax>Cosh(<v>number</v>)</syntax>
+		<description>
+			Cosinus Hyperbolicus
+		</description>
+	</function>
+	<function name="Tanh">
+		<syntax>Tanh(<v>number</v>)</syntax>
+		<description>
+			Tangens Hyperbolicus
+		</description>
+	</function>
+	<function name="ArSinh">
+		<syntax>ArSinh(<v>number</v>)</syntax>
+		<description>
+			Inverse zu SinH
+		</description>
+	</function>
+	<function name="ArCosh">
+		<syntax>ArCosh(<v>number</v>)</syntax>
+		<description>
+			Inverse zu CosH
+		</description>
+	</function>
+	<function name="ArTanh">
+		<syntax>ArTanh(<v>number</v>)</syntax>
+		<description>
+			Inverse zu TanH
+		</description>
+	</function>
+</package>

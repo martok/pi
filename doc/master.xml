@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+<!DOCTYPE
+   document
+   PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"
+   [
+      <!ENTITY Pi  "&#0928;">
+   ]
+>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+	<title>pi - Matheparser/Taschenrechner</title>
+	<section title="Über das Projekt &Pi;">
+		Offizielles Repository: <a href="https://github.com/martok/pi">GitHub</a>.<br/>
+		Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.php?t=106298">pi - Matheparsertaschenrechner</a>
+	</section>
+	<section title="Syntax">
+		<p>Gleichungen eben ;)</p>
+
+		<p>Eine Besonderheit ist, dass mit dem DynamicAssignment-Operator (<code>:=</code>) Ausdrücke
+		direkt ohne Auswertung gespeichert werden können. Diese kann man dann durch eine
+		spezielle Art des Funktionsaufrufs verwenden: Eckige Klammern führen eine Expression
+		mit neuem Kontext aus, der durch die Ausdrücke in der Klammer vorbereitet werden
+		kann.</p>
+	</section>
+	<section title="Operatoren">
+		<ul>
+			<li id="operator-describe">
+				<code>?</code>
+				Describe. Gibt die StringForm seines Arguments aus
+			</li>
+			<li id="operator-dump">
+				<code>??</code>
+				Dump. Gibt die interne Datenstruktur des unevaluierten Arguments aus.
+			</li>
+			<li id="operator-char">
+				<code>#</code>
+				Character. Ein Zeichen aus seinem ASCII-Code erzeugen
+			</li>
+			<li id="operator-power">
+				<code>^</code>
+				Power. Berechnet x^y
+			</li>
+			<li id="operator-muldiv">
+				<code>* / %</code>
+				Multiplication, Division, Modulus
+			</li>
+			<li id="operator-addsub">
+				<code>+ -</code>
+				Addition, Subtraktion
+			</li>
+			<li id="operator-assignstat">
+				<code>=</code>
+				AssigmentStatic. Weist der linken Seite <b>den Wert</b> der rechten Seite zu
+			</li>
+			<li id="operator-assigndyn">
+				<code>:=</code>
+				AssigmentDynamic. Weist der linken Seite <b>den Ausdruck</b> auf der rechten Seite zu
+			</li>
+			<li id="operator-arglist">
+				<code>,</code>
+				ArgList. Stellt sowohl Parameterlisten als auch verkette Ausdrücke dar.
+					Ergebnis ist immer das Ergebnis des letzten Ausdrucks.
+			</li>
+			<li id="operator-list">
+				<code>{ }</code>
+				List. Erzeugt eine Liste. Identisch zu <seealso p="lists" n="l">L()</seealso>
+			</li>
+			<li id="operator-listaccess">
+				<code>@</code>
+				ListAccess. Identisch zu <seealso p="lists" n="lget">LGet()</seealso>
+			</li>
+		</ul>
+	</section>
+	<section title="Datentypen">
+		<p><code>Number</code><br/>
+		80bit Extended (long double)<br/>
+		3.6 x 10^-4951 bis 1.1 x 10^4932 bei 19–20 stelliger Genauigkeit</p>
+		<p><code>String</code><br/>
+		Ansi-String
+		</p>
+		<p><code>Unassigned</code><br/>
+		Kein Wert zugewiesen (wird intern verwendet; Darstellung: &lt;?&gt;)
+		</p>
+		<p><code>Null</code><br/>
+		Nullwert
+		</p>
+		<p><code>RangeList</code><br/>
+		Bereich, Darstellung: {Enfang->Ende, Schrittweite}
+		</p>
+		<p><code>FixedList</code><br/>
+		Liste mehrerer Werte, Darstellung: {el1,el2,el3}
+		</p>
+	</section>
+	<section title="Ausdrücke, Werte und Variablen">
+		<p>Alles, was (syntaktisch korrekt) eingegeben werden kann wird als Ausdruck
+		bezeichnet. Das Umfasst sowohl mathematische Ausdrücke ("Formeln") als auch
+		Funktionsaufrufe, Listen etc. Um herauszufinden, wie ein Ausdruck definiert
+		ist kann der <a href="#operator-describe">Describe-Operator</a> <code>?</code> verwendet
+		werden. Dieser verwendet die StringForm der Ausdrücke, die den Ausdruck
+		als Baum der beteiligten Funktionen beschreibt.</p>
+		<p>In &Pi; ist es möglich, Ausdrücke ohne vorherige Zuweisung an eine
+		Variable zu verwenden. Darüber hinaus sind weitergehende Zuweisungen möglich.</p>
+		<p>Statische Zuweisungen mit <code>=</code> legen den Wert der sich bei der
+		Auswertung des Ausdrucks auf der rechten Seite in der Variable im aktuellen
+		Kontext ab. Dies kann also z.B. ein Zahlenwert sein.<br/>
+		Diese Syntax wird außerdem von manchen Funktionen verwendet, um Konfigurationsparameter
+		angeben zu können und so das Verhalten der Funktionen zu beeinflussen.</p>
+		<p>Dynamische Zuweisungen mit <code>:=</code> werten den Ausdruck nicht aus
+		sondern speichern den Ausdruck selbst. Dieser kann dann später ausgewertet
+		oder in weiteren dynamischen Zuweisungen verwendet werden. Das ermöglicht es,
+		eine Funktion zu definieren und wiederholt für verschiedene Parameter
+		aufzurufen.</p>
+	</section>
+	<section title="Funktionen">
+		<p>Funktionen sind in sogenannten Packages organisiert. Jedes dieser Packages
+		stellt eine Einheit von Funktionen ähnlicher Kategorie dar.</p>
+		<xi:include href="./packages/core.xml" parse="xml"/>
+		<xi:include href="./packages/trig.xml" parse="xml"/>
+		<xi:include href="./packages/elementary.xml" parse="xml"/>
+		<xi:include href="./packages/numerical.xml" parse="xml"/>
+		<xi:include href="./packages/lists.xml" parse="xml"/>
+		<xi:include href="./packages/data.xml" parse="xml"/>
+		<xi:include href="./packages/statistics.xml" parse="xml"/>
+		<xi:include href="./packages/graph.xml" parse="xml"/>
+		<xi:include href="./packages/symbolics.xml" parse="xml"/>
+		<xi:include href="./packages/dimensions.xml" parse="xml"/>
+	</section>
+	<section title="License">
+		<pre><xi:include href="license.txt" parse="text"/></pre>
+	</section>
+</document>

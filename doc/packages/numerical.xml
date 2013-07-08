@@ -1,0 +1,102 @@
+<package name="Numerical">
+	<description>Das Package stellt Funktionen zum Umgang mit Zahlenwerten und Zahlsystemen zur Verfügung.</description>
+	<function name="Abs">
+		<syntax>Abs(<v>number</v>)</syntax>
+		<description>
+			Betrag
+		</description>
+	</function>
+	<function name="Sign">
+		<syntax>Sign(<v>number</v>)</syntax>
+		<description>
+			Vorzeichen der Zahl. <code>{-1|x&lt;0, 0|x=0, 1|y>0}</code>
+		</description>
+	</function>
+	<function name="Step">
+		<syntax>Step(<v>number</v>)</syntax>
+		<description>
+			Heaviside'sche Sprungfunktion mit <code>H(0)=1</code>. <code>{0|x&lt;0, 1|y>=0}</code>
+		</description>
+	</function>
+	<function name="Round">
+		<syntax>Round(<v>number</v>)</syntax>
+		<syntax>Round(<v>number</v>, <v>digits</v>)</syntax>
+		<description>
+			Rundet auf <v>digits</v> Stellen (Genauigkeit von 10<sup><v>digits</v></sup>) oder ganze Zahlen.
+		</description>
+	</function>
+	<function name="Fac">
+		<syntax>Fac(<v>number</v>)</syntax>
+		<description>
+			Fakultät
+		</description>
+	</function>
+	<function name="Binomial">
+		<syntax>Binomial(<v>n</v>, <v>k</v>)</syntax>
+		<description>
+			Binomialkoeffizient <code>(<v>n</v> über <v>k</v>) = <v>n</v>! / (<v>k</v>!*(<v>n</v>-<v>k</v>)!)</code>
+		</description>
+	</function>
+	<function name="Permutations">
+		<syntax>Permutations(<v>n</v>, <v>k</v>)</syntax>
+		<description>
+			Anzahl der Permutationen der Länge <v>k</v> aus <v>n</v> Elementen <code>P(n,r) = n! / (n - r)!</code>
+		</description>
+	</function>
+	<function name="ItoA">
+		<syntax>ItoA(<v>number</v>,<v>base</v>)</syntax>
+		<description>
+			Konvertiert Ganzzahlen in String-Repräsentation in Basis
+		</description>
+	</function>
+	<function name="AtoI">
+		<syntax>AtoI(<v>string</v>,<v>base</v>)</syntax>
+		<description>
+			Konvertiert String-Repräsentation aus Basis in Zahl (nur Ganzzahlen)
+		</description>
+	</function>
+	<function name="b">
+		<syntax>b(<v>string</v> OR <v>number</v>)</syntax>
+		<description>
+			Konvertiert aus/in String-Darstellung in Basis 2.
+		</description>
+	</function>
+	<function name="h">
+		<syntax>h(<v>string</v> OR <v>number</v>)</syntax>
+		<description>
+			Konvertiert aus/in String-Darstellung in Basis 16.
+		</description>
+	</function>
+	<function name="o">
+		<syntax>o(<v>string</v> OR <v>number</v>)</syntax>
+		<description>
+			Konvertiert aus/in String-Darstellung in Basis 8.
+		</description>
+	</function>
+	<function name="GCD">
+		<syntax>GCD(<v>a</v>, <v>b</v>)</syntax>
+		<description>
+			Berechnet den größten gemeinsamen Teiler (ggT, greatest common divisor) der Ganzzahlen <v>a</v> und <v>b</v>
+		</description>
+	</function>
+	<function name="LCM">
+		<syntax>LCM(<v>a</v>, <v>b</v>)</syntax>
+		<description>
+			Berechnet das kleinste gemeinse Vielfache (kgV, least common multiple) der Ganzzahlen <v>a</v> und <v>b</v>
+		</description>
+	</function>
+	<function name="Fraction">
+		<syntax>Fraction(<v>number</v>)</syntax>
+		<description>
+			Findet eine Bruchdarstellung für <v>number</v> und gibt diese als Liste zurück
+		</description>
+		<options>
+			<option name="precision" default="1E-11">
+				<description>Erlaubte Abweichung in Prozent, höhere Genauigkeiten erfordern größere Nenner</description>
+			</option>
+			<option name="mixed" default="*undefined*">
+				<description>Gemischten Bruch als <i>a+b/c</i> zurückgeben, sonst gewöhnlicher Bruch <i>a/b</i></description>
+			</option>
+		</options>
+	</function>
+</package>

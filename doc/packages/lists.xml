@@ -1,0 +1,61 @@
+<package name="Lists">
+	<description>Das Package stellt Funktionen zur Listen-Verarbeitung zur Verfügung.</description>
+	<function name="L">
+		<syntax>L(<v>p1</v>, <v>p2</v>, <v>p3</v>, ...)</syntax>
+		<description>
+			Erzeugt eine neue FixedList aus den Werten der Parameter
+		</description>
+	</function>
+
+	<function name="range">
+		<syntax>Range(<v>start</v>, <v>end</v>, <v>step</v>)</syntax>
+		<description>
+			Erzeugt eine RangeList mit <v>start</v>&gt;=<v>x</v>&gt;=<v>end</v> mit Schrittweite <v>step</v>
+		</description>
+	</function>
+
+	<function name="merge">
+		<syntax>Merge(<v>left</v>, <v>right</v>)</syntax>
+		<description>Verkettet zwei Listen zu einer neuen</description>
+	</function>
+
+	<function name="each">
+		<syntax>Each(<v>list</v>, <v>var</v>, <v>expr</v>)</syntax>
+		<description>Führt <v>expr</v> in einem neuen Kontext auf jedem Element von <v>list</v>
+		als Variable <v>var</v> aus und gibt die Ergebnisse als eine neue Liste zurück</description>
+	</function>
+
+	<function name="holdlist">
+		<syntax>HoldList(<v>list</v>)</syntax>
+		<description>Kopiert jedes Element von <v>list</v> in Ergebnis (zum Umwandeln von RangeList in FixedList)</description>
+	</function>
+
+	<function name="flatten">
+		<syntax>Flatten(<v>list</v>)</syntax>
+		<description>Entpackt eine Ebene verschachtelter Listen</description>
+	</function>
+
+	<function name="aggregate">
+		<syntax>Aggregate(<v>list</v>, <v>agg</v>, <v>init</v>, <v>var</v>, <v>expr</v>)</syntax>
+		<description>Wendet <v>expr</v> auf jedes Element in <v>list</v> als <v>var</v> an.
+		Dabei kann <v>agg</v> (vorbelegt mit <v>init</v>) modifiziert werden.
+		Rückgabewert ist der Wert von <v>agg</v> nach dem letzten Durchlauf</description>
+	</function>
+	<function name="part">
+		<syntax>Part(<v>list</v>, <v>first</v>, <v>last</v>)</syntax>
+		<description>Erzeugt eine List aus den Unterelementen <v>first</v> bis <v>last</v>. Der erste Eintrag hat
+		den Index 0.
+		Werden negative Indizes angegeben, wird von hinten gezählt, -1 bezeichnet das letzte
+		Element, -2 das vorletzte etc.
+		</description>
+	</function>
+	<function name="lget">
+		<syntax>LGet(<v>list</v>, <v>item</v>)</syntax>
+		<description>Gibt das Element item aus <v>list</v> zurück. Zählung wie bei <seealso p="lists" n="part">Part</seealso>.</description>
+	</function>
+	<function name="count">
+		<syntax>Count(<v>list</v>)</syntax>
+		<description>Gibt die Anzahl der Elemente in <v>list</v> zurück.</description>
+	</function>
+
+</package>

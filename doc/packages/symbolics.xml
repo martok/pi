@@ -1,0 +1,16 @@
+<package name="Symbolics">
+	<description>Das Package implementiert Funktionen zur symbolischen Manipulation von Ausdrücken</description>
+	<function name="Clone">
+		<syntax>Clone(<v>expr</v>)</syntax>
+		<description>
+			Erstellt eine unabhängig veränderbare Kopie des Ausdrucksbaums von <v>expr</v>
+		</description>
+	</function>
+	<function name="Subs">
+		<syntax>Subs(<v>expr</v>, {<v>rules</v>})</syntax>
+		<description>
+			Wendet alle Zuweisungen in <v>rules</v> permanent auf <v>expr</v> an und gibt den neuen
+			Ausdruck zurück.
+		</description>
+	</function>
+</package>

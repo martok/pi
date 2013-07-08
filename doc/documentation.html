@@ -1,0 +1,867 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="de" lang="de" dir="ltr">
+   <head>
+      <meta content="text/html; charset=UTF-8" http-equiv="Content-Type"></meta>
+      <title>pi - Matheparser/Taschenrechner</title><style type="text/css">
+            body {
+                background-color: #ffffe0;
+                margin: 0;
+                padding: 5px;
+                line-height: 1.5;
+                font-family: Verdana,Arial,sans-serif;
+                font-size: 14px;
+            }
+
+            a,a:visited,a:active {
+            	color: #555;
+            	border-top:1px solid #555;
+            	border-bottom:1px solid #555;
+            	text-decoration:none;
+            }
+            h1 {
+            	margin-top: 50px;
+            }
+
+            h1#main {
+            	margin-top: 0px;
+            }
+
+            code {
+            	border: 1px solid silver;
+            	padding: 2px;
+            	margin: 1px;
+            }
+            h3 code,
+            pre code {
+            	border: none;
+            	margin: 0;
+            	padding: 0;
+            }
+            pre {
+            	margin-left: 20px;
+            	padding-left: 1ex;
+            	border: 1px solid silver;
+            	background: white;
+            }
+
+            li {
+            	margin-bottom: 10px;
+            }
+            
+            dd p, li p {
+            	margin-top: 0.2em;
+            }
+
+            a.function-link {
+            	float: right;
+            	border: 0px;
+			}
+            li.function {
+            	margin-bottom: 2em;
+			}
+
+            span.function-options {
+            	text-decoration: underline;
+			}
+            
+			dl.function-options dt {
+            	font-family: monospace;
+            	padding-left: 1em;
+            }
+			dl.function-options dd table {
+            	border-left: 1px solid black;
+            	width: 100%;
+            }
+			dl.function-options dd table td {
+            	border-bottom: 1px solid #bbb;
+            }
+         </style></head>
+   <body>
+      	
+      <h1>pi - Matheparser/Taschenrechner</h1>
+      	
+      <h2>Über das Projekt Π</h2>
+      <div>
+         		Offizielles Repository: <a href="https://github.com/martok/pi" shape="rect">GitHub</a>.<br clear="none">
+         		Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.php?t=106298" shape="rect">pi - Matheparsertaschenrechner</a>
+         	
+      </div>
+      	
+      <h2>Syntax</h2>
+      <div>
+         		
+         <p>Gleichungen eben ;)</p>
+         
+         		
+         <p>Eine Besonderheit ist, dass mit dem DynamicAssignment-Operator (<code>:=</code>) Ausdrücke
+            		direkt ohne Auswertung gespeichert werden können. Diese kann man dann durch eine
+            		spezielle Art des Funktionsaufrufs verwenden: Eckige Klammern führen eine Expression
+            		mit neuem Kontext aus, der durch die Ausdrücke in der Klammer vorbereitet werden
+            		kann.
+         </p>
+         	
+      </div>
+      	
+      <h2>Operatoren</h2>
+      <div>
+         		
+         <ul>
+            <li id="operator-describe">
+               				<code>?</code>
+               				Describe. Gibt die StringForm seines Arguments aus
+               			
+            </li>
+            <li id="operator-dump">
+               				<code>??</code>
+               				Dump. Gibt die interne Datenstruktur des unevaluierten Arguments aus.
+               			
+            </li>
+            <li id="operator-char">
+               				<code>#</code>
+               				Character. Ein Zeichen aus seinem ASCII-Code erzeugen
+               			
+            </li>
+            <li id="operator-power">
+               				<code>^</code>
+               				Power. Berechnet x^y
+               			
+            </li>
+            <li id="operator-muldiv">
+               				<code>* / %</code>
+               				Multiplication, Division, Modulus
+               			
+            </li>
+            <li id="operator-addsub">
+               				<code>+ -</code>
+               				Addition, Subtraktion
+               			
+            </li>
+            <li id="operator-assignstat">
+               				<code>=</code>
+               				AssigmentStatic. Weist der linken Seite <b>den Wert</b> der rechten Seite zu
+               			
+            </li>
+            <li id="operator-assigndyn">
+               				<code>:=</code>
+               				AssigmentDynamic. Weist der linken Seite <b>den Ausdruck</b> auf der rechten Seite zu
+               			
+            </li>
+            <li id="operator-arglist">
+               				<code>,</code>
+               				ArgList. Stellt sowohl Parameterlisten als auch verkette Ausdrücke dar.
+               					Ergebnis ist immer das Ergebnis des letzten Ausdrucks.
+               			
+            </li>
+            <li id="operator-list">
+               				<code>{ }</code>
+               				List. Erzeugt eine Liste. Identisch zu <a href="#function-lists-l">L()</a>
+               			
+            </li>
+            <li id="operator-listaccess">
+               				<code>@</code>
+               				ListAccess. Identisch zu <a href="#function-lists-lget">LGet()</a>
+               			
+            </li>
+         </ul>
+         	
+      </div>
+      	
+      <h2>Datentypen</h2>
+      <div>
+         		
+         <p><code>Number</code><br clear="none">
+            		80bit Extended (long double)<br clear="none">
+            		3.6 x 10^-4951 bis 1.1 x 10^4932 bei 19–20 stelliger Genauigkeit
+         </p>
+         		
+         <p><code>String</code><br clear="none">
+            		Ansi-String
+            		
+         </p>
+         		
+         <p><code>Unassigned</code><br clear="none">
+            		Kein Wert zugewiesen (wird intern verwendet; Darstellung: &lt;?&gt;)
+            		
+         </p>
+         		
+         <p><code>Null</code><br clear="none">
+            		Nullwert
+            		
+         </p>
+         		
+         <p><code>RangeList</code><br clear="none">
+            		Bereich, Darstellung: {Enfang-&gt;Ende, Schrittweite}
+            		
+         </p>
+         		
+         <p><code>FixedList</code><br clear="none">
+            		Liste mehrerer Werte, Darstellung: {el1,el2,el3}
+            		
+         </p>
+         	
+      </div>
+      	
+      <h2>Ausdrücke, Werte und Variablen</h2>
+      <div>
+         		
+         <p>Alles, was (syntaktisch korrekt) eingegeben werden kann wird als Ausdruck
+            		bezeichnet. Das Umfasst sowohl mathematische Ausdrücke ("Formeln") als auch
+            		Funktionsaufrufe, Listen etc. Um herauszufinden, wie ein Ausdruck definiert
+            		ist kann der <a href="#operator-describe" shape="rect">Describe-Operator</a> <code>?</code> verwendet
+            		werden. Dieser verwendet die StringForm der Ausdrücke, die den Ausdruck
+            		als Baum der beteiligten Funktionen beschreibt.
+         </p>
+         		
+         <p>In Π ist es möglich, Ausdrücke ohne vorherige Zuweisung an eine
+            		Variable zu verwenden. Darüber hinaus sind weitergehende Zuweisungen möglich.
+         </p>
+         		
+         <p>Statische Zuweisungen mit <code>=</code> legen den Wert der sich bei der
+            		Auswertung des Ausdrucks auf der rechten Seite in der Variable im aktuellen
+            		Kontext ab. Dies kann also z.B. ein Zahlenwert sein.<br clear="none">
+            		Diese Syntax wird außerdem von manchen Funktionen verwendet, um Konfigurationsparameter
+            		angeben zu können und so das Verhalten der Funktionen zu beeinflussen.
+         </p>
+         		
+         <p>Dynamische Zuweisungen mit <code>:=</code> werten den Ausdruck nicht aus
+            		sondern speichern den Ausdruck selbst. Dieser kann dann später ausgewertet
+            		oder in weiteren dynamischen Zuweisungen verwendet werden. Das ermöglicht es,
+            		eine Funktion zu definieren und wiederholt für verschiedene Parameter
+            		aufzurufen.
+         </p>
+         	
+      </div>
+      	
+      <h2>Funktionen</h2>
+      <div>
+         		
+         <p>Funktionen sind in sogenannten Packages organisiert. Jedes dieser Packages
+            		stellt eine Einheit von Funktionen ähnlicher Kategorie dar.
+         </p>
+         		
+         <h3 id="package-core">Package <code>Core</code></h3>
+         <p>Das Package stellt System-Funktionen zur Verfügung.</p>
+         <ul>
+            <li class="function" id="function-core-undef"><a class="function-link" href="#function-core-undef">#</a><code>Undef(<i>Name</i>)</code><br><p>
+                  			Entfernt eine Variable aus dem aktuellen Kontext
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-core-new"><a class="function-link" href="#function-core-new">#</a><code>New()</code><br><code>New(<i>String</i>)</code><br><p>
+                  			Erzeugt einen neuen (optional benannten) Kontext
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-core-drop"><a class="function-link" href="#function-core-drop">#</a><code>Drop()</code><br><p>
+                  			Löscht den aktuell obersten Kontext
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-core-clear"><a class="function-link" href="#function-core-clear">#</a><code>Clear()</code><br><p>
+                  			Leert die Ausgabe-Konsole
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-core-const"><a class="function-link" href="#function-core-const">#</a><code>Const(<i>name</i>)</code><br><p>
+                  			Fragt den Wert einer Konstante ab
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-core-constinfo"><a class="function-link" href="#function-core-constinfo">#</a><code>constinfo()</code><br><code>constinfo(<i>name</i>)</code><br><p>
+                  			Listet verfügbare/bekannte Konstanten
+                  		
+               </p>
+               <p>
+                  			Gibt Information über eine Konstante zurück
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-core-hold"><a class="function-link" href="#function-core-hold">#</a><code>Hold(<i>Expr</i>)</code><br><p>
+                  			Gibt die Expression <i>expr</i> unevaluiert zurück.
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-core-absolutetime"><a class="function-link" href="#function-core-absolutetime">#</a><code>AbsoluteTime(<i>Expr</i>)</code><br><p>
+                  			Gibt die Ausführungszeit sowie das Ergebnis der Auswertung von <i>Expr</i> zurück
+                  		
+               </p>
+            </li>
+         </ul>
+         		
+         <h3 id="package-trig">Package <code>Trig</code></h3>
+         <p>Das Package stellt trigonometrische und hyperbolische Funktionen zur Verfügung.</p>
+         <ul>
+            <li class="function" id="function-trig-deg2rad"><a class="function-link" href="#function-trig-deg2rad">#</a><code>Deg2Rad(<i>Number</i>)</code><br><p>
+                  			Grad in Radiant
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-trig-rad2deg"><a class="function-link" href="#function-trig-rad2deg">#</a><code>Rad2Deg(<i>number</i>)</code><br><p>
+                  			Radiant in Grad
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-trig-sin"><a class="function-link" href="#function-trig-sin">#</a><code>Sin(<i>number</i>)</code><br><p>
+                  			Sinus
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-trig-cos"><a class="function-link" href="#function-trig-cos">#</a><code>Cos(<i>number</i>)</code><br><p>
+                  			Cosinus
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-trig-tan"><a class="function-link" href="#function-trig-tan">#</a><code>Tan(<i>number</i>)</code><br><p>
+                  			Tangens
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-trig-arcsin"><a class="function-link" href="#function-trig-arcsin">#</a><code>ArcSin(<i>number</i>)</code><br><p>
+                  			Inverse zu Sin
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-trig-arccos"><a class="function-link" href="#function-trig-arccos">#</a><code>ArcCos(<i>number</i>)</code><br><p>
+                  			Inverse zu Cos
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-trig-arctan"><a class="function-link" href="#function-trig-arctan">#</a><code>ArcTan(<i>number</i>)</code><br><code>ArcTan(<i>Y</i>, <i>X</i>)</code><br><p>
+                  			Inverse zu Tan
+                  		
+               </p>
+               <p>
+                  			Delphi's <a href="http://docwiki.embarcadero.com/VCL/en/Math.ArcTan2">ArcTan2</a>: ArcTan im korrekten Quadranten
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-trig-sinh"><a class="function-link" href="#function-trig-sinh">#</a><code>Sinh(<i>number</i>)</code><br><p>
+                  			Sinus Hyperbolicus
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-trig-cosh"><a class="function-link" href="#function-trig-cosh">#</a><code>Cosh(<i>number</i>)</code><br><p>
+                  			Cosinus Hyperbolicus
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-trig-tanh"><a class="function-link" href="#function-trig-tanh">#</a><code>Tanh(<i>number</i>)</code><br><p>
+                  			Tangens Hyperbolicus
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-trig-arsinh"><a class="function-link" href="#function-trig-arsinh">#</a><code>ArSinh(<i>number</i>)</code><br><p>
+                  			Inverse zu SinH
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-trig-arcosh"><a class="function-link" href="#function-trig-arcosh">#</a><code>ArCosh(<i>number</i>)</code><br><p>
+                  			Inverse zu CosH
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-trig-artanh"><a class="function-link" href="#function-trig-artanh">#</a><code>ArTanh(<i>number</i>)</code><br><p>
+                  			Inverse zu TanH
+                  		
+               </p>
+            </li>
+         </ul>
+         		
+         <h3 id="package-elementary">Package <code>Elementary</code></h3>
+         <p>Das Package stellt grundlegende mathematische Funktionen zur Verfügung.</p>
+         <ul>
+            <li class="function" id="function-elementary-exp"><a class="function-link" href="#function-elementary-exp">#</a><code>Exp(<i>number</i>)</code><br><p>
+                  			Exponential
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-elementary-ln"><a class="function-link" href="#function-elementary-ln">#</a><code>Ln(<i>number</i>)</code><br><p>
+                  			Logarithmus zur Basis e (natürlicher Logarithmus)
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-elementary-lg"><a class="function-link" href="#function-elementary-lg">#</a><code>Lg(<i>number</i>)</code><br><p>
+                  			Logarithmus zur Basis 10 (dekadischer Logarithmus)
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-elementary-ld"><a class="function-link" href="#function-elementary-ld">#</a><code>Ld(<i>number</i>)</code><br><p>
+                  			Logarithmus zur Basis 2 (dualer Logarithmus)
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-elementary-loga"><a class="function-link" href="#function-elementary-loga">#</a><code>Loga(<i>base</i>, <i>number</i>)</code><br><p>
+                  			Logarithmus zu beliebiger Basis
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-elementary-sqrt"><a class="function-link" href="#function-elementary-sqrt">#</a><code>Sqrt(<i>number</i>)</code><br><p>
+                  			Quadratwurzel
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-elementary-nrt"><a class="function-link" href="#function-elementary-nrt">#</a><code>NRt(<i>base</i>, <i>number</i>)</code><br><p>
+                  			N-te Wurzel
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-elementary-random"><a class="function-link" href="#function-elementary-random">#</a><code>Random()</code><br><p>
+                  			Zufallszahl aus 0 &lt;= Random &lt; 1
+                  		
+               </p>
+            </li>
+         </ul>
+         		
+         <h3 id="package-numerical">Package <code>Numerical</code></h3>
+         <p>Das Package stellt Funktionen zum Umgang mit Zahlenwerten und Zahlsystemen zur Verfügung.</p>
+         <ul>
+            <li class="function" id="function-numerical-abs"><a class="function-link" href="#function-numerical-abs">#</a><code>Abs(<i>number</i>)</code><br><p>
+                  			Betrag
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-numerical-sign"><a class="function-link" href="#function-numerical-sign">#</a><code>Sign(<i>number</i>)</code><br><p>
+                  			Vorzeichen der Zahl. <code>{-1|x&lt;0, 0|x=0, 1|y&gt;0}</code>
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-numerical-step"><a class="function-link" href="#function-numerical-step">#</a><code>Step(<i>number</i>)</code><br><p>
+                  			Heaviside'sche Sprungfunktion mit <code>H(0)=1</code>. <code>{0|x&lt;0, 1|y&gt;=0}</code>
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-numerical-round"><a class="function-link" href="#function-numerical-round">#</a><code>Round(<i>number</i>)</code><br><code>Round(<i>number</i>, <i>digits</i>)</code><br><p>
+                  			Rundet auf <i>digits</i> Stellen (Genauigkeit von 10<sup>
+                     <v>digits</v></sup>) oder ganze Zahlen.
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-numerical-fac"><a class="function-link" href="#function-numerical-fac">#</a><code>Fac(<i>number</i>)</code><br><p>
+                  			Fakultät
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-numerical-binomial"><a class="function-link" href="#function-numerical-binomial">#</a><code>Binomial(<i>n</i>, <i>k</i>)</code><br><p>
+                  			Binomialkoeffizient <code>(
+                     <v>n</v> über 
+                     <v>k</v>) = 
+                     <v>n</v>! / (
+                     <v>k</v>!*(
+                     <v>n</v>-
+                     <v>k</v>)!)</code>
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-numerical-permutations"><a class="function-link" href="#function-numerical-permutations">#</a><code>Permutations(<i>n</i>, <i>k</i>)</code><br><p>
+                  			Anzahl der Permutationen der Länge <i>k</i> aus <i>n</i> Elementen <code>P(n,r) = n! / (n - r)!</code>
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-numerical-itoa"><a class="function-link" href="#function-numerical-itoa">#</a><code>ItoA(<i>number</i>,<i>base</i>)</code><br><p>
+                  			Konvertiert Ganzzahlen in String-Repräsentation in Basis
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-numerical-atoi"><a class="function-link" href="#function-numerical-atoi">#</a><code>AtoI(<i>string</i>,<i>base</i>)</code><br><p>
+                  			Konvertiert String-Repräsentation aus Basis in Zahl (nur Ganzzahlen)
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-numerical-b"><a class="function-link" href="#function-numerical-b">#</a><code>b(<i>string</i> OR <i>number</i>)</code><br><p>
+                  			Konvertiert aus/in String-Darstellung in Basis 2.
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-numerical-h"><a class="function-link" href="#function-numerical-h">#</a><code>h(<i>string</i> OR <i>number</i>)</code><br><p>
+                  			Konvertiert aus/in String-Darstellung in Basis 16.
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-numerical-o"><a class="function-link" href="#function-numerical-o">#</a><code>o(<i>string</i> OR <i>number</i>)</code><br><p>
+                  			Konvertiert aus/in String-Darstellung in Basis 8.
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-numerical-gcd"><a class="function-link" href="#function-numerical-gcd">#</a><code>GCD(<i>a</i>, <i>b</i>)</code><br><p>
+                  			Berechnet den größten gemeinsamen Teiler (ggT, greatest common divisor) der Ganzzahlen
+                  <i>a</i> und <i>b</i>
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-numerical-lcm"><a class="function-link" href="#function-numerical-lcm">#</a><code>LCM(<i>a</i>, <i>b</i>)</code><br><p>
+                  			Berechnet das kleinste gemeinse Vielfache (kgV, least common multiple) der Ganzzahlen
+                  <i>a</i> und <i>b</i>
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-numerical-fraction"><a class="function-link" href="#function-numerical-fraction">#</a><code>Fraction(<i>number</i>)</code><br><p>
+                  			Findet eine Bruchdarstellung für <i>number</i> und gibt diese als Liste zurück
+                  		
+               </p><span class="function-options">Optionen:</span><dl class="function-options">
+                  <dt>precision = 1E-11</dt>
+                  <dd>
+                     <p>Erlaubte Abweichung in Prozent, höhere Genauigkeiten erfordern größere Nenner</p>
+                  </dd>
+                  <dt>mixed = *undefined*</dt>
+                  <dd>
+                     <p>Gemischten Bruch als <i>a+b/c</i> zurückgeben, sonst gewöhnlicher Bruch <i>a/b</i></p>
+                  </dd>
+               </dl>
+            </li>
+         </ul>
+         		
+         <h3 id="package-lists">Package <code>Lists</code></h3>
+         <p>Das Package stellt Funktionen zur Listen-Verarbeitung zur Verfügung.</p>
+         <ul>
+            <li class="function" id="function-lists-l"><a class="function-link" href="#function-lists-l">#</a><code>L(<i>p1</i>, <i>p2</i>, <i>p3</i>, ...)</code><br><p>
+                  			Erzeugt eine neue FixedList aus den Werten der Parameter
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-lists-range"><a class="function-link" href="#function-lists-range">#</a><code>Range(<i>start</i>, <i>end</i>, <i>step</i>)</code><br><p>
+                  			Erzeugt eine RangeList mit <i>start</i>&gt;=<i>x</i>&gt;=<i>end</i> mit Schrittweite <i>step</i>
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-lists-merge"><a class="function-link" href="#function-lists-merge">#</a><code>Merge(<i>left</i>, <i>right</i>)</code><br><p>Verkettet zwei Listen zu einer neuen</p>
+            </li>
+            <li class="function" id="function-lists-each"><a class="function-link" href="#function-lists-each">#</a><code>Each(<i>list</i>, <i>var</i>, <i>expr</i>)</code><br><p>Führt <i>expr</i> in einem neuen Kontext auf jedem Element von <i>list</i>
+                  		als Variable <i>var</i> aus und gibt die Ergebnisse als eine neue Liste zurück
+               </p>
+            </li>
+            <li class="function" id="function-lists-holdlist"><a class="function-link" href="#function-lists-holdlist">#</a><code>HoldList(<i>list</i>)</code><br><p>Kopiert jedes Element von <i>list</i> in Ergebnis (zum Umwandeln von RangeList in FixedList)
+               </p>
+            </li>
+            <li class="function" id="function-lists-flatten"><a class="function-link" href="#function-lists-flatten">#</a><code>Flatten(<i>list</i>)</code><br><p>Entpackt eine Ebene verschachtelter Listen</p>
+            </li>
+            <li class="function" id="function-lists-aggregate"><a class="function-link" href="#function-lists-aggregate">#</a><code>Aggregate(<i>list</i>, <i>agg</i>, <i>init</i>, <i>var</i>, <i>expr</i>)</code><br><p>Wendet <i>expr</i> auf jedes Element in <i>list</i> als <i>var</i> an.
+                  		Dabei kann <i>agg</i> (vorbelegt mit <i>init</i>) modifiziert werden.
+                  		Rückgabewert ist der Wert von <i>agg</i> nach dem letzten Durchlauf
+               </p>
+            </li>
+            <li class="function" id="function-lists-part"><a class="function-link" href="#function-lists-part">#</a><code>Part(<i>list</i>, <i>first</i>, <i>last</i>)</code><br><p>Erzeugt eine List aus den Unterelementen <i>first</i> bis <i>last</i>. Der erste Eintrag hat
+                  		den Index 0.
+                  		Werden negative Indizes angegeben, wird von hinten gezählt, -1 bezeichnet das letzte
+                  		Element, -2 das vorletzte etc.
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-lists-lget"><a class="function-link" href="#function-lists-lget">#</a><code>LGet(<i>list</i>, <i>item</i>)</code><br><p>Gibt das Element item aus <i>list</i> zurück. Zählung wie bei <a href="#function-lists-part">Part</a>.
+               </p>
+            </li>
+            <li class="function" id="function-lists-count"><a class="function-link" href="#function-lists-count">#</a><code>Count(<i>list</i>)</code><br><p>Gibt die Anzahl der Elemente in <i>list</i> zurück.
+               </p>
+            </li>
+         </ul>
+         		
+         <h3 id="package-data">Package <code>Data</code></h3>
+         <p>Das Package stellt Funktionen zum Arbeiten mit Dateien zur Verfügung.</p>
+         <ul>
+            <li class="function" id="function-data-pwd"><a class="function-link" href="#function-data-pwd">#</a><code>Pwd()</code><br><p>
+                  		Zeigt das aktuelle Verzeichnis an
+                  	
+               </p>
+            </li>
+            <li class="function" id="function-data-cwd"><a class="function-link" href="#function-data-cwd">#</a><code>Cwd(<i>path</i>)</code><br><p>
+                  		Wechselt in <i>path</i> (kann auch eine relative Angabe sein)
+                  	
+               </p>
+            </li>
+            <li class="function" id="function-data-csvload"><a class="function-link" href="#function-data-csvload">#</a><code>CsvLoad(<i>file[,options]</i>)</code><br><p>
+                  		Lädt eine CSV-Datei in eine Liste von Listen
+                  		
+               </p><span class="function-options">Optionen:</span><dl class="function-options">
+                  <dt>Delimiter = ';'</dt>
+                  <dd>
+                     <p>Feldtrenner</p>
+                  </dd>
+                  <dt>QuoteChar = '"'</dt>
+                  <dd>
+                     <p>Gruppierungszeichen</p>
+                  </dd>
+                  <dt>Decimal = '.'</dt>
+                  <dd>
+                     <p>Dezimaltrenner</p>
+                  </dd>
+                  <dt>Skip = 0</dt>
+                  <dd>
+                     <p>Anzahl zu überspringender Zeilen (z.b. Überschrift)</p>
+                  </dd>
+                  <dt>Count = Max</dt>
+                  <dd>
+                     <p>Maximale Anzahl zu ladender Zeilen</p>
+                  </dd>
+               </dl>
+            </li>
+            <li class="function" id="function-data-source"><a class="function-link" href="#function-data-source">#</a><code>Source(<i>file</i>)</code><br><p>
+                  		Lädt eine Datei und führt sie Zeilenweise aus. Tritt ein Fehler auf, wird die Ausführung
+                  beendet.
+                  		Die Dateiendung .pi wird automatisch ergänzt, falls <i>file</i> nicht gefunden wird.
+                  	
+               </p>
+            </li>
+            <li class="function" id="function-data-table"><a class="function-link" href="#function-data-table">#</a><code>Table(<i>list</i>)</code><br><p>
+                  		Stellt eine Liste (oder Liste von Listen) als Tabelle dar
+                  	
+               </p>
+            </li>
+            <li class="function" id="function-data-bucket"><a class="function-link" href="#function-data-bucket">#</a><code>Bucket(<i>list</i>, <i>min</i>, <i>max</i>, <i>count</i>)</code><br><p>
+                  		Zählt alle Werte in <i>min</i> &lt; x &lt; <i>max</i> in <i>count</i> Gruppen.
+                  		Rückgabe: Liste von {Mittelwert, Anzahl}
+                  	
+               </p>
+            </li>
+            <li class="function" id="function-data-max"><a class="function-link" href="#function-data-max">#</a><code>Max(<i>list</i>)</code><br><p>
+                  		Größter Wert einer Liste
+                  	
+               </p>
+            </li>
+            <li class="function" id="function-data-min"><a class="function-link" href="#function-data-min">#</a><code>Min(<i>list</i>)</code><br><p>
+                  		Kleinster Wert einer Liste
+                  	
+               </p>
+            </li>
+            <li class="function" id="function-data-sortby"><a class="function-link" href="#function-data-sortby">#</a><code>SortBy(<i>list</i>, <i>var</i>, <i>expr</i>)</code><br><p>
+                  		Sortiert <i>list</i> unter verwendung der Schlüssel, wie sie <i>expr</i> generiert.
+                  		
+               </p><span class="function-options">Optionen:</span><dl class="function-options">
+                  <dt>Desc = *undefined*</dt>
+                  <dd>
+                     <p>Absteigend sortieren, sonst Aufsteigend</p>
+                  </dd>
+                  <dt>String = *undefined*</dt>
+                  <dd>
+                     <p>Als Text sortieren, sonst als Zahl</p>
+                  </dd>
+               </dl>
+            </li>
+            <li class="function" id="function-data-numderive"><a class="function-link" href="#function-data-numderive">#</a><code>NumDerive(<i>list</i>)</code><br><p>
+                  		Numerische Ableitung einer Liste von {X,Y}-Punkten. In der Mitte zwischen zwei X-Werten
+                  wird die differenz
+                  		nach dY/dY abgelegt. Die erzeugte Liste ist ein Element kürzer.
+                  	
+               </p>
+            </li>
+         </ul>
+         		
+         <h3 id="package-statistics">Package <code>Statistics</code></h3>
+         <p>Das Package stellt Funktionen zu Statistischen Verteilungen zur Verfügung.</p>
+         <ul>
+            <li class="function" id="function-statistics-erf"><a class="function-link" href="#function-statistics-erf">#</a><code>Erf(<i>x</i>)</code><br><p>
+                  			Gauß'sche Fehlerfunktion
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-statistics-erfc"><a class="function-link" href="#function-statistics-erfc">#</a><code>ErfC(<i>x</i>)</code><br><p>
+                  			Komplementäre Gauß'sche Fehlerfunktion (ErfC(x) = 1 - Erf(x))
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-statistics-normpdf"><a class="function-link" href="#function-statistics-normpdf">#</a><code>NormPDF(<i>x</i>, <i>mu</i>, <i>sigma</i>)</code><br><p>
+                  			Wahrscheinlichkeitsdichte der Normalverteilung mit dem Erwartungswert <i>mu</i> und der Standardabweichung <i>sigma</i>.
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-statistics-stdnormpdf"><a class="function-link" href="#function-statistics-stdnormpdf">#</a><code>StdNormPDF(<i>x</i>)</code><br><p>
+                  			Wahrscheinlichkeitsdichte der Standardnormalverteilung.
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-statistics-stdnormcdf"><a class="function-link" href="#function-statistics-stdnormcdf">#</a><code>StdNormCDF(<i>x</i>)</code><br><p>
+                  			Verteilungsfunktion der Standardnormalverteilung.
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-statistics-invstdnormcdf"><a class="function-link" href="#function-statistics-invstdnormcdf">#</a><code>InvStdNormCDF(<i>x</i>)</code><br><p>
+                  			Inverse der Verteilungsfunktion der Standardnormalverteilung.
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-statistics-stdnormrand"><a class="function-link" href="#function-statistics-stdnormrand">#</a><code>StdNormRand()</code><br><p>
+                  			Liefert einen standardnormalverteilten Zufallswert.
+                  		
+               </p>
+            </li>
+         </ul>
+         		
+         <h3 id="package-graph">Package <code>Graph</code></h3>
+         <p>Das Package stellt Funktionen zum Erstellen und Anzeigen von Diagrammen und Plots
+            zur Verfügung.<br>
+            		Alle <i>range</i>-Angaben sind Listen der 2 Grenzen: <code>range={min, max}</code><br>
+            		Alle Funktionen, die Plot-Objekte erstellen backen den aktuellen Kontext zum Zeitpunkt
+            ihrer
+            		Ausführung. Spätere Änderungen werden nicht übernommen. Das kann man verwenden,
+            um Funktionsscharen
+            		zu plotten
+         </p>
+         <ul>
+            <li class="function" id="function-graph-plot"><a class="function-link" href="#function-graph-plot">#</a><code>Plot(<i>expr</i>,<i>var</i>,<i>range</i>[,options])</code><br><p>
+                  			Plottet eine Expression in Variable <i>var</i> über <i>range</i>
+                  		
+               </p><span class="function-options">Optionen:</span><dl class="function-options">
+                  <dt>Color = *random*</dt>
+                  <dd>
+                     <p>Linienfarbe, Angabe als TColor (clRed, clBlue etc) oder Hexadezimal '$bbggrr'</p>
+                  </dd>
+                  <dt>Size = 1</dt>
+                  <dd>
+                     <p>Linienbreite in Pixel</p>
+                  </dd>
+                  <dt>Caption = *auto*</dt>
+                  <dd>
+                     <p>Titel, sonst StringForm</p>
+                  </dd>
+               </dl>
+            </li>
+            <li class="function" id="function-graph-histogram"><a class="function-link" href="#function-graph-histogram">#</a><code>Histogram(<i>list</i>[,options])</code><br><p>
+                  			Plottet eine Liste von {Mittelwert,Anzahl}-Tupeln
+                  		
+               </p><span class="function-options">Optionen:</span><dl class="function-options">
+                  <dt>Color = *random*</dt>
+                  <dd>
+                     <p>Linienfarbe, Angabe als TColor (clRed, clBlue etc) oder Hexadezimal '$bbggrr'</p>
+                  </dd>
+                  <dt>Size = 1</dt>
+                  <dd>
+                     <p>Balkenbreite, automatisch schmalster Abstand zwischen zwei Mittelwerten</p>
+                  </dd>
+                  <dt>Caption = *auto*</dt>
+                  <dd>
+                     <p>Titel, sonst Anzahl der Elemente</p>
+                  </dd>
+               </dl>
+            </li>
+            <li class="function" id="function-graph-xyplot"><a class="function-link" href="#function-graph-xyplot">#</a><code>XYPlot(<i>list</i>[,options])</code><br><p>
+                  			Plottet eine Liste von {X,Y}-Punkten
+                  		
+               </p><span class="function-options">Optionen:</span><dl class="function-options">
+                  <dt>Color = *random*</dt>
+                  <dd>
+                     <p>Linienfarbe, Angabe als TColor (clRed, clBlue etc) oder Hexadezimal '$bbggrr'</p>
+                  </dd>
+                  <dt>Size = 1</dt>
+                  <dd>
+                     <p>Durchmesser der Punktmarkierungen</p>
+                  </dd>
+                  <dt>Points = 'Cross'</dt>
+                  <dd>
+                     <p>Art der Punktmarker</p>
+                     <table>
+                        <tr>
+                           <td class="option-value">'None'</td>
+                           <td>Keine Punkte</td>
+                        </tr>
+                        <tr>
+                           <td class="option-value">'Dot'</td>
+                           <td>Punkt</td>
+                        </tr>
+                        <tr>
+                           <td class="option-value">'Cross'</td>
+                           <td>Kreuz (X)</td>
+                        </tr>
+                        <tr>
+                           <td class="option-value">'Plus'</td>
+                           <td>Kreuz (+)</td>
+                        </tr>
+                        <tr>
+                           <td class="option-value">'Circle'</td>
+                           <td>Kreis</td>
+                        </tr>
+                        <tr>
+                           <td class="option-value">'Square'</td>
+                           <td>Quadrat</td>
+                        </tr>
+                     </table>
+                  </dd>
+               </dl>
+            </li>
+            <li class="function" id="function-graph-show"><a class="function-link" href="#function-graph-show">#</a><code>Show(<i>plots</i>[,options])</code><br><p>
+                  			Stellt mehrere Plot-Objekte dar. <i>plots</i> muss eine Liste von Plot-Objekten oder ein Plot-Objekt sein.<br>
+                  			Eine Legende mit der Zuordnung der Farben wird bei gedrückter Maustaste angezeigt.
+                  		
+               </p><span class="function-options">Optionen:</span><dl class="function-options">
+                  <dt>XRange = *auto*</dt>
+                  <dd>
+                     <p>X-Bereich. Automatisch so, dass alle plots dargestellt werden können</p>
+                  </dd>
+                  <dt>YRange = *auto*</dt>
+                  <dd>
+                     <p>Y-Bereich. Automatisch nach Achsen-Modus: 0.1..10 für logarithmisch und -5..5 für
+                        linear
+                     </p>
+                  </dd>
+                  <dt>Axes = 'linlin'</dt>
+                  <dd>
+                     <p>Modus der X und Y-Achsen. Paare von 'Lin' oder 'Log'</p>
+                  </dd>
+               </dl>
+            </li>
+         </ul>
+         		
+         <h3 id="package-symbolics">Package <code>Symbolics</code></h3>
+         <p>Das Package implementiert Funktionen zur symbolischen Manipulation von Ausdrücken</p>
+         <ul>
+            <li class="function" id="function-symbolics-clone"><a class="function-link" href="#function-symbolics-clone">#</a><code>Clone(<i>expr</i>)</code><br><p>
+                  			Erstellt eine unabhängig veränderbare Kopie des Ausdrucksbaums von <i>expr</i>
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-symbolics-subs"><a class="function-link" href="#function-symbolics-subs">#</a><code>Subs(<i>expr</i>, {<i>rules</i>})</code><br><p>
+                  			Wendet alle Zuweisungen in <i>rules</i> permanent auf <i>expr</i> an und gibt den neuen
+                  			Ausdruck zurück.
+                  		
+               </p>
+            </li>
+         </ul>
+         		
+         <h3 id="package-dimensions">Package <code>Dimensions</code></h3>
+         <p>
+            		Das Package bietet Funktionen zum erzeugen von Einheiten, mit denen dann gerechnet
+            werden kann.<br>
+            		Es existiert eine Bibliothek von vordefinierten Einheiten, die mit SI-Prefixen verbunden
+            werden können.
+            		Dabei kann sowohl die "natürliche" Syntax ls auch die getrennte Syntax verwendet
+            werden (<code>km = k:m = m * 1E3</code>).
+            		Ist eine Prefix/Einheit-Kombination nicht eindeutig, muss die getrennte Syntax angewendet
+            werden.
+            	
+         </p>
+         <ul>
+            <li class="function" id="function-dimensions-unit"><a class="function-link" href="#function-dimensions-unit">#</a><code>Unit(<i>val</i>, <i>unit</i>)</code><br><p>
+                  			Bildet aus einem Zahlenwert und einer String-Repräsentation der Einheit einen dimensionierten
+                  Wert.
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-dimensions-convert"><a class="function-link" href="#function-dimensions-convert">#</a><code>Convert(<i>val</i>, <i>unit</i>)</code><br><p>
+                  			Konvertiert einen dimensionierten Wert in eine andere Einheit der gleichen Dimension.
+                  		
+               </p>
+            </li>
+         </ul>
+         	
+      </div>
+      	
+      <h2>License</h2>
+      <div>
+         		<pre xml:space="preserve">This license applies to everything in this package, except where otherwise
+noted. Parts taken from other authors may be subject to their own licenses.
+
+
+This project is available under a dual-license model, applying either (1) or (2):
+
+1. Non-Commercial and Evaluation Use:
+   This Source Code Form is subject to the terms of the Mozilla Public License,
+   v. 2.0. If a copy of the MPL was not distributed with this package, You can
+   obtain one at http://mozilla.org/MPL/2.0/
+
+   If you use this software in a product, an acknowledgment in the product
+   documentation would be appreciated but is not required.
+
+2. Commercial Use:
+  A special permission is required, please contact us for details.</pre>
+         	</div>
+      
+   </body>
+</html>

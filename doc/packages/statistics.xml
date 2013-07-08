@@ -1,0 +1,45 @@
+<package name="Statistics">
+	<description>Das Package stellt Funktionen zu Statistischen Verteilungen zur Verfügung.</description>
+	<function name="Erf">
+		<syntax>Erf(<v>x</v>)</syntax>
+		<description>
+			Gauß'sche Fehlerfunktion
+		</description>
+	</function>
+	<function name="ErfC">
+		<syntax>ErfC(<v>x</v>)</syntax>
+		<description>
+			Komplementäre Gauß'sche Fehlerfunktion (ErfC(x) = 1 - Erf(x))
+		</description>
+	</function>
+	<function name="NormPDF">
+		<syntax>NormPDF(<v>x</v>, <v>mu</v>, <v>sigma</v>)</syntax>
+		<description>
+			Wahrscheinlichkeitsdichte der Normalverteilung mit dem Erwartungswert <i>mu</i> und der Standardabweichung <i>sigma</i>.
+		</description>
+	</function>
+	<function name="StdNormPDF">
+		<syntax>StdNormPDF(<v>x</v>)</syntax>
+		<description>
+			Wahrscheinlichkeitsdichte der Standardnormalverteilung.
+		</description>
+	</function>
+	<function name="StdNormCDF">
+		<syntax>StdNormCDF(<v>x</v>)</syntax>
+		<description>
+			Verteilungsfunktion der Standardnormalverteilung.
+		</description>
+	</function>
+	<function name="InvStdNormCDF">
+		<syntax>InvStdNormCDF(<v>x</v>)</syntax>
+		<description>
+			Inverse der Verteilungsfunktion der Standardnormalverteilung.
+		</description>
+	</function>
+	<function name="StdNormRand">
+		<syntax>StdNormRand()</syntax>
+		<description>
+			Liefert einen standardnormalverteilten Zufallswert.
+		</description>
+	</function>
+</package>

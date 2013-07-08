@@ -1,0 +1,20 @@
+<package name="Dimensions">
+	<description>
+		Das Package bietet Funktionen zum erzeugen von Einheiten, mit denen dann gerechnet werden kann.<br/>
+		Es existiert eine Bibliothek von vordefinierten Einheiten, die mit SI-Prefixen verbunden werden können.
+		Dabei kann sowohl die "natürliche" Syntax ls auch die getrennte Syntax verwendet werden (<code>km = k:m = m * 1E3</code>).
+		Ist eine Prefix/Einheit-Kombination nicht eindeutig, muss die getrennte Syntax angewendet werden.
+	</description>
+	<function name="Unit">
+		<syntax>Unit(<v>val</v>, <v>unit</v>)</syntax>
+		<description>
+			Bildet aus einem Zahlenwert und einer String-Repräsentation der Einheit einen dimensionierten Wert.
+		</description>
+	</function>
+	<function name="Convert">
+		<syntax>Convert(<v>val</v>, <v>unit</v>)</syntax>
+		<description>
+			Konvertiert einen dimensionierten Wert in eine andere Einheit der gleichen Dimension.
+		</description>
+	</function>
+</package>

@@ -1,0 +1,56 @@
+<package name="Core">
+	<description>Das Package stellt System-Funktionen zur Verfügung.</description>
+	<function name="Undef">
+		<syntax>Undef(<v>Name</v>)</syntax>
+		<description>
+			Entfernt eine Variable aus dem aktuellen Kontext
+		</description>
+	</function>
+	<function name="New">
+		<syntax>New()</syntax>
+		<syntax>New(<v>String</v>)</syntax>
+		<description>
+			Erzeugt einen neuen (optional benannten) Kontext
+		</description>
+	</function>
+	<function name="Drop">
+		<syntax>Drop()</syntax>
+		<description>
+			Löscht den aktuell obersten Kontext
+		</description>
+	</function>
+	<function name="Clear">
+		<syntax>Clear()</syntax>
+		<description>
+			Leert die Ausgabe-Konsole
+		</description>
+	</function>
+	<function name="Const">
+		<syntax>Const(<v>name</v>)</syntax>
+		<description>
+			Fragt den Wert einer Konstante ab
+		</description>
+	</function>
+	<function name="constinfo">
+		<syntax>constinfo()</syntax>
+		<description>
+			Listet verfügbare/bekannte Konstanten
+		</description>
+		<syntax>constinfo(<v>name</v>)</syntax>
+		<description>
+			Gibt Information über eine Konstante zurück
+		</description>
+	</function>
+	<function name="Hold">
+		<syntax>Hold(<v>Expr</v>)</syntax>
+		<description>
+			Gibt die Expression <v>expr</v> unevaluiert zurück.
+		</description>
+	</function>
+	<function name="AbsoluteTime">
+		<syntax>AbsoluteTime(<v>Expr</v>)</syntax>
+		<description>
+			Gibt die Ausführungszeit sowie das Ergebnis der Auswertung von <v>Expr</v> zurück
+		</description>
+	</function>
+</package>

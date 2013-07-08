@@ -1,0 +1,51 @@
+<package name="Elementary">
+	<description>Das Package stellt grundlegende mathematische Funktionen zur Verfügung.</description>
+	<function name="Exp">
+		<syntax>Exp(<v>number</v>)</syntax>
+		<description>
+			Exponential
+		</description>
+	</function>
+	<function name="Ln">
+		<syntax>Ln(<v>number</v>)</syntax>
+		<description>
+			Logarithmus zur Basis e (natürlicher Logarithmus)
+		</description>
+	</function>
+	<function name="Lg">
+		<syntax>Lg(<v>number</v>)</syntax>
+		<description>
+			Logarithmus zur Basis 10 (dekadischer Logarithmus)
+		</description>
+	</function>
+	<function name="Ld">
+		<syntax>Ld(<v>number</v>)</syntax>
+		<description>
+			Logarithmus zur Basis 2 (dualer Logarithmus)
+		</description>
+	</function>
+	<function name="Loga">
+		<syntax>Loga(<v>base</v>, <v>number</v>)</syntax>
+		<description>
+			Logarithmus zu beliebiger Basis
+		</description>
+	</function>
+	<function name="Sqrt">
+		<syntax>Sqrt(<v>number</v>)</syntax>
+		<description>
+			Quadratwurzel
+		</description>
+	</function>
+	<function name="NRt">
+		<syntax>NRt(<v>base</v>, <v>number</v>)</syntax>
+		<description>
+			N-te Wurzel
+		</description>
+	</function>
+	<function name="Random">
+		<syntax>Random()</syntax>
+		<description>
+			Zufallszahl aus 0 &lt;= Random &lt; 1
+		</description>
+	</function>
+</package>

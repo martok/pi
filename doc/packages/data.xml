@@ -1,0 +1,64 @@
+﻿<package name="Data">
+<description>Das Package stellt Funktionen zum Arbeiten mit Dateien zur Verfügung.</description>
+	<function name="pwd">
+		<syntax>Pwd()</syntax><description>
+		Zeigt das aktuelle Verzeichnis an
+	</description></function>
+	<function name="cwd">
+		<syntax>Cwd(<v>path</v>)</syntax><description>
+		Wechselt in <v>path</v> (kann auch eine relative Angabe sein)
+	</description></function>
+	<function name="csvload">
+		<syntax>CsvLoad(<v>file[,options]</v>)</syntax><description>
+		Lädt eine CSV-Datei in eine Liste von Listen
+		</description>
+		
+		<options>
+			<option name="Delimiter" default="';'"><description>Feldtrenner</description></option>
+			<option name="QuoteChar" default="'&quot;'"><description>Gruppierungszeichen</description></option>
+			<option name="Decimal" default="'.'"><description>Dezimaltrenner</description></option>
+			<option name="Skip" default="0"><description>Anzahl zu überspringender Zeilen (z.b. Überschrift)</description></option>
+			<option name="Count" default="Max"><description>Maximale Anzahl zu ladender Zeilen</description></option>
+		</options>
+	</function>
+	<function name="source">
+		<syntax>Source(<v>file</v>)</syntax><description>
+		Lädt eine Datei und führt sie Zeilenweise aus. Tritt ein Fehler auf, wird die Ausführung beendet.
+		Die Dateiendung .pi wird automatisch ergänzt, falls <v>file</v> nicht gefunden wird.
+	</description></function>
+	<function name="table">
+		<syntax>Table(<v>list</v>)</syntax><description>
+		Stellt eine Liste (oder Liste von Listen) als Tabelle dar
+	</description></function>
+	<function name="bucket">
+		<syntax>Bucket(<v>list</v>, <v>min</v>, <v>max</v>, <v>count</v>)</syntax><description>
+		Zählt alle Werte in <v>min</v> &lt; x &lt; <v>max</v> in <v>count</v> Gruppen.
+		Rückgabe: Liste von {Mittelwert, Anzahl}
+	</description></function>
+	<function name="max">
+		<syntax>Max(<v>list</v>)</syntax><description>
+		Größter Wert einer Liste
+	</description></function>
+	<function name="min">
+		<syntax>Min(<v>list</v>)</syntax><description>
+		Kleinster Wert einer Liste
+	</description></function>
+	<function name="sortby">
+		<syntax>SortBy(<v>list</v>, <v>var</v>, <v>expr</v>)</syntax><description>
+		Sortiert <v>list</v> unter verwendung der Schlüssel, wie sie <v>expr</v> generiert.
+		</description>
+		<options>
+			<option name="Desc" default="*undefined*">
+				<description>Absteigend sortieren, sonst Aufsteigend</description>		
+			</option>
+			<option name="String" default="*undefined*">
+				<description>Als Text sortieren, sonst als Zahl</description>
+			</option>
+		</options>
+	</function>
+	<function name="numderive">
+		<syntax>NumDerive(<v>list</v>)</syntax><description>
+		Numerische Ableitung einer Liste von {X,Y}-Punkten. In der Mitte zwischen zwei X-Werten wird die differenz
+		nach dY/dY abgelegt. Die erzeugte Liste ist ein Element kürzer.
+	</description></function>
+</package>
