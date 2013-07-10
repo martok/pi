@@ -232,27 +232,11 @@ begin
 end;
 
 function TPackageElementary.Sqrt_1(Context: IContext; args: TExprList): IExpression;
-var
-  el: TExprList;
 begin
-  SetLength(el,2);
-  el[0]:= TValueNumber.Create(2);
-  el[1]:= args[0];
-  Result:= NRt_2(Context, el);
+  Result:= NRt_2(Context, MakeArgs([TValueNumber.Create(2), args[0]]));
 end;
 
 function TPackageElementary.NRt_2(Context: IContext; args: TExprList): IExpression;
-  function DivideDimensions(const A: TMathUnits; const Expo: integer): TMathUnits;
-  var
-    d: TMathBaseUnit;
-  begin
-    for d:= low(d) to high(d) do begin
-      if A[d] mod Expo = 0 then
-        Result[d]:= A[d] div Expo
-      else
-        raise EMathDimensionError.Create('Cannot take root because dimensions don''t allow it.');
-    end;
-  end;
 var
   x: Number;
   a: IExpression;

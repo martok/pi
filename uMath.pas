@@ -233,6 +233,8 @@ var
 
 function NumberToStr(const Value: Number; FS: TFormatSettings; ShowThousands: boolean): string;
 
+function MakeArgs(const Args: array of IExpression): TExprList;
+
 resourcestring
   sConstants = 'Constants';
   sWork = 'Work';
@@ -284,6 +286,15 @@ begin
       end;
     end;
   end;
+end;
+
+function MakeArgs(const Args: array of IExpression): TExprList;
+var
+  i: integer;
+begin
+  SetLength(Result, length(Args));
+  for i:= 0 to high(Args) do
+    Result[i]:= Args[i];
 end;
 
 { TMathSystem }

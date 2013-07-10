@@ -50,6 +50,7 @@ type
   published
     function Unit_2(Context: IContext; args: TExprList): IExpression;
     function Convert_2(Context: IContext; args: TExprList): IExpression;
+    function Express_2(Context: IContext; args: TExprList): IExpression;
   end;
 
 function GetUnitString(const Units: TMathUnits; const UseExponents: boolean): string;
@@ -345,7 +346,6 @@ begin
   end;
 end;
 
-
 { TValueDimension }
 
 constructor TValueDimension.Create(const aVal: Number; const aUnits: TMathUnits; const aCreatedAs: String);
@@ -544,6 +544,45 @@ begin
   if not nd.IsCompatible(u) then
     raise EMathDimensionError.Create('Dimension of the target unit differs from current object.');
   Result:= TValueDimension.Create(nd.Value, nd.Units, un);
+end;
+
+function TPackageDimensions.Express_2(Context: IContext; args: TExprList): IExpression;
+var
+  e: IExpression;
+  nd: IValueDimension;
+  l: IValueList;
+  ls: IValueString;
+  unitNames: TStringList;
+  i: integer;
+begin
+  e:= args[0].Evaluate(Context);
+
+  if not e.Represents(IValueDimension, nd) then
+    raise EMathSysError.Create('Convert requires a unit value.');
+
+  e:= args[1].Evaluate(Context);
+
+  unitNames:= TStringList.Create;
+  try
+    if e.Represents(IValueList, l) then begin
+      for i:= 0 to l.Length-1 do begin
+        e:= l.Arg[i].Evaluate(Context);
+        if e.Represents(IValueString, ls) then
+          unitNames.Add(ls.Value)
+        else
+          raise EMathDimensionError.Create('Express requires one or a list of unit strings.');
+      end;
+    end else
+    if e.Represents(IValueString, ls) then
+      unitNames.Add(ls.Value)
+    else
+      raise EMathDimensionError.Create('Express requires one or a list of unit strings.');
+
+
+
+  finally
+    FreeAndNil(unitNames);
+  end;
 end;
 
 initialization
