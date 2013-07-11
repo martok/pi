@@ -283,7 +283,7 @@
                </p>
             </li>
             <li class="function" id="function-core-absolutetime"><a class="function-link" href="#function-core-absolutetime">#</a><code>AbsoluteTime(<i>Expr</i>)</code><br><p>
-                  			Gibt die Ausführungszeit sowie das Ergebnis der Auswertung von <i>Expr</i> zurück
+                  			Gibt die Ausführungszeit in Sekunden sowie das Ergebnis der Auswertung von <i>Expr</i> zurück
                   		
                </p>
             </li>
@@ -836,6 +836,14 @@
             </li>
             <li class="function" id="function-dimensions-convert"><a class="function-link" href="#function-dimensions-convert">#</a><code>Convert(<i>val</i>, <i>unit</i>)</code><br><p>
                   			Konvertiert einen dimensionierten Wert in eine andere Einheit der gleichen Dimension.
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-dimensions-express"><a class="function-link" href="#function-dimensions-express">#</a><code>Express(<i>val</i>, <i>unit</i>)</code><br><code>Express(<i>val</i>, {<i>unit</i>, unit...})</code><br><p>
+                  			Stellt einen Wert in einer minimalen Kombination von Einheiten dar. Dabei können
+                  bestimmte
+                  			Einheiten als "zu verwenden" vorgegeben werden. Dimensionsfremde Vorgaben werden
+                  u.U. ignoriert.
                   		
                </p>
             </li>

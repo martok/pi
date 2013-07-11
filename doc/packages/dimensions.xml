@@ -17,4 +17,12 @@
 			Konvertiert einen dimensionierten Wert in eine andere Einheit der gleichen Dimension.
 		</description>
 	</function>
+	<function name="Express">
+		<syntax>Express(<v>val</v>, <v>unit</v>)</syntax>
+		<syntax>Express(<v>val</v>, {<v>unit</v>, unit...})</syntax>
+		<description>
+			Stellt einen Wert in einer minimalen Kombination von Einheiten dar. Dabei können bestimmte
+			Einheiten als "zu verwenden" vorgegeben werden. Dimensionsfremde Vorgaben werden u.U. ignoriert.
+		</description>
+	</function>
 </package>

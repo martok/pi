@@ -53,18 +53,44 @@ type
     function Express_2(Context: IContext; args: TExprList): IExpression;
   end;
 
-function GetUnitString(const Units: TMathUnits; const UseExponents: boolean): string;
-function ParseUnitString(const US: string; out ConversionFactor: Number): TMathUnits;
+  TDimensionsList = array of record
+    DimIndex: Integer;
+    PrefixIndex: integer;
+    Exponent: Integer;
+  end;
+  TDimensionParser = object
+  private
+    FFactor: Number;
+    FDim: TMathUnits;
+    function TryParseUnit(u: String; out UnitI, PrefixI, Expon: integer): boolean;
+    function FormatExponent(const base: String; u: ShortInt): string;
+    function FormatSIExponent(Dim: TMathBaseUnit; u: ShortInt): string;
+    function GetStringFromList(const Units: TDimensionsList; const UseExponents: boolean): string;
+    function FormatPrefix(const pref, un: String): string;
+  protected
+    function CombineDL(const A, B: TDimensionsList): TDimensionsList;
+  public
+    function SplitDimensionPart(const Str: String; const PreExponent: Shortint): TDimensionsList;
+    function SplitDimension(const Str: String): TDimensionsList;
+    function ApplyDimList(const DL: TDimensionsList; out ConversionFactor: Number): TMathUnits;
+    function ParseUnitString(const Str: string; out ConversionFactor: Number): TMathUnits;
+
+    function GetSIString(const Units: TMathUnits; const UseExponents: boolean): string;
+    property Factor: Number read FFactor;
+    property Dimension: TMathUnits read FDim write FDim;
+  end;
+
 function MakeDimension(const Dim: array of Shortint): TMathUnits;
 function MultDimensions(const A, B: TMathUnits): TMathUnits;
 function InverseDimensions(const A: TMathUnits): TMathUnits;
 function PowerDimensions(const A: TMathUnits; const Expo: integer): TMathUnits;
 function RootDimensions(const A: TMathUnits; const Expo: integer): TMathUnits;
+function DimensionIsScalar(const A: TMathUnits): boolean;
 
 implementation
 
 uses
-  SysUtils, StrUtils, ConvUtils;
+  SysUtils, StrUtils;
 
 type
   TDefinedUnit = record
@@ -119,35 +145,230 @@ begin
   UnitDimTable[i].Dim:= MakeDimension(Dim);
 end;
 
-function GetUnitString(const Units: TMathUnits; const UseExponents: boolean): string;
+
+{ TDimensionParser }
+
+function TDimensionParser.ParseUnitString(const Str: string; out ConversionFactor: Number): TMathUnits;   
+var
+  dl: TDimensionsList;
+begin
+  dl:= SplitDimension(Str);
+  Result:= ApplyDimList(dl, ConversionFactor);
+end;
+
+function TDimensionParser.ApplyDimList(const DL: TDimensionsList; out ConversionFactor: Number): TMathUnits;
+var
+  i: integer;
+  f: Number;
+begin
+  Result:= MakeDimension([]);
+  ConversionFactor:= 1.0;
+
+  for i:= 0 to high(dl) do
+    with dl[i] do begin
+      f:= DimPrefixTable[PrefixIndex].Factor * UnitDimTable[DimIndex].Factor;
+      Result:= MultDimensions(Result, PowerDimensions(UnitDimTable[DimIndex].Dim, Exponent));
+      ConversionFactor:= ConversionFactor * Power(f, Exponent);
+    end;
+end;
+
+function TDimensionParser.CombineDL(const A, B: TDimensionsList): TDimensionsList;
+var
+  i, j, k: integer;
+  f: boolean;
+begin
+  SetLength(Result, Length(A) + Length(B));
+  i:= 0;
+  for j:= 0 to high(A) do begin
+    Result[i]:= A[j];
+    inc(i);
+  end;
+  for j:= 0 to high(B) do begin
+    f:= false;
+    for k:= 0 to i do 
+      if (Result[k].DimIndex = B[j].DimIndex) and (Result[k].PrefixIndex = B[j].PrefixIndex) then begin
+        Inc(Result[k].Exponent, b[j].Exponent);
+        f:= true;
+        break;
+      end;
+    if not f then begin
+      Result[i]:= B[j];
+      inc(i);
+    end;
+  end;
+  SetLength(Result, i);
+end;
+
+function TDimensionParser.SplitDimension(const Str: String): TDimensionsList;
+var
+  nom, den: String;
+  dl1,dl2: TDimensionsList;
+begin
+  if Pos('/', Str)>0 then begin
+    if Pos('/', Str) <> LastDelimiter('/', Str) then
+      raise EMathDimensionError.Create('Unit string must not contain more than one fraction bar.');
+    nom:= Trim(Copy(Str, 1, Pos('/', Str)-1));
+    den:= Trim(Copy(Str, Pos('/', Str)+1, MaxInt));
+  end else begin
+    nom:= trim(Str);
+    den:= '';
+  end;
+  dl1:= SplitDimensionPart(nom, 1);
+  dl2:= SplitDimensionPart(den, -1);
+  Result:= CombineDL(dl1, dl2);
+end;
+
+function TDimensionParser.SplitDimensionPart(const Str: String; const PreExponent: Shortint): TDimensionsList;
+var
+  pts: TStringList;
+  i, ut, pt, pp: integer;
+begin
+  SetLength(Result, 0);
+  pts:= TStringList.Create;
+  try
+    pts.Delimiter:= ' ';
+    pts.DelimitedText:= Str;
+    for i:= 0 to pts.Count-1 do begin
+      if not TryParseUnit(pts[i], ut, pt, pp) then
+        raise EMathDimensionError.CreateFmt('Could not parse unit string: %s',[pts[i]]);
+      SetLength(Result, Length(Result) + 1);
+      with Result[high(Result)] do begin
+        DimIndex:= ut;
+        PrefixIndex:= pt;
+        Exponent:= pp * PreExponent;
+      end;
+    end;
+  finally
+    FreeAndNil(pts);
+  end;
+end;
+
+// k:m^-1 km^-1 k:m-1 km-1 k:m km
+function TDimensionParser.TryParseUnit(u: String; out UnitI, PrefixI, Expon: integer): boolean;
+var
+  expo, pref, un: string;
+  d: integer;
+  i,j,k: integer;
+begin
+  Result:= false;
+  PrefixI:= -1;
+  UnitI:= -1;
+  
+  i:= 1;
+  while TryStrToInt(RightStr(u, i), d) and (i <= length(u)) do
+    inc(i);
+  dec(i);
+  expo:= RightStr(u, i);
+  if MidStr(u, Length(u) - i, 1) = '^' then
+    inc(i);
+  un:= Copy(u, 1, Length(u) - i);
+  if Pos(':', un)>0 then begin
+    if Pos(':', un) <> LastDelimiter(':', un) then
+      raise EMathDimensionError.Create('Unit part must not contain more than one prefix indicator.');
+    pref:= Trim(copy(un, 1, Pos(':', un)-1));
+    un:= Trim(copy(un, Pos(':', un)+1, MaxInt));
+
+    // Prefix
+    for i:= 0 to high(DimPrefixTable) do
+      if pref = DimPrefixTable[i].Symbol then begin
+        PrefixI:= i;
+        break;
+      end;
+    if PrefixI<0 then
+      raise EMathDimensionError.CreateFmt('Unknown unit prefix: %s',[pref]);
+
+    // Dimension
+    for i:= 0 to high(UnitDimTable) do
+      if un = UnitDimTable[i].Sign then begin
+        UnitI:= i;
+        break;
+      end;
+    if UnitI<0 then
+      raise EMathDimensionError.CreateFmt('Unknown unit symbol: %s',[un]);
+  end else begin
+    k:= 0;
+    // is there a single unit named exactly like what we look for?
+    for j:= 0 to high(UnitDimTable) do
+      if un = UnitDimTable[j].Sign then begin
+        PrefixI:= 0;
+        UnitI:= j;
+        inc(k);
+      end;
+    if k>1 then
+      // more than one unit has the same name. this is bad. very bad.
+      raise EMathDimensionError.CreateFmt('Ambiguous unit name. This is a bug: %s', [un]);
+    if k < 1 then begin
+      k:= 0;
+      // is there a prefix-unit combination that matches?
+      for i:= 1 to high(DimPrefixTable) do
+        if AnsiStartsStr(DimPrefixTable[i].Symbol, un) then
+          for j:= 1 to high(UnitDimTable) do
+            if un = DimPrefixTable[i].Symbol+UnitDimTable[j].Sign then begin
+              PrefixI:= i;
+              UnitI:= j;
+              inc(k);
+            end;
+      if k>1 then
+        // there is more than one
+        raise EMathDimensionError.CreateFmt('Ambiguous unit/prefix combination: %s', [un]);
+      if k<1 then
+        // none found
+        raise EMathDimensionError.CreateFmt('Cannot resolve unit/prefix combination: %s', [un]);
+      // k=1, everything is already set
+    end;
+  end;
+
+  // Exponent
+  Expon:= StrToIntDef(Expo, 1);
+
+  Result:= true;
+end;
+
+function TDimensionParser.FormatPrefix(const pref, un:String): string;
+begin
+  if pref>'' then
+    Result:= pref + ':' + un
+  else
+    Result:= un;
+end;
+
+function TDimensionParser.FormatExponent(const base:String; u: ShortInt): string;
+begin
+  if u = 1 then
+    Result:= base
+  else
+    Result:= format('%s^%d', [base, u]);
+end;
+
+function TDimensionParser.FormatSIExponent(Dim: TMathBaseUnit; u: ShortInt): string;
+begin
+  if u = 1 then
+    Result:= MATH_UNIT_NAME[Dim]
+  else
+    Result:= format('%s^%d', [MATH_UNIT_NAME[Dim], u]);
+end;
+
+function TDimensionParser.GetSIString(const Units: TMathUnits; const UseExponents: boolean): string;
 var
   d: TMathBaseUnit;
   no, de: string;
-
-  function US(prep: string; u: ShortInt): string;
-  begin
-    if u = 1 then
-      Result:= format('%s%s ', [prep, MATH_UNIT_NAME[d]])
-    else
-      Result:= format('%s%s^%d ', [prep, MATH_UNIT_NAME[d], u]);
-  end;
 
 begin
   Result:= '';
   if UseExponents then begin
     for d:= low(d) to high(d) do
       if Units[d] <> 0 then
-        Result:= US(Result, Units[d]);
+        Result:= Result + FormatSIExponent(d, Units[d]) + ' ';
   end else begin
     no:= '';
     for d:= low(d) to high(d) do
       if Units[d] > 0 then
-        no:= US(no, Units[d]);
+        no:= no + FormatSIExponent(d, Units[d]) + ' ';
 
     de:= '';
     for d:= low(d) to high(d) do
       if Units[d] < 0 then
-        de:= US(de, -Units[d]);
+        de:= de + FormatSIExponent(d, -Units[d]) + ' ';
 
     if de = '' then
       Result:= no
@@ -161,136 +382,39 @@ begin
   Result:= TrimRight(Result);
 end;
 
-function ParseUnitString(const US: string; out ConversionFactor: Number): TMathUnits;
+function TDimensionParser.GetStringFromList(const Units: TDimensionsList; const UseExponents: boolean): string;
 var
-  nom, den: String;
-
-  // k:m^-1 km^-1 k:m-1 km-1 k:m km
-  function TryParseUnit(u: String; out UnitI, PrefixI, Expon: integer): boolean;
-  var
-    expo, pref, un: string;
-    d: integer;
-    i,j,k: integer;
-  begin
-    Result:= false;
-    PrefixI:= -1;
-    UnitI:= -1;
-  
-    i:= 1;
-    while TryStrToInt(RightStr(u, i), d) and (i <= length(u)) do
-      inc(i);
-    dec(i);
-    expo:= RightStr(u, i);
-    if MidStr(u, Length(u) - i, 1) = '^' then
-      inc(i);
-    un:= Copy(u, 1, Length(u) - i);
-    if Pos(':', un)>0 then begin
-      if Pos(':', un) <> LastDelimiter(':', un) then
-        raise EMathDimensionError.Create('Unit part must not contain more than one prefix indicator.');
-      pref:= Trim(copy(un, 1, Pos(':', un)-1));
-      un:= Trim(copy(un, Pos(':', un)+1, MaxInt));
-
-      // Prefix
-      for i:= 0 to high(DimPrefixTable) do
-        if pref = DimPrefixTable[i].Symbol then begin
-          PrefixI:= i;
-          break;
-        end;
-      if PrefixI<0 then
-        raise EMathDimensionError.CreateFmt('Unknown unit prefix: %s',[pref]);
-
-      // Dimension
-      for i:= 0 to high(UnitDimTable) do
-        if un = UnitDimTable[i].Sign then begin
-          UnitI:= i;
-          break;
-        end;
-      if UnitI<0 then
-        raise EMathDimensionError.CreateFmt('Unknown unit symbol: %s',[un]);
-    end else begin
-      k:= 0;
-      // is there a single unit named exactly like what we look for?
-      for j:= 0 to high(UnitDimTable) do
-        if un = UnitDimTable[j].Sign then begin
-          PrefixI:= 0;
-          UnitI:= j;
-          inc(k);
-        end;
-      if k>1 then
-        // more than one unit has the same name. this is bad. very bad.
-        raise EMathDimensionError.CreateFmt('Ambiguous unit name. This is a bug: %s', [un]);
-      if k < 1 then begin
-        k:= 0;
-        // is there a prefix-unit combination that matches?
-        for i:= 1 to high(DimPrefixTable) do
-          if AnsiStartsStr(DimPrefixTable[i].Symbol, un) then
-            for j:= 1 to high(UnitDimTable) do
-              if un = DimPrefixTable[i].Symbol+UnitDimTable[j].Sign then begin
-                PrefixI:= i;
-                UnitI:= j;
-                inc(k);
-              end;
-        if k>1 then
-          // there is more than one
-          raise EMathDimensionError.CreateFmt('Ambiguous unit/prefix combination: %s', [un]);
-        if k<1 then
-          // none found
-          raise EMathDimensionError.CreateFmt('Cannot resolve unit/prefix combination: %s', [un]);
-        // k=1, everything is already set
-      end;
-    end;
-
-    // Exponent
-    Expon:= StrToIntDef(Expo, 1);
-
-    Result:= true;
-  end;
-
-  procedure AddToResult(Dim: TMathUnits; p: integer);
-  var
-    d: TMathBaseUnit;
-  begin
-    for d:= low(d) to high(d) do
-      Result[d]:= Result[d] + p * dim[d];
-  end;
-
-  procedure ProcessPart(s: string; premul: integer);
-  var
-    pts: TStringList;
-    i, ut, pt, pp: integer;
-    f: Number;
-  begin
-    pts:= TStringList.Create;
-    try
-      pts.Delimiter:= ' ';
-      pts.DelimitedText:= s;
-      for i:= 0 to pts.Count-1 do begin
-        if not TryParseUnit(pts[i], ut, pt, pp) then
-          raise EMathDimensionError.CreateFmt('Could not parse unit string: %s',[pts[i]]);
-        f:= DimPrefixTable[pt].Factor * UnitDimTable[ut].Factor;
-        AddToResult(UnitDimTable[ut].Dim, premul * pp);
-        ConversionFactor:= ConversionFactor * Power(f, premul * pp);
-      end;
-    finally
-      FreeAndNil(pts);
-    end;
-  end;
+  i: integer;
+  no, de: string;
 begin
-  ConversionFactor:= 1.0;
-  Result:= MakeDimension([]);
-
-  if Pos('/', US)>0 then begin
-    if Pos('/', US) <> LastDelimiter('/', US) then
-      raise EMathDimensionError.Create('Unit string must not contain more than one fraction bar.');
-    nom:= Trim(Copy(US, 1, Pos('/', US)-1));
-    den:= Trim(Copy(US, Pos('/', US)+1, MaxInt));
+  Result:= '';
+  if UseExponents then begin
+    for i:= 0 to high(Units) do
+      if Units[i].Exponent<>0 then
+        Result:= Result + FormatExponent(FormatPrefix(DimPrefixTable[Units[i].PrefixIndex].Symbol, UnitDimTable[Units[i].DimIndex].Sign), Units[i].Exponent) + ' ';
   end else begin
-    nom:= trim(US);
-    den:= '';
+    no:= '';
+    for i:= 0 to high(Units) do
+      if Units[i].Exponent>0 then
+          no:= no + FormatExponent(FormatPrefix(DimPrefixTable[Units[i].PrefixIndex].Symbol, UnitDimTable[Units[i].DimIndex].Sign), Units[i].Exponent) + ' ';
+
+    de:= '';
+    for i:= 0 to high(Units) do
+      if Units[i].Exponent<0 then
+        de:= de + FormatExponent(FormatPrefix(DimPrefixTable[Units[i].PrefixIndex].Symbol, UnitDimTable[Units[i].DimIndex].Sign), -Units[i].Exponent) + ' ';
+
+    if de = '' then
+      Result:= no
+    else begin
+      if no = '' then
+        Result:= '1 / ' + de
+      else
+        Result:= no + '/ ' + de;
+    end;
   end;
-  ProcessPart(nom, 1);
-  ProcessPart(den, -1);
+  Result:= TrimRight(Result);
 end;
+
 
 function MakeDimension(const Dim: array of Shortint): TMathUnits;
 var
@@ -346,6 +470,17 @@ begin
   end;
 end;
 
+function DimensionIsScalar(const A: TMathUnits): boolean;
+var
+  d: TMathBaseUnit;
+begin
+  Result:= false;
+  for d:= low(d) to high(d) do
+    if A[d]<>0 then
+      exit;
+  Result:= true;
+end;
+
 { TValueDimension }
 
 constructor TValueDimension.Create(const aVal: Number; const aUnits: TMathUnits; const aCreatedAs: String);
@@ -375,10 +510,11 @@ end;
 
 function TValueDimension.NumberValue: Number;
 var
+  dp: TDimensionParser;
   u: TMathUnits;
   f: Number;
 begin
-  u:= ParseUnitString(FCreatedAs, f);
+  u:= dp.ParseUnitString(FCreatedAs, f);
 
   Result:= FSIValue / f;
 end;
@@ -394,18 +530,13 @@ begin
 end;
 
 function TValueDimension.IsScalar: boolean;
-var
-  d: TMathBaseUnit;
 begin
-  Result:= true;
-  for d:= low(d) to high(d) do
-    if FUnits[d]<>0 then begin
-      Result:= false;
-      exit;
-    end;
+  Result:= DimensionIsScalar(FUnits);
 end;
 
 function TValueDimension.AsString(const Format: TStringFormat): string;
+var
+  dp: TDimensionParser;
 begin
   case Format of
     STR_FORMAT_OUTPUT: begin
@@ -413,12 +544,12 @@ begin
       if FCreatedAs >'' then
          Result:= Result + ' ' + FCreatedAs
       else
-         Result:= Result + ' ' + GetUnitString(FUnits, false);
+         Result:= Result + ' ' + dp.GetSIString(FUnits, false);
     end;
   else
     Result:=
       (TValueNumber.Create(FSIValue) as IStringConvertible).AsString(Format) + ' ' +
-      GetUnitString(FUnits, true);
+      dp.GetSIString(FUnits, true);
   end;
 end;
 
@@ -515,19 +646,21 @@ end;
 
 function TPackageDimensions.Unit_2(Context: IContext; args: TExprList): IExpression;
 var
+  dp: TDimensionParser;
   n, f: Number;
   u: TMathUnits;
   un: string;
 begin
   n:= EvaluateToNumber(Context, args[0]);
   un:= EvaluateToString(Context, args[1]);
-  u:= ParseUnitString(un, f);
+  u:= dp.ParseUnitString(un, f);
   n:= n * f;
   Result:= TValueDimension.Create(n, u, un);
 end;
 
 function TPackageDimensions.Convert_2(Context: IContext; args: TExprList): IExpression;
 var
+  dp: TDimensionParser;
   nn: IExpression;
   nd: IValueDimension;
   f: Number;
@@ -537,7 +670,7 @@ begin
   nn:= args[0].Evaluate(Context);
 
   un:= EvaluateToString(Context, args[1]);
-  u:= ParseUnitString(un, f);
+  u:= dp.ParseUnitString(un, f);
   if not nn.Represents(IValueDimension, nd) then
     raise EMathSysError.Create('Convert requires a unit value.');
 
@@ -548,12 +681,141 @@ end;
 
 function TPackageDimensions.Express_2(Context: IContext; args: TExprList): IExpression;
 var
+  dp: TDimensionParser;
   e: IExpression;
   nd: IValueDimension;
   l: IValueList;
   ls: IValueString;
   unitNames: TStringList;
   i: integer;
+
+  usedUnits: TDimensionsList;
+  buildDim, remDim: TMathUnits;
+
+  function ComputeExponent(const target, u: TMathUnits): Integer;
+  var
+    lowv: Integer;
+    lowd, j: TMathBaseUnit;
+  begin
+    // find lowest power
+    lowv:= 1000;
+    lowd:= TMathBaseUnit(-1);
+    for j:= low(j) to high(j) do
+      if (u[j]<>0) and (u[j] < lowv)  then begin
+        lowv:= u[j];
+        lowd:= j;
+      end;
+    if lowv<>0 then
+      Result:= target[lowd] div lowv
+    else
+      Result:= 1;
+  end;
+
+  procedure ApplyWantedUnits;
+  var
+    i, j: integer;
+    dl: TDimensionsList;
+    dim: TMathUnits;
+    f: Number;
+    e: Integer;
+  begin                    
+    remDim:= nd.Units;
+    buildDim:= MakeDimension([]);
+
+    for i:= 0 to unitNames.Count-1 do begin
+      dl:= dp.SplitDimension(unitNames[i]);
+      dim:= dp.ApplyDimList(dl, f);
+      e:= ComputeExponent(remDim, dim);
+      for j:= 0 to high(dl) do
+        dl[j].Exponent:= dl[j].Exponent * e;
+      usedUnits:= dp.CombineDL(usedUnits, dl);
+      buildDim:= MultDimensions(buildDim, PowerDimensions(dim, e));
+      remDim:= MultDimensions(remDim, PowerDimensions(dim, -e));
+    end;
+  end;
+
+  procedure RecurseFindMore(const target: TMathUnits; const Used: TDimensionsList; var BestDims: TDimensionsList; var BestPresent: boolean);
+    function IsUsed(const Un: integer): boolean;
+    var
+      i: integer;
+    begin
+      Result:= true;
+      for i:= 0 to high(Used) do
+        if Used[i].DimIndex = Un then
+          exit;
+      Result:= false;
+    end;
+
+    function ContributesDim(const dim: TMathUnits): Boolean;
+    var
+      d: TMathBaseUnit;
+    begin
+      // any dimensions overlap?
+      Result:= true;
+      for d:= low(d) to high(d) do
+        if (dim[d]<>0) and (target[d]<>0) then
+          exit;
+      Result:= false;
+    end;
+
+  var
+    u: integer;
+    tDim, rDim: TMathUnits;
+    tDL: TDimensionsList;
+  begin
+    // goal reached?
+    if DimensionIsScalar(target) then begin
+      if not BestPresent or (Length(BestDims) > length(Used)) then begin
+        BestPresent:= True;
+        BestDims:= Used;
+        exit;
+      end;
+    end;
+    // would just using base units be better?
+    if Length(Used)> Ord(High(TMathBaseUnit)) - Ord(Low(TMathBaseUnit)) then
+      exit;
+    // can we still improve? (cutoff)
+    if BestPresent and (Length(Used)> length(BestDims)) then
+      exit;
+    SetLength(tDL, 1);
+    tDL[0].PrefixIndex:= 0;
+    for u:= 1 to high(UnitDimTable) do begin
+      if IsUsed(u) then
+        continue;
+
+      tDim:= UnitDimTable[u].Dim;
+
+      if not ContributesDim(tDim) then
+        continue;
+
+      tDL[0].DimIndex:= u;
+      tDL[0].Exponent:= ComputeExponent(target, tDim);
+
+      rDim:= MultDimensions(target, PowerDimensions(tDim, -tDL[0].Exponent));
+      RecurseFindMore(rDim, dp.CombineDL(Used, tDL), BestDims, BestPresent);
+    end;
+  end;
+
+  procedure FindMoreUnits;
+  var
+    dl: TDimensionsList;
+    dlSet: boolean;
+    i: integer;
+    d: TMathUnits;
+  begin
+    dlSet:= false;
+    SetLength(dl, 0);
+    RecurseFindMore(remDim, usedUnits, dl, dlSet);
+    if dlSet then begin
+      for i:= length(usedUnits) to high(dl) do begin
+        d:= UnitDimTable[dl[i].DimIndex].Dim;
+        buildDim:= MultDimensions(buildDim, PowerDimensions(d, dl[i].Exponent));
+      end;
+      usedUnits:= dl;
+    end else
+      raise EMathDimensionError.Create('Could not match Dimensions. Possible conflicting input?');
+  end;
+
 begin
   e:= args[0].Evaluate(Context);
 
@@ -578,8 +840,13 @@ begin
     else
       raise EMathDimensionError.Create('Express requires one or a list of unit strings.');
 
+    SetLength(usedUnits, 0);
 
+    ApplyWantedUnits;
 
+    FindMoreUnits;
+
+    Result:= TValueDimension.Create(nd.Value, buildDim, dp.GetStringFromList(usedUnits, true));
   finally
     FreeAndNil(unitNames);
   end;

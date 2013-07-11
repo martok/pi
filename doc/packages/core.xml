@@ -50,7 +50,7 @@
 	<function name="AbsoluteTime">
 		<syntax>AbsoluteTime(<v>Expr</v>)</syntax>
 		<description>
-			Gibt die Ausführungszeit sowie das Ergebnis der Auswertung von <v>Expr</v> zurück
+			Gibt die Ausführungszeit in Sekunden sowie das Ergebnis der Auswertung von <v>Expr</v> zurück
 		</description>
 	</function>
 </package>
