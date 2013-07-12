@@ -25,6 +25,24 @@
 			Rundet auf <v>digits</v> Stellen (Genauigkeit von 10<sup><v>digits</v></sup>) oder ganze Zahlen.
 		</description>
 	</function>
+	<function name="Trunc">
+		<syntax>Trunc(<v>number</v>)</syntax>
+		<description>
+			Schneidet die Nachkommastellen von <v>number</v> ab, es wird gegen 0 gerundet.
+		</description>
+	</function>
+	<function name="Floor">
+		<syntax>Floor(<v>number</v>)</syntax>
+		<description>
+			Rundet <v>number</v> auf die nächstkleinere ganze Zahl ab.
+		</description>
+	</function>
+	<function name="Ceil">
+		<syntax>Ceil(<v>number</v>)</syntax>
+		<description>
+			Rundet <v>number</v> auf die nächstgrößere ganze Zahl auf.
+		</description>
+	</function>
 	<function name="Fac">
 		<syntax>Fac(<v>number</v>)</syntax>
 		<description>

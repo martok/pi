@@ -48,7 +48,10 @@ type
     function Sign_1(Context: IContext; args: TExprList): IExpression;
     function Step_1(Context: IContext; args: TExprList): IExpression;
     function Round_1(Context: IContext; args: TExprList): IExpression;
-    function Round_2(Context: IContext; args: TExprList): IExpression;
+    function Round_2(Context: IContext; args: TExprList): IExpression;   
+    function Trunc_1(Context: IContext; args: TExprList): IExpression;
+    function Ceil_1(Context: IContext; args: TExprList): IExpression;
+    function Floor_1(Context: IContext; args: TExprList): IExpression;
     function Fac_1(Context: IContext; args: TExprList): IExpression;
     function Binomial_2(Context: IContext; args: TExprList): IExpression;
     function Permutations_2(Context: IContext; args: TExprList): IExpression;
@@ -313,6 +316,22 @@ begin
   v:= Round(v / f) * f;
   Result:= TValueNumber.Create(v);
 end;
+
+function TPackageNumerical.Trunc_1(Context: IContext; args: TExprList): IExpression;
+begin
+  Result:= TValueNumber.Create(trunc(EvaluateToNumber(Context, args[0])));
+end;
+
+function TPackageNumerical.Ceil_1(Context: IContext; args: TExprList): IExpression;
+begin
+  Result:= TValueNumber.Create(Ceil(EvaluateToNumber(Context, args[0])));
+end;
+
+function TPackageNumerical.Floor_1(Context: IContext; args: TExprList): IExpression;
+begin
+  Result:= TValueNumber.Create(Floor(EvaluateToNumber(Context, args[0])));
+end;
+
 
 function TPackageNumerical.Fac_1(Context: IContext; args: TExprList): IExpression;
 var
@@ -594,7 +613,6 @@ begin
   end else
     Result:= TValueList.CreateAs([TValueNumber.Create(Nom),TValueNumber.Create(den)]);
 end;
-
 
 
 { TPackageLists }
