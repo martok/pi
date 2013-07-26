@@ -50,7 +50,7 @@ type
   published
     function Unit_2(Context: IContext; args: TExprList): IExpression;
     function Convert_2(Context: IContext; args: TExprList): IExpression;
-    function Express_2(Context: IContext; args: TExprList): IExpression;
+    function Express_2_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
   end;
 
   TDimensionsList = array of record
@@ -85,12 +85,13 @@ function MultDimensions(const A, B: TMathUnits): TMathUnits;
 function InverseDimensions(const A: TMathUnits): TMathUnits;
 function PowerDimensions(const A: TMathUnits; const Expo: integer): TMathUnits;
 function RootDimensions(const A: TMathUnits; const Expo: integer): TMathUnits;
-function DimensionIsScalar(const A: TMathUnits): boolean;
+function DimensionIsScalar(const A: TMathUnits): boolean;                
+function SameDimension(const A, B: TMathUnits): boolean;
 
 implementation
 
 uses
-  SysUtils, StrUtils;
+  SysUtils, StrUtils, uCIntegerBucketList;
 
 type
   TDefinedUnit = record
@@ -481,6 +482,17 @@ begin
   Result:= true;
 end;
 
+function SameDimension(const A, B: TMathUnits): boolean;
+var
+  d: TMathBaseUnit;
+begin
+  Result:= false;
+  for d:= low(d) to high(d) do
+    if A[d]<>B[d] then
+      exit;
+  Result:= true;
+end;
+
 { TValueDimension }
 
 constructor TValueDimension.Create(const aVal: Number; const aUnits: TMathUnits; const aCreatedAs: String);
@@ -679,8 +691,9 @@ begin
   Result:= TValueDimension.Create(nd.Value, nd.Units, un);
 end;
 
-function TPackageDimensions.Express_2(Context: IContext; args: TExprList): IExpression;
+function TPackageDimensions.Express_2_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
 var
+  optAcceptSameDimensions: boolean;
   dp: TDimensionParser;
   e: IExpression;
   nd: IValueDimension;
@@ -694,21 +707,20 @@ var
 
   function ComputeExponent(const target, u: TMathUnits): Integer;
   var
-    lowv: Integer;
-    lowd, j: TMathBaseUnit;
+    j: TMathBaseUnit;
+    ibl: TIntegerBucketList;
   begin
-    // find lowest power
-    lowv:= 1000;
-    lowd:= TMathBaseUnit(-1);
-    for j:= low(j) to high(j) do
-      if (u[j]<>0) and (u[j] < lowv)  then begin
-        lowv:= u[j];
-        lowd:= j;
-      end;
-    if lowv<>0 then
-      Result:= target[lowd] div lowv
-    else
-      Result:= 1;
+    ibl:= TIntegerBucketList.Create;
+    try
+      for j:= low(j) to high(j) do
+        if (u[j]<>0) then begin
+          if target[j] mod u[j] = 0 then
+            ibl.Push(target[j] div u[j], 1);
+        end;
+      Result:= ibl.GetMostCommon;      
+    finally
+      FreeAndNil(ibl);
+    end;
   end;
 
   procedure ApplyWantedUnits;
@@ -740,9 +752,17 @@ var
       i: integer;
     begin
       Result:= true;
-      for i:= 0 to high(Used) do
-        if Used[i].DimIndex = Un then
-          exit;
+      if optAcceptSameDimensions then begin
+        // Filter based on exact name only
+        for i:= 0 to high(Used) do
+          if Used[i].DimIndex = Un then
+            exit;
+      end else begin
+        // Filter based on equivalent dimensions, i.e. m/pc/ly or g/t/lb
+        for i:= 0 to high(Used) do
+          if SameDimension(UnitDimTable[Used[i].DimIndex].Dim, UnitDimTable[Un].Dim) then
+            exit;
+      end;
       Result:= false;
     end;
 
@@ -823,6 +843,9 @@ begin
     raise EMathSysError.Create('Convert requires a unit value.');
 
   e:= args[1].Evaluate(Context);
+
+
+  optAcceptSameDimensions:= Options.IsSet('AcceptSameDimensions');
 
   unitNames:= TStringList.Create;
   try

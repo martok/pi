@@ -24,5 +24,10 @@
 			Stellt einen Wert in einer minimalen Kombination von Einheiten dar. Dabei können bestimmte
 			Einheiten als "zu verwenden" vorgegeben werden. Dimensionsfremde Vorgaben werden u.U. ignoriert.
 		</description>
+		<options>
+			<option name="AcceptSameDimensions" default="*undefined*">
+				<description>Auch Einheitenkombinationen verwenden, die die gleiche Dimension darstellen. Selten sinnvoll.</description>
+			</option>
+		</options>
 	</function>
 </package>

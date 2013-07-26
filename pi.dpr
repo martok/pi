@@ -18,7 +18,8 @@ uses
   uFunctionsSymbolics in 'uFunctionsSymbolics.pas',
   uMathOutputRichEdit in 'uMathOutputRichEdit.pas',
   uMathOutputStdout in 'uMathOutputStdout.pas',
-  uMathDimensions in 'uMathDimensions.pas';
+  uMathDimensions in 'uMathDimensions.pas',
+  uCIntegerBucketList in 'uCIntegerBucketList.pas';
 
 {$R *.res}
 
