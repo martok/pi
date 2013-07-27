@@ -91,7 +91,7 @@ function SameDimension(const A, B: TMathUnits): boolean;
 implementation
 
 uses
-  SysUtils, StrUtils, uCIntegerBucketList;
+  SysUtils, StrUtils, uCIntegerBucketList, uMathConstants;
 
 type
   TDefinedUnit = record
@@ -876,7 +876,7 @@ begin
 end;
 
 initialization
-  //                                                                   m, kg,  s,  K,mol,  A, cd
+  //                                                                   m, kg,  s,  K,mol,  A, cd,rad,
   //SI base
   DefineUnit(''       , ''                      , 1               , [  0,  0,  0,  0,  0,  0,  0]);
   DefineUnit('m'      , 'Meter'                 , 1               , [  1,  0,  0,  0,  0,  0,  0]);
@@ -900,17 +900,24 @@ initialization
   DefineUnit('V'      , 'Volt'                  , 1               , [  2,  1, -3,  0,  0, -1,  0]);
   DefineUnit('W'      , 'Watt'                  , 1               , [  2,  1, -3,  0,  0,  0,  0]);
   DefineUnit('Wb'     , 'Weber'                 , 1               , [  2,  1, -2,  0,  0, -1,  0]);
-  // Length                                                       
+  // Length
   DefineUnit('in'     , 'inch'                  , 0.0254          , [  1,  0,  0,  0,  0,  0,  0]);
   DefineUnit('ft'     , 'foot'                  , 0.3048          , [  1,  0,  0,  0,  0,  0,  0]);
   DefineUnit('yd'     , 'yard'                  , 0.9144          , [  1,  0,  0,  0,  0,  0,  0]);
   DefineUnit('mi'     , 'mile'                  , 1609.344        , [  1,  0,  0,  0,  0,  0,  0]);
   DefineUnit('nmi'    , 'nautic mile'           , 1852            , [  1,  0,  0,  0,  0,  0,  0]);
   DefineUnit('AU'     , 'astronomical unit'     , 149.59787e9     , [  1,  0,  0,  0,  0,  0,  0]);
-  DefineUnit('ly'     , 'light-year'            , 9.46073e15      , [  1,  0,  0,  0,  0,  0,  0]);
+  DefineUnit('ly'     , 'light-year'            , 9454254955488e3 , [  1,  0,  0,  0,  0,  0,  0]);
   DefineUnit('pc'     , 'parsec'                , 30.857e15       , [  1,  0,  0,  0,  0,  0,  0]);
-  // Volume                                                       
+  // Arc
+  DefineUnit('°'      , 'degree'                , cTau / 360      , [  0,  0,  0,  0,  0,  0,  0,  1]);
+  DefineUnit('deg'    , 'degree'                , cTau / 360      , [  0,  0,  0,  0,  0,  0,  0,  1]);
+  DefineUnit('gon'    , 'gradian'               , cTau / 400      , [  0,  0,  0,  0,  0,  0,  0,  1]);
+  DefineUnit('sr'     , 'steradiant'            , 1               , [  0,  0,  0,  0,  0,  0,  0,  2]);
+  // Volume
   DefineUnit('L'      , 'litre'                 , 1e-3            , [  3,  0,  0,  0,  0,  0,  0]);
+  DefineUnit('gal'    , 'gallon'                , 3.785e-3        , [  3,  0,  0,  0,  0,  0,  0]);
+  DefineUnit('fl-oz'  , 'fluid ounce'           , 29.57e-6        , [  3,  0,  0,  0,  0,  0,  0]);
   // Mass
   DefineUnit('t'      , 'tonne'                 , 1e3             , [  0,  1,  0,  0,  0,  0,  0]);
   DefineUnit('oz'     , 'ounce'                 , 28.349523125e-3 , [  0,  1,  0,  0,  0,  0,  0]);
@@ -922,9 +929,9 @@ initialization
   DefineUnit('d'      , 'day'                   , 86400           , [  0,  0,  1,  0,  0,  0,  0]);
   DefineUnit('wk'     , 'week'                  , 604800          , [  0,  0,  1,  0,  0,  0,  0]);
   DefineUnit('a'      , 'year'                  , 31536000        , [  0,  0,  1,  0,  0,  0,  0]);
-  // Thermodynamic Temperature                                    
+  // Thermodynamic Temperature
   DefineUnit('R'      , 'Rankine'               , 1.8             , [  0,  0,  0,  1,  0,  0,  0]);
-  // Substance                                                    
+  // Substance
   DefineUnit('lb-mol' , 'pound - mole'          , 453.59237       , [  0,  0,  0,  0,  1,  0,  0]);
   // Pressure
   DefineUnit('bar'    , 'Bar'                   , 1e5             , [ -1,  1, -2,  0,  0,  0,  0]);
@@ -932,12 +939,17 @@ initialization
   DefineUnit('at'     , 'technical atm'         , 0.980665e5      , [ -1,  1, -2,  0,  0,  0,  0]);
   DefineUnit('Torr'   , 'Torr'                  , 133.322         , [ -1,  1, -2,  0,  0,  0,  0]);
   DefineUnit('psi'    , 'pound per sq inch'     , 6.895e3         , [ -1,  1, -2,  0,  0,  0,  0]);
+  DefineUnit('mmhg'   , 'mm mercury column'     , 133.3           , [ -1,  1, -2,  0,  0,  0,  0]);
+  DefineUnit('mmwc'   , 'mm water column'       , 9.80665         , [ -1,  1, -2,  0,  0,  0,  0]);
   // Energy
   DefineUnit('cal'    , 'Calories'              , 4.1868          , [  2,  1, -2,  0,  0,  0,  0]);
   DefineUnit('btu'    , 'british thermal unit'  , 1055.056        , [  2,  1, -2,  0,  0,  0,  0]);
   DefineUnit('erg'    , 'Erg'                   , 1e-7            , [  2,  1, -2,  0,  0,  0,  0]);
-  DefineUnit('eV'     , 'Electronvolt'          , 1.6021766e-19   , [  2,  1, -2,  0,  0,  0,  0]);     
+  DefineUnit('eV'     , 'Electronvolt'          , 1.6021766e-19   , [  2,  1, -2,  0,  0,  0,  0]);
   // Power
-  DefineUnit('hp'      , 'Horsepower'           , 745.7           , [  2,  1, -3,  0,  0,  0,  0]);
+  DefineUnit('hp'     , 'Horsepower'            , 745.7           , [  2,  1, -3,  0,  0,  0,  0]);
+  // Photometry
+  DefineUnit('lm'     , 'lumen'                 , 1               , [  0,  0,  0,  0,  0,  0,  1, -2]);
+  DefineUnit('lx'     , 'lux'                   , 1               , [ -2,  0,  0,  0,  0,  0,  1, -2]);
 end.
 

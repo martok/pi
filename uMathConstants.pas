@@ -15,6 +15,7 @@ type
 
 const
   cPi: Number = 3.1415926535897932384626433832795028841972; // required for tests
+  cTau: Number = 6.28318530717958647692528676655900576839433879875021; // required for tests
   MathematicalConstants: array[0..8] of TConstantDef = (
     (LongName: 'Pi'; Value: 3.1415926535897932384626433832795028841972),
     (LongName: 'Tau'; Value: 6.28318530717958647692528676655900576839433879875021),
