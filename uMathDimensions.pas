@@ -47,6 +47,8 @@ type
   end;
 
   TPackageDimensions = class(TFunctionPackage)
+  protected
+    procedure OnImport(const MS: TMathSystem); override;
   published
     function Unit_2(Context: IContext; args: TExprList): IExpression;
     function Convert_2(Context: IContext; args: TExprList): IExpression;
@@ -561,7 +563,7 @@ begin
   else
     Result:=
       (TValueNumber.Create(FSIValue) as IStringConvertible).AsString(Format) + ' ' +
-      dp.GetSIString(FUnits, true);
+      dp.GetSIString(FUnits, false);
   end;
 end;
 
@@ -869,10 +871,16 @@ begin
 
     FindMoreUnits;
 
-    Result:= TValueDimension.Create(nd.Value, buildDim, dp.GetStringFromList(usedUnits, true));
+    Result:= TValueDimension.Create(nd.Value, buildDim, dp.GetStringFromList(usedUnits, false));
   finally
     FreeAndNil(unitNames);
   end;
+end;
+
+procedure TPackageDimensions.OnImport(const MS: TMathSystem);
+begin
+  inherited;
+  MS.RegisterAsInfix('_', 1, [],Self,'unit');
 end;
 
 initialization

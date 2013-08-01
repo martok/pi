@@ -68,6 +68,10 @@
 				<code>@</code>
 				ListAccess. Identisch zu <seealso p="lists" n="lget">LGet()</seealso>
 			</li>
+			<li id="operator-unit">
+				<code>_</code>
+				Unit. Identisch zu <seealso p="dimensons" n="unit">Unit()</seealso>
+			</li>
 		</ul>
 	</section>
 	<section title="Datentypen">

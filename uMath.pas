@@ -596,7 +596,7 @@ var
             t.Kind:= tokListClose;
             inc(p);
           end;
-        'a'..'z', 'A'..'Z', '_': ParseIdentifier(t);
+        'a'..'z', 'A'..'Z'{, '_'}: ParseIdentifier(t);
       else
         for i:= 0 to fInfixTable.Count-1 do begin
           inf:= PInfixDefinition(fInfixTable[i]);
