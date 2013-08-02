@@ -115,18 +115,39 @@ begin
 end;
 
 function TPackageTrig.Sin_1(Context: IContext; args: TExprList): IExpression;
+var
+  a: IExpression;
+  d: IValueDimension;
 begin
-  Result:= TValueNumber.Create(Sin(EvaluateToNumber(Context, args[0])));
+  a:= args[0].Evaluate(Context);
+  if a.Represents(IValueDimension, d) then
+    Result:= TValueNumber.Create(Sin(d.Value))
+  else
+    Result:= TValueNumber.Create(Sin(CastToNumber(a)));
 end;
 
 function TPackageTrig.Cos_1(Context: IContext; args: TExprList): IExpression;
+var
+  a: IExpression;
+  d: IValueDimension;
 begin
-  Result:= TValueNumber.Create(Cos(EvaluateToNumber(Context, args[0])));
+  a:= args[0].Evaluate(Context);
+  if a.Represents(IValueDimension, d) then
+    Result:= TValueNumber.Create(Cos(d.Value))
+  else
+    Result:= TValueNumber.Create(Cos(CastToNumber(a)));
 end;
 
 function TPackageTrig.Tan_1(Context: IContext; args: TExprList): IExpression;
+var
+  a: IExpression;
+  d: IValueDimension;
 begin
-  Result:= TValueNumber.Create(Tan(EvaluateToNumber(Context, args[0])));
+  a:= args[0].Evaluate(Context);
+  if a.Represents(IValueDimension, d) then
+    Result:= TValueNumber.Create(Cos(d.Value))
+  else
+    Result:= TValueNumber.Create(Cos(CastToNumber(a)));
 end;
 
 function TPackageTrig.ArcSin_1(Context: IContext; args: TExprList): IExpression;
