@@ -9,6 +9,7 @@
 		<syntax>Unit(<v>val</v>, <v>unit</v>)</syntax>
 		<description>
 			Bildet aus einem Zahlenwert und einer String-Repräsentation der Einheit einen dimensionierten Wert.
+			Ist <v>val</v> bereits ein dimensionierter Wert, verhält sich Unit wie <seealso p="dimensions" n="convert">Convert</seealso>.
 		</description>
 	</function>
 	<function name="Convert">

@@ -661,15 +661,23 @@ end;
 function TPackageDimensions.Unit_2(Context: IContext; args: TExprList): IExpression;
 var
   dp: TDimensionParser;
+  nn: IExpression;
+  nd: IValueDimension;
   n, f: Number;
   u: TMathUnits;
   un: string;
 begin
-  n:= EvaluateToNumber(Context, args[0]);
-  un:= EvaluateToString(Context, args[1]);
-  u:= dp.ParseUnitString(un, f);
-  n:= n * f;
-  Result:= TValueDimension.Create(n, u, un);
+  nn:= args[0].Evaluate(Context);
+
+  if nn.Represents(IValueDimension, nd) then begin
+    Result:= Convert_2(Context, Args);
+  end else begin
+    n:= CastToNumber(nn);
+    un:= EvaluateToString(Context, args[1]);
+    u:= dp.ParseUnitString(un, f);
+    n:= n * f;
+    Result:= TValueDimension.Create(n, u, un);
+  end;
 end;
 
 function TPackageDimensions.Convert_2(Context: IContext; args: TExprList): IExpression;
