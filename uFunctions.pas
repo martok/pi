@@ -145,9 +145,9 @@ var
 begin
   a:= args[0].Evaluate(Context);
   if a.Represents(IValueDimension, d) then
-    Result:= TValueNumber.Create(Cos(d.Value))
+    Result:= TValueNumber.Create(Tan(d.Value))
   else
-    Result:= TValueNumber.Create(Cos(CastToNumber(a)));
+    Result:= TValueNumber.Create(Tan(CastToNumber(a)));
 end;
 
 function TPackageTrig.ArcSin_1(Context: IContext; args: TExprList): IExpression;
