@@ -1772,9 +1772,12 @@ var
   res: TConstantDef;
 begin
   nm:= EvaluateToString(Context, args[0]);
-  if FindConstant(nm, res) then
-    Result:= TValueNumber.Create(res.Value)
-  else
+  if FindConstant(nm, res) then begin
+    if res.Uni>'' then
+      Result:= DimensionFromString(res.Value, res.Uni)
+    else
+      Result:= TValueNumber.Create(res.Value);
+  end else
     raise EMathSysError.CreateFmt('Unknown Constant: %s', [nm]);
 end;
 

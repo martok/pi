@@ -89,6 +89,7 @@ function PowerDimensions(const A: TMathUnits; const Expo: integer): TMathUnits;
 function RootDimensions(const A: TMathUnits; const Expo: integer): TMathUnits;
 function DimensionIsScalar(const A: TMathUnits): boolean;                
 function SameDimension(const A, B: TMathUnits): boolean;
+function DimensionFromString(const Value: Number; Const Uni: String): IValueDimension;
 
 implementation
 
@@ -495,6 +496,16 @@ begin
   Result:= true;
 end;
 
+function DimensionFromString(const Value: Number; Const Uni: String): IValueDimension;
+var
+  dp: TDimensionParser;
+  f: Number;
+  u: TMathUnits;
+begin
+  u:= dp.ParseUnitString(uni, f);
+  Result:= TValueDimension.Create(Value * f, u, uni);
+end;
+
 { TValueDimension }
 
 constructor TValueDimension.Create(const aVal: Number; const aUnits: TMathUnits; const aCreatedAs: String);
@@ -660,11 +671,9 @@ end;
 
 function TPackageDimensions.Unit_2(Context: IContext; args: TExprList): IExpression;
 var
-  dp: TDimensionParser;
   nn: IExpression;
   nd: IValueDimension;
-  n, f: Number;
-  u: TMathUnits;
+  n: Number;
   un: string;
 begin
   nn:= args[0].Evaluate(Context);
@@ -674,9 +683,7 @@ begin
   end else begin
     n:= CastToNumber(nn);
     un:= EvaluateToString(Context, args[1]);
-    u:= dp.ParseUnitString(un, f);
-    n:= n * f;
-    Result:= TValueDimension.Create(n, u, un);
+    Result:= DimensionFromString(n, un);
   end;
 end;
 

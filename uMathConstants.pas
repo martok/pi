@@ -56,9 +56,9 @@ const
     (LongName: 'SolRadius'; Value: 6.955E8; Uni: 'm'),
     (LongName: 'SolMass'; Value: 1.988435E30; Uni: 'kg'),
     (LongName: 'SolLuminosity'; Value: 3.846E26; Uni: 'W'),
-    (LongName: 'AstronomicalUnit'; Value: 149.6E9; Uni: 'm'),
-    (LongName: 'Lightyear'; Value: 9.4605E15; Uni: 'm'),
-    (LongName: 'Parsec'; Value: 3.08568E16; Uni: 'm'),
+    (LongName: 'AstronomicalUnit'; Value: 149597870700; Uni: 'm'),
+    (LongName: 'Lightyear'; Value: 9460730472580800; Uni: 'm'),
+    (LongName: 'Parsec'; Value: 3.0856776E16; Uni: 'm'),
     //Chemistry
     (LongName: 'Avogadro'; Value: 6.022142E32; Uni: 'mol^-1'),
     (LongName: 'Boltzmann'; Value: 1.380650E-23; Uni: 'J/K'; Comment: 'MolarGasConstant/Avogadro'),
