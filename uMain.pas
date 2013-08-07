@@ -37,6 +37,7 @@ type
     procedure acHelpExecute(Sender: TObject);
     procedure trContextEdited(Sender: TObject; Node: TTreeNode; var S: String);
     procedure trContextEditing(Sender: TObject; Node: TTreeNode; var AllowEdit: Boolean);
+    procedure acRunTestExecute(Sender: TObject);
   private
     { Private-Deklarationen }
     fOutput: TOutputRichEdit;
@@ -54,6 +55,7 @@ implementation
 uses
   ShellAPI,
   uMathIntf,
+  uMathSelfTests,
   uFunctions, uFunctionsStatistics, uFunctionsGraphing, uFunctionsSymbolics, uMathDimensions;
 
 const
@@ -78,7 +80,7 @@ begin
     RegisterPackage(TPackageStatistics.Create);
     RegisterPackage(TPackageGraph.Create);
     RegisterPackage(TPackageSymbolics.Create);   
-    RegisterPackage(TPackageDimensions.Create);
+    RegisterPackage(TPackageDimensions.Create);   
   end;
   reOutput.Clear;
   cbInput.Clear;
@@ -200,6 +202,18 @@ begin
       exit;
   end;
   ShellExecute(Handle, 'open',PAnsiChar(fn),nil,nil, SW_SHOWNORMAL);
+end;
+
+procedure TfmPiMain.acRunTestExecute(Sender: TObject);
+var
+  Tester: TMathSysTest;
+begin
+  Tester:= TMathSysTest.Create(MathS);
+  try
+    Tester.Run;
+  finally
+    FreeAndNil(Tester);
+  end;
 end;
 
 end.

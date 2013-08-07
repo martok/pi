@@ -151,6 +151,7 @@ object fmPiMain: TfmPiMain
       Caption = 'T'
       Hint = 'Run Selftest'
       ImageIndex = 2
+      OnExecute = acRunTestExecute
     end
     object acHelp: TAction
       Category = 'Toolbar'

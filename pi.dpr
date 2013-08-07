@@ -19,7 +19,8 @@ uses
   uMathOutputRichEdit in 'uMathOutputRichEdit.pas',
   uMathOutputStdout in 'uMathOutputStdout.pas',
   uMathDimensions in 'uMathDimensions.pas',
-  uCIntegerBucketList in 'uCIntegerBucketList.pas';
+  uCIntegerBucketList in 'uCIntegerBucketList.pas',
+  uMathSelfTests in 'uMathSelfTests.pas';
 
 {$R *.res}
 

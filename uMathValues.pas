@@ -341,7 +341,8 @@ end;
 function TValueString.AsString(const Format: TStringFormat): String;
 begin
   case Format of
-    STR_FORMAT_INPUT: Result:= QuotedStr(FValue);
+    STR_FORMAT_INPUT,
+    STR_FORMAT_INPUT_EXPANDED: Result:= QuotedStr(FValue);
   else
      Result:= FValue;
   end;
@@ -500,7 +501,8 @@ end;
 function TValueRange.AsString(const Format: TStringFormat): String;
 begin
   case Format of
-    STR_FORMAT_INPUT: Result:= SysUtils.Format('range(%s->%s, %s)',[
+    STR_FORMAT_INPUT,
+    STR_FORMAT_INPUT_EXPANDED: Result:= SysUtils.Format('range(%s->%s, %s)',[
       NumberToStr(FStart,NeutralFormatSettings, false),
       NumberToStr(FEnd,NeutralFormatSettings, false),
       NumberToStr(FEnd,NeutralFormatSettings, false)

@@ -227,6 +227,7 @@ type
 const
   STR_FORMAT_INPUT = TStringFormat(1);
   STR_FORMAT_OUTPUT = TStringFormat(2);
+  STR_FORMAT_INPUT_EXPANDED = TStringFormat(3);
 
 var
   NeutralFormatSettings: TFormatSettings;
@@ -1564,7 +1565,7 @@ var
   inf: PInfixDefinition;
 begin
   case Format of
-    $FFFF: ;
+    STR_FORMAT_INPUT_EXPANDED: Result:= Name + '('+StringOfArgs(Format, ',')+')'
   else
     if not Assigned(FCreatedFrom) then
       Result:= Name + '('+StringOfArgs(Format, ',')+')'
