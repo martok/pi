@@ -929,15 +929,17 @@ initialization
   DefineUnit('yd'     , 'yard'                  , 0.9144          , [  1,  0,  0,  0,  0,  0,  0]);
   DefineUnit('mi'     , 'mile'                  , 1609.344        , [  1,  0,  0,  0,  0,  0,  0]);
   DefineUnit('nmi'    , 'nautic mile'           , 1852            , [  1,  0,  0,  0,  0,  0,  0]);
-  DefineUnit('AU'     , 'astronomical unit'     , 149.59787e9     , [  1,  0,  0,  0,  0,  0,  0]);
-  DefineUnit('ly'     , 'light-year'            , 9454254955488e3 , [  1,  0,  0,  0,  0,  0,  0]);
+  DefineUnit('AU'     , 'astronomical unit'     , 149.597870691e9 , [  1,  0,  0,  0,  0,  0,  0]);
+  DefineUnit('ly'     , 'light-year'            , 94607304725808e2, [  1,  0,  0,  0,  0,  0,  0]);
   DefineUnit('pc'     , 'parsec'                , 30.857e15       , [  1,  0,  0,  0,  0,  0,  0]);
-  // Arc                                                                                                  
+  // Arc
   DefineUnit('rad'    , 'radiant'               , 1               , [  0,  0,  0,  0,  0,  0,  0,  1]);
   DefineUnit('°'      , 'degree'                , cTau / 360      , [  0,  0,  0,  0,  0,  0,  0,  1]);
   DefineUnit('deg'    , 'degree'                , cTau / 360      , [  0,  0,  0,  0,  0,  0,  0,  1]);
   DefineUnit('gon'    , 'gradian'               , cTau / 400      , [  0,  0,  0,  0,  0,  0,  0,  1]);
   DefineUnit('sr'     , 'steradiant'            , 1               , [  0,  0,  0,  0,  0,  0,  0,  2]);
+  // Area
+  DefineUnit('ha'     , 'hectare'               , 1E4             , [  2,  0,  0,  0,  0,  0,  0,  0]);
   // Volume
   DefineUnit('L'      , 'litre'                 , 1e-3            , [  3,  0,  0,  0,  0,  0,  0]);
   DefineUnit('gal'    , 'gallon'                , 3.785e-3        , [  3,  0,  0,  0,  0,  0,  0]);
@@ -946,13 +948,14 @@ initialization
   DefineUnit('t'      , 'tonne'                 , 1e3             , [  0,  1,  0,  0,  0,  0,  0]);
   DefineUnit('oz'     , 'ounce'                 , 28.349523125e-3 , [  0,  1,  0,  0,  0,  0,  0]);
   DefineUnit('lb'     , 'pound'                 , 453.59237e-3    , [  0,  1,  0,  0,  0,  0,  0]);
-  DefineUnit('amu'    , 'atomic unit'           , 1.660539E-27    , [  0,  1,  0,  0,  0,  0,  0]);
+  DefineUnit('amu'    , 'atomic unit'           , 1.66053886E-27  , [  0,  1,  0,  0,  0,  0,  0]);
   // Time
   DefineUnit('min'    , 'minute'                , 60              , [  0,  0,  1,  0,  0,  0,  0]);
   DefineUnit('h'      , 'hour'                  , 3600            , [  0,  0,  1,  0,  0,  0,  0]);
   DefineUnit('d'      , 'day'                   , 86400           , [  0,  0,  1,  0,  0,  0,  0]);
   DefineUnit('wk'     , 'week'                  , 604800          , [  0,  0,  1,  0,  0,  0,  0]);
-  DefineUnit('a'      , 'year'                  , 31536000        , [  0,  0,  1,  0,  0,  0,  0]);
+  DefineUnit('a'      , 'year'                  , 31536000        , [  0,  0,  1,  0,  0,  0,  0]); // gregorian year, 365.0 days
+  DefineUnit('ja'     , 'year'                  , 31557600        , [  0,  0,  1,  0,  0,  0,  0]); // julian year, 365.25 days
   // Thermodynamic Temperature
   DefineUnit('R'      , 'Rankine'               , 1.8             , [  0,  0,  0,  1,  0,  0,  0]);
   // Substance
@@ -969,7 +972,7 @@ initialization
   DefineUnit('cal'    , 'Calories'              , 4.1868          , [  2,  1, -2,  0,  0,  0,  0]);
   DefineUnit('btu'    , 'british thermal unit'  , 1055.056        , [  2,  1, -2,  0,  0,  0,  0]);
   DefineUnit('erg'    , 'Erg'                   , 1e-7            , [  2,  1, -2,  0,  0,  0,  0]);
-  DefineUnit('eV'     , 'Electronvolt'          , 1.6021766e-19   , [  2,  1, -2,  0,  0,  0,  0]);
+  DefineUnit('eV'     , 'Electronvolt'          , 1.602176565e-19 , [  2,  1, -2,  0,  0,  0,  0]);
   // Power
   DefineUnit('hp'     , 'Horsepower'            , 745.7           , [  2,  1, -3,  0,  0,  0,  0]);
   // Photometry

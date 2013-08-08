@@ -69,7 +69,7 @@ const
     (LongName: 'StandardTemperature'; Value: 273.15; Uni: 'K'),
     //Paricles
     (LongName: 'ElectronComptonWavelength'; Value: 2.426310303E-12; Uni: 'm'; Comment: 'Planck/(ElectronMass*SpeedOfLight)'),
-    (LongName: 'ElectronCharge'; Value: 1.60217646E-19; Uni: 'C'),
+    (LongName: 'ElectronCharge'; Value: 1.602176565E-19; Uni: 'C'),
     (LongName: 'ElectronMass'; Value: 9.10938188E-31; Uni: 'kg'),
     (LongName: 'NeutronComptonWavelength'; Value: 1.319590943E-15; Uni: 'm'; Comment: 'Planck/(NeutronMass*SpeedOfLight)'),
     (LongName: 'NeutronMass'; Value: 1.67492716E-27; Uni: 'kg'),
