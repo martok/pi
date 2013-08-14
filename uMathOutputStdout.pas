@@ -22,6 +22,9 @@ type
 
 implementation
 
+uses
+  StrUtils;
+
 
 { TOutputStdOut }
 
@@ -31,8 +34,11 @@ begin
 end;
 
 procedure TOutputStdOut.LineOut(const Line: string);
+var
+  s: String;
 begin
-  Writeln(Line);
+  s:= StringReplace(Line, #160, '', [rfReplaceAll]);
+  Writeln(s);
 end;
 
 procedure TOutputStdOut.Hint(const Line: string; Params: array of const);
