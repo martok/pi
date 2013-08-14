@@ -94,7 +94,7 @@ function DimensionFromString(const Value: Number; Const Uni: String): IValueDime
 implementation
 
 uses
-  SysUtils, StrUtils, uCIntegerBucketList, uMathConstants;
+  SysUtils, StrUtils, uCIntegerBucketList, uMathConstants, uFPUSupport;
 
 type
   TDefinedUnit = record
@@ -626,9 +626,9 @@ var
   ud: IValueDimension;
 begin
   if B.Represents(IValueDimension, ud) then
-    Result:= TValueDimension.Create(DivideNumber(FSIValue, ud.Value), MultDimensions(FUnits, InverseDimensions(ud.Units)))
+    Result:= TValueDimension.Create(fdiv(FSIValue, ud.Value), MultDimensions(FUnits, InverseDimensions(ud.Units)))
   else if B.Represents(IValueNumber, nd) then
-    Result:= TValueDimension.Create(DivideNumber(FSIValue, nd.Value), FUnits)
+    Result:= TValueDimension.Create(fdiv(FSIValue, nd.Value), FUnits)
   else
     raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
 end;
@@ -653,7 +653,7 @@ end;
 
 function TValueDimension.OpPower(const B: Number): IExpression;
 begin
-  if IsZero(frac(b)) then
+  if fzero(frac(b)) then
     Result:= TValueDimension.Create(IntPower(FSIValue, trunc(b)), PowerDimensions(FUnits, trunc(b)))
   else
     raise EMathDimensionError.Create('Exponent has to be a whole number');
@@ -661,7 +661,7 @@ end;
 
 function TValueDimension.OpRoot(const B: Number): IExpression;
 begin
-  if IsZero(frac(B)) then
+  if fzero(frac(B)) then
     Result:= TValueDimension.Create(Math.Power(FSIValue, 1 / B), RootDimensions(FUnits, trunc(B)))
   else
     raise EMathDimensionError.Create('Root has to be a whole number');

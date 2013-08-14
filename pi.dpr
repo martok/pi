@@ -20,7 +20,8 @@ uses
   uMathOutputStdout in 'uMathOutputStdout.pas',
   uMathDimensions in 'uMathDimensions.pas',
   uCIntegerBucketList in 'uCIntegerBucketList.pas',
-  uMathSelfTests in 'uMathSelfTests.pas';
+  uMathSelfTests in 'uMathSelfTests.pas',
+  uFPUSupport in 'uFPUSupport.pas';
 
 {$R *.res}
 

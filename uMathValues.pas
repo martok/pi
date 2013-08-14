@@ -3,7 +3,7 @@ unit uMathValues;
 interface
 
 uses
-  SysUtils, Math, uMath, uMathIntf;
+  SysUtils, Math, uMath, uMathIntf, uFPUSupport;
 
 type
   TE_Atom = class(TExpression, IExpressionAtom)
@@ -100,8 +100,6 @@ function EvaluateToNumber(Context: IContext; ex: IExpression; out n: Number): Bo
 function EvaluateToNumber(Context: IContext; ex: IExpression): Number; overload;
 function EvaluateToString(Context: IContext; ex: IExpression; out s: string): Boolean; overload;
 function EvaluateToString(Context: IContext; ex: IExpression): String; overload;
-function DivideNumber(a, d: Number): Number;
-
 
 implementation
 
@@ -183,21 +181,6 @@ function EvaluateToString(Context: IContext; ex: IExpression): String;
 begin
   Result:= CastToString(ex.Evaluate(Context));
 end;
-
-function DivideNumber(a, d: Number): Number;
-begin
-  Result:= 0;
-  if IsZero(d) then begin
-    if IsZero(a) then
-      Result:= NaN
-    else if a < 0 then
-      Result:= NegInfinity
-    else if a > 0 then
-      Result:= Infinity;
-  end else
-    Result:= a / d;
-end;
-
 
 { TE_Atom }
 
@@ -301,9 +284,9 @@ var
   nd: IValueNumber;
 begin
   if B.Represents(IValueDimension, ud) then
-    Result:= TValueDimension.Create(DivideNumber(FValue, ud.Value), InverseDimensions(ud.Units))
+    Result:= TValueDimension.Create(fdiv(FValue, ud.Value), InverseDimensions(ud.Units))
   else if B.Represents(IValueNumber, nd) then
-    Result:= TValueNumber.Create(DivideNumber(FValue, nd.Value))
+    Result:= TValueNumber.Create(fdiv(FValue, nd.Value))
   else
     raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
 end;
@@ -328,7 +311,7 @@ end;
 
 function TValueNumber.OpPower(const B: Number): IExpression;
 begin
-  Result:= TValueNumber.Create(Power(FValue, b));
+  Result:= TValueNumber.Create(fpower(FValue, b));
 end;
 
 function TValueNumber.OpRoot(const B: Number): IExpression;

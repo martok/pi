@@ -2,7 +2,7 @@ unit uFunctions;
 
 interface
 
-uses SysUtils, Classes, uMathIntf, uMath, uMathValues;
+uses SysUtils, Classes, uMathIntf, uMath, uMathValues, uFPUSupport, uMathConstants;
 
 type
   TPackageTrig = class(TFunctionPackage)
@@ -62,6 +62,7 @@ type
     function h_1(Context: IContext; args: TExprList): IExpression;
     function b_1(Context: IContext; args: TExprList): IExpression;
     function o_1(Context: IContext; args: TExprList): IExpression;
+    function exthex_1(Context: IContext; args: TExprList): IExpression;
 
     function GCD_2(Context: IContext; args: TExprList): IExpression;
     function LCM_2(Context: IContext; args: TExprList): IExpression;
@@ -210,7 +211,7 @@ end;
 function TPackageElementary.LogPossible(Val: Number; var FailVal: IExpression): boolean;
 begin
   Result:= false;
-  if IsZero(Val) then
+  if fzero(Val) then
     FailVal:= TValueNumber.Create(NegInfinity)
   else if Val < 0 then
     FailVal:= TValueNumber.Create(NaN)
@@ -267,7 +268,7 @@ var
   op: IOperationPower;
 begin
   x:= EvaluateToNumber(Context, args[0]);
-  if IsZero(x) then begin
+  if fzero(x) then begin
     Result:= TValueNumber.Create(NaN);
     exit;
   end;
@@ -298,10 +299,12 @@ begin
   n:= EvaluateToNumber(Context, args[0]);
   if IsZero(n) then
     m:= 0
-  else if n>0 then
+  if n>0 then
     m:= 1.0
+  else if n<0 then
+    m:= -1.0
   else
-    m:= -1.0;
+    m:= 0.0;
   Result:= TValueNumber.Create(m);
 end;
 
@@ -310,7 +313,7 @@ var
   n, m: Number;
 begin
   n:= EvaluateToNumber(Context, args[0]);
-  if IsZero(n) or (n>0) then
+  if fzero(n) or (n>0) then
     m:= 1.0
   else
     m:= 0;
@@ -527,6 +530,27 @@ begin
     Result:= Base_atoi(8, s) as IExpression
   else if v.Represents(IValueNumber, n) then
     Result:= Base_itoa(8, n) as IExpression
+  else
+    Result:= v;
+end;
+
+function TPackageNumerical.exthex_1(Context: IContext; args: TExprList): IExpression;
+var
+  a: TExtRec;
+var
+  v: IExpression;
+  s: IValueString;
+  n: IValueNumber;
+begin
+  v:= args[0].Evaluate(Context);
+  if v.Represents(IValueString, s) then  begin
+    a.xp:= StrToInt('$' + copy(s.Value, 1, 4));
+    a.m:= StrToInt64('$' + copy(s.Value, 5, 16));
+    Result:= TValueNumber.Create(a.e);
+  end else if v.Represents(IValueNumber, n) then begin
+    a.e:= n.Value;
+    Result:= TValueString.Create(IntToHex(a.xp,4) + IntToHex(a.m,16))
+  end
   else
     Result:= v;
 end;

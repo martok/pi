@@ -27,7 +27,7 @@ type
 implementation
 
 uses
-  Math, uMathValues;
+  Math, uMathValues, uFPUSupport;
 
 function fac(const X: Int64): Int64;
 var
@@ -42,7 +42,7 @@ function erf(const X: Number): Number;
 //  Abramowitz & Stegun, Handbook of Mathematical Functions
 //  maximum error: 3E-7
 begin
-  if IsZero(X) then
+  if fzero(X) then
     Result:= 0
   else
   if X >=0 then begin

@@ -2,7 +2,8 @@ unit uFunctionsGraphing;
 
 interface
 
-uses SysUtils, Classes, Graphics, uMathIntf, uMathValues, uMath;
+uses SysUtils, Classes, Graphics, uMathIntf, uMathValues, uMath,
+  uFPUSupport;
 
 type
   TPlotRange = record
@@ -21,10 +22,10 @@ type
     function GetCaption: string;
   protected
     procedure PlotOptions(D: TDynamicArguments); virtual;
-    function Clone(Deep: Boolean): IExpression; override;
   public
     constructor Create;
     destructor Destroy; override;
+    function Clone(Deep: Boolean): IExpression; override;
     function GetRange: TPlotRange; virtual; abstract;
     function GetLegend: string; virtual; abstract;
     property Context: IContext read FContext;
@@ -242,14 +243,14 @@ begin
   end;
 
   if gr.XScale = smLog then begin
-    if (gr.XMin <= 0) or IsZero(gr.XMin) then begin
+    if (gr.XMin <= 0) or fzero(gr.XMin) then begin
       gr.XMin:= 2000E-19;
       Context.Output.Hint('XRange Minimum %.3f <= 0, autocorrecting.', [gr.YMin]);
     end;
   end;
 
   if gr.YScale = smLog then begin
-    if (gr.YMin <= 0) or IsZero(gr.YMin) then begin
+    if (gr.YMin <= 0) or fzero(gr.YMin) then begin
       gr.YMin:= 2000E-19;
       Context.Output.Hint('YRange Minimum %.3f <= 0, autocorrecting.', [gr.YMin]);
     end;
@@ -347,7 +348,7 @@ begin
   ma:= NegInfinity;
   x:= FMin;
   dx:= (FMax-FMin)/(SAMPLES-1);
-  while (x < FMax) or IsZero(x-FMax) do begin
+  while (x < FMax) or fzero(x-FMax) do begin
     n:= ValueAt(x);
     if not IsNan(n) then begin
       if n > ma then ma:= n;

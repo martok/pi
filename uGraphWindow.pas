@@ -4,7 +4,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
-  Dialogs, uFunctionsGraphing, uMath, uMathIntf, uMathValues, Menus, ExtDlgs;
+  Dialogs, uFunctionsGraphing, uMath, uMathIntf, uMathValues, Menus, ExtDlgs,
+  uFPUSupport;
 
 type
   TScaleMode = (smLin, smLog);
@@ -178,7 +179,7 @@ var
   sp: Number;
 begin
   sp:= FMaxVal - FMinVal;
-  if IsZero(sp) then
+  if fzero(sp) then
     sp:= 1;
   Fact:= (FFrameMax - FFrameMin) / sp;
 end;
@@ -202,7 +203,7 @@ end;
 
 function TLogScale.Scale(Value: Number): integer;
 begin
-  if (Value < 0) or IsZero(Value) then
+  if (Value < 0) or fzero(Value) then
     Result:= MaxInt
   else
     Result:= round((Log10(Value) - Log10(FMinVal)) * Fact + FFrameMin);
@@ -358,7 +359,7 @@ var
       ts: TSize;
       w: integer;
     begin
-      if not IsZero(Value) then begin
+      if not fzero(Value) then begin
         if Hor then
           l:= ax.AxisLabel(Value)
         else
@@ -387,7 +388,7 @@ var
     var
       w: integer;
     begin
-      if not IsZero(Value) then begin
+      if not fzero(Value) then begin
         if Main then
           LabelAxis(Hor, Value);
 
@@ -455,7 +456,7 @@ var
         end;
 
         a:= a + subdiv;
-        while (a < b) and not IsZero(a-b) and (a < Max+subdiv/10) do begin
+        while (a < b) and not fzero(a-b) and (a < Max+subdiv/10) do begin
           if (a > Min-subdiv/10) then
             TickMark(TickH,a,false);
           a:= a + subdiv;
@@ -507,7 +508,7 @@ var
     for x:= ax.FFrameMin to ax.FFrameMax - 1 do begin
       a:= ax.Inverse(x);
       n:= ob.ValueAt(a);
-      if ((ay is TLogScale) and ((n <= 0) or IsZero(n))) or
+      if ((ay is TLogScale) and ((n <= 0) or fzero(n))) or
         (IsNan(n)) or
         (IsInfinite(n)) or
         ((abs((n - nprev + 1E-17) / (a - aprev + 1E-17)) > 1E5)) then
@@ -534,11 +535,11 @@ var
       tup:= ob.List.Item[j] as IValueList;
       x:= CastToNumber(tup.Item[0]);
       if IsNan(x) then continue;
-      if ((ax is TLogScale) and ((x <= 0) or IsZero(x))) then
+      if ((ax is TLogScale) and ((x <= 0) or fzero(x))) then
         continue;
       y:= CastToNumber(tup.Item[1]);
       if IsNan(y) then continue;
-      if ((ay is TLogScale) and ((y <= 0) or IsZero(y))) then
+      if ((ay is TLogScale) and ((y <= 0) or fzero(y))) then
         continue;
       Canvas.Brush.Color:= ob.Color;
       Canvas.Pen.Width:= 1;
@@ -565,11 +566,11 @@ var
       tup:= ob.List.Item[indx] as IValueList;
       x:= CastToNumber(tup.Item[0]);
       if IsNan(x) then exit;
-      if ((ax is TLogScale) and ((x <= 0) or IsZero(x))) then
+      if ((ax is TLogScale) and ((x <= 0) or fzero(x))) then
         exit;
       y:= CastToNumber(tup.Item[1]);
       if IsNan(y) then exit;
-      if ((ay is TLogScale) and ((y <= 0) or IsZero(y))) then
+      if ((ay is TLogScale) and ((y <= 0) or fzero(y))) then
         exit;
       Result:= true;
     end;

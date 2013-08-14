@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, IniFiles, Windows, Contnrs,
-  uMathIntf, Math;
+  uMathIntf, Math, uFPUSupport;
 
 type
   TFunctionPackage = class;
@@ -1356,17 +1356,24 @@ end;
 
 function TPackageAlgebra._mod_2(Context: IContext; Args: TExprList): IExpression;
 var
-  a,b,c,f: Number;
+  a,b,f: Number;
 begin
   if EvaluateToNumber(Context, Args[0], a) and
      EvaluateToNumber(Context, Args[1], b) then begin
-    c:= a / b;
-    if c > 1000000 then begin
-      c:= Int(c);
-      f:= a - b * c;
-    end else
-      f:= frac(c) * b;
-    Result:= TValueNumber.Create(f);
+    if b > a then
+      Result:= TValueNumber.Create(a)
+    else
+    if fzero(a) then
+      Result:= TValueNumber.Create(0.0)
+    else begin
+      if fzero((a/b) - ((a-1)/b)) or
+         fzero(((a+1)/b) - (a/b)) then
+        Context.Output.Hint('Mod: result is not exact.',[]);
+//      f:= a - Int(a / b) * b;
+//      f:= frac(a / b) * b;
+      f:= fmod(a, b);
+      Result:= TValueNumber.Create(f);
+    end;
   end
   else
     raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);

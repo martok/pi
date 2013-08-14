@@ -14,9 +14,11 @@ type
     procedure EndGroup;
     procedure Expect(Condition: Boolean; FailMessage: string; SuccessMessage: string='Success');
     procedure ExpectEqual(A, Ref: Variant);
+    procedure ExpectZero(A: Number);
   protected
-    procedure TestParser;     
-    procedure TestDatatypes;  
+    procedure TestParser;
+    procedure TestDatatypes;
+    procedure TestOperations;
     procedure TestFunctions;
     function ExprString(e: IExpression): String;
     function EvalNum(Expr: String): Number;
@@ -29,7 +31,7 @@ type
 implementation
 
 uses
-  Windows, Math, uMathValues, uMathConstants;
+  Windows, Math, uMathValues, uMathConstants, uFPUSupport;
 
 { TMathSysTest }
 
@@ -74,6 +76,11 @@ begin
                'found   : '+String(A))
 end;
 
+procedure TMathSysTest.ExpectZero(A: Number);
+begin
+  Expect(fzero(a),'Expected 0, found   : '+NumberToStr(a,NeutralFormatSettings,false));
+end;
+
 procedure TMathSysTest.Run;
 var
   pc1,pc2,pf: Int64;
@@ -85,7 +92,8 @@ begin
   BeginGroup('Running MathSystem Tests');
   try
     TestParser;
-    TestDatatypes;
+    TestDatatypes;  
+    TestOperations;
     TestFunctions;
   finally
     EndGroup;
@@ -211,7 +219,7 @@ begin
   try
     BeginGroup('Num->Num');
       n:= TValueNumber.Create(42);
-      Expect(IsZero(n.Value - 42),'42!=42');
+      Expect(fzero(n.Value - 42),'42!=42');
       EndGroup;
     BeginGroup('Num->Str');
       n:= TValueNumber.Create(42);
@@ -224,7 +232,7 @@ begin
     BeginGroup('NumStr->Num'); 
       e:= Sys.Evaluate(Sys.Parse('123'));
       Expect(e.Represents(IValueNumber, n),'Cannot cast Result to IValueNumber');
-      Expect(IsZero(n.Value - 123),'"123"!=123');
+      Expect(fzero(n.Value - 123),'"123"!=123');
       EndGroup;
     BeginGroup('HiP->Str');
       n:= TValueNumber.Create(uMathConstants.cPi);
@@ -233,7 +241,44 @@ begin
     BeginGroup('Str->HiP');
       e:= Sys.Evaluate(Sys.Parse('3.1415926535897932384626433832795'));
       Expect(e.Represents(IValueNumber, n),'Cannot cast Result to IValueNumber');
-      Expect(IsZero(n.Value - uMathConstants.cPi),'"pi"!=pi');
+      Expect(fzero(n.Value - uMathConstants.cPi),'"pi"!=pi');
+      EndGroup;
+  finally
+    EndGroup;
+  end;
+end;
+
+procedure TMathSysTest.TestOperations;
+begin
+  BeginGroup('Arithmetic Operations');
+  try
+    BeginGroup('Numeric');
+      BeginGroup('Add');
+        ExpectEqual(EvalNum('1+1'),2);
+        ExpectEqual(EvalNum('pi+pi'),cTau);
+        EndGroup;
+      BeginGroup('Sub');
+        ExpectZero(EvalNum('1-1'));
+        ExpectEqual(EvalNum('123456789012345678-1'),123456789012345677);
+        ExpectZero(EvalNum('pi-pi'));
+        EndGroup;
+      BeginGroup('Mul');
+        ExpectEqual(EvalNum('2*pi'),cTau);  
+     //   ExpectZero(EvalNum('(1/0)*0'));
+        EndGroup;
+      BeginGroup('Div');
+        ExpectEqual(EvalNum('1/0'),Infinity);
+        ExpectEqual(EvalNum('(-1)/0'),NegInfinity);
+        Expect(IsNan(EvalNum('0/0')),'Failed');
+        EndGroup;
+      BeginGroup('Mod');
+        ExpectEqual(EvalNum('23%5'),3);
+        ExpectEqual(EvalNum('-23%5'),-3);
+        ExpectEqual(EvalNum('356458567243513653%5'),3);
+        ExpectEqual(EvalNum('356458567243513653%15'),3);
+        ExpectEqual(EvalNum('35645856724351365347%5'),2);
+        ExpectEqual(EvalNum('35645856724351365347%15'),2);
+        EndGroup;
       EndGroup;
   finally
     EndGroup;
@@ -268,8 +313,7 @@ begin
         EndGroup;
       BeginGroup('Fac');
         ExpectEqual(EvalNum('fac(8)'),40320);
-        EndGroup;
-      EndGroup;
+        EndGroup;   
     BeginGroup('Geometric');
       BeginGroup('deg2rad');
         ExpectEqual(EvalNum('deg2rad(90)'),cPi/2);
@@ -279,14 +323,14 @@ begin
         EndGroup;
       BeginGroup('Sin');
         ExpectEqual(EvalNum('sin(pi/2)'),1);
-        ExpectEqual(EvalNum('sin(0)'),0);
+        ExpectZero(EvalNum('sin(0)'));
         EndGroup;
       BeginGroup('Cos');
-        Expect(IsZero(EvalNum('cos(pi/2)')),'Failed');
+        ExpectZero(EvalNum('cos(pi/2)'));
         ExpectEqual(EvalNum('cos(0)'),1);
         EndGroup;
       BeginGroup('Tan');
-        ExpectEqual(EvalNum('tan(deg2rad(80))'), 5.671281819617709530994418439864);   
+        ExpectEqual(EvalNum('tan(deg2rad(80))'), 5.671281819617709530994418439864);
         ExpectEqual(EvalNum('tan(pi/4)'),1.0);
         ExpectEqual(EvalNum('tan(0)'),0);
         EndGroup;
