@@ -173,7 +173,7 @@ end;
 
 function TPackageTrig.Sinh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(Sinh(EvaluateToNumber(Context, args[0])));
+  Result:= TValueNumber.Create(fSinh(EvaluateToNumber(Context, args[0])));
 end;
 
 function TPackageTrig.Cosh_1(Context: IContext; args: TExprList): IExpression;
@@ -183,7 +183,7 @@ end;
 
 function TPackageTrig.Tanh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(Tanh(EvaluateToNumber(Context, args[0])));
+  Result:= TValueNumber.Create(fTanh(EvaluateToNumber(Context, args[0])));
 end;
 
 function TPackageTrig.ArSinh_1(Context: IContext; args: TExprList): IExpression;

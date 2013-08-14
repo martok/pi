@@ -18,6 +18,10 @@ function fmod(x, y: Extended): Extended;
 function fdiv(x, y: Extended): Extended;
 function fpower(x, y: Extended): Extended;
 
+function fSinh(const X: Extended): Extended;
+function fTanh(const X: Extended): Extended;
+
+
 function fzero(x: Extended): boolean;
 function finf(x: Extended): boolean;
 function ftruncable(x: Extended): boolean;
@@ -48,6 +52,8 @@ const
   //normal numbers closest to 0, "predecessor" and "successor" of 0 in representable numbers 
   FPU_HEX_PRED0: TExtRec = (m: $4000000000000000; xp:$8000); //-2^-16383
   FPU_HEX_SUCC0: TExtRec = (m: $4000000000000000; xp:$0000); // 2^-16383
+
+  FPU_EXP2: Extended = 7.38905609893065022723042746058; // Exp(2)
 
 var
   FPU_PRED0: Extended absolute FPU_HEX_PRED0;
@@ -134,7 +140,40 @@ begin
       else
         Result := Math.IntPower(x, Trunc(y));
     end else
-      Result := Exp(y * Ln(x))
+      Result := Exp(y * Ln(x));
+  end;
+end;
+
+{
+  Compute SinH
+  Return:       Sinh(x), accurate even close to 0
+}
+function fSinh(const X: Extended): Extended;
+begin
+  if IsZero(X) then
+    Result := X
+  else
+    Result := (Exp(X) - Exp(-X)) / 2;
+end;
+
+{
+  Compute Tanh
+  Return:       Tanh(x), accurate even close to 0 and for large x
+}
+function fTanh(const X: Extended): Extended;
+var
+  t: extended;
+begin
+  if IsZero(X) then
+    Result := X
+  else begin
+    // largest argument that yields fpower() < MaxExtended : loga(e^2, MaxExtended) ~= 5678.22
+    // however: |X| > 22 yields +-1 anyway, since 2/(1+t) < eps_x
+    if Abs(X) < 5678 then begin
+      t:= fpower(FPU_EXP2, x);       // e^2x = (e^2)^x
+      Result := 1 - 2 / (1 + t);
+    end else
+      Result:= Sign(x);
   end;
 end;
 
@@ -179,7 +218,7 @@ asm
   fstcw fpucw                     // retrieve current CW
   mov ax, fpucw
   mov Result, ax
-  or Result, FPU_MASK_ALL         // return old exception mask
+  and Result, FPU_MASK_ALL         // return old exception mask
   and ax, FPU_MASK_NONE           // compute new CW
   or ax, aMask
   mov fpucw, ax
