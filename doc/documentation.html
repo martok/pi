@@ -460,7 +460,12 @@
             <li class="function" id="function-numerical-fac"><a class="function-link" href="#function-numerical-fac">#</a><code>Fac(<i>number</i>)</code><br><p>
                   			Fakultät
                   		
-               </p>
+               </p><span class="function-options">Optionen:</span><dl class="function-options">
+                  <dt>approximate = *undefined*</dt>
+                  <dd>
+                     <p>Stirling-Approximation erzwingen, sonst nur für große Argumente</p>
+                  </dd>
+               </dl>
             </li>
             <li class="function" id="function-numerical-binomial"><a class="function-link" href="#function-numerical-binomial">#</a><code>Binomial(<i>n</i>, <i>k</i>)</code><br><p>
                   			Binomialkoeffizient <code>(
@@ -500,6 +505,11 @@
             </li>
             <li class="function" id="function-numerical-o"><a class="function-link" href="#function-numerical-o">#</a><code>o(<i>string</i> OR <i>number</i>)</code><br><p>
                   			Konvertiert aus/in String-Darstellung in Basis 8.
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-numerical-exthex"><a class="function-link" href="#function-numerical-exthex">#</a><code>exthex(<i>string</i> OR <i>number</i>)</code><br><p>
+                  			Konvertiert aus/in Speicher-Darstellung von Number (80-bit Extended) in Basis 16.
                   		
                </p>
             </li>

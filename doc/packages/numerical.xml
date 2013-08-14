@@ -48,6 +48,11 @@
 		<description>
 			Fakultät
 		</description>
+		<options>
+			<option name="approximate" default="*undefined*">
+				<description>Stirling-Approximation erzwingen, sonst nur für große Argumente</description>
+			</option>
+		</options>
 	</function>
 	<function name="Binomial">
 		<syntax>Binomial(<v>n</v>, <v>k</v>)</syntax>
@@ -89,6 +94,12 @@
 		<syntax>o(<v>string</v> OR <v>number</v>)</syntax>
 		<description>
 			Konvertiert aus/in String-Darstellung in Basis 8.
+		</description>
+	</function>
+	<function name="exthex">
+		<syntax>exthex(<v>string</v> OR <v>number</v>)</syntax>
+		<description>
+			Konvertiert aus/in Speicher-Darstellung von Number (80-bit Extended) in Basis 16.
 		</description>
 	</function>
 	<function name="GCD">

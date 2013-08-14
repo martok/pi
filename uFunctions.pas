@@ -52,7 +52,7 @@ type
     function Trunc_1(Context: IContext; args: TExprList): IExpression;
     function Ceil_1(Context: IContext; args: TExprList): IExpression;
     function Floor_1(Context: IContext; args: TExprList): IExpression;
-    function Fac_1(Context: IContext; args: TExprList): IExpression;
+    function Fac_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
     function Binomial_2(Context: IContext; args: TExprList): IExpression;
     function Permutations_2(Context: IContext; args: TExprList): IExpression;
 
@@ -297,8 +297,6 @@ var
   n, m: Number;
 begin
   n:= EvaluateToNumber(Context, args[0]);
-  if IsZero(n) then
-    m:= 0
   if n>0 then
     m:= 1.0
   else if n<0 then
@@ -357,16 +355,24 @@ begin
 end;
 
 
-function TPackageNumerical.Fac_1(Context: IContext; args: TExprList): IExpression;
+function TPackageNumerical.Fac_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+const
+  SQRT_2PI: Number = 2.506628274631000502415765;   // sqrt(2*Pi)
 var
-  accu: Number;
+  accu, p: Number;
   desiredFact: Int64;
 begin
-  accu:= 1;
-  desiredFact:= trunc(EvaluateToNumber(Context, args[0]));
-  while desiredFact >= 2 do begin
-    accu:= accu * desiredFact;
-    Dec(desiredFact);
+  p:= EvaluateToNumber(Context, args[0]);
+  if ftruncable(p) and not Options.IsSet('Approximate') then begin
+    accu:= 1;
+    desiredFact:= trunc(p);
+    while desiredFact >= 2 do begin
+      accu:= accu * desiredFact;
+      Dec(desiredFact);
+    end;
+  end else begin
+    accu:= SQRT_2PI * fpower(p, 0.5) * fPower(p/cE, p);
+    Context.Output.Hint('Fac: Using Stirling''s approximation.',[]);
   end;
   Result:= TValueNumber.Create(accu);
 end;
