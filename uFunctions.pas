@@ -708,7 +708,7 @@ begin
 
   ctx:= TContext.Create(Context);
   try
-    TContext(ctx.NativeObject).Silent:= true;
+    ctx.SetSilent(true);
     res:= TValueList.Create;
     res.Length:= list.Length;
     n:= v.Name;
@@ -784,7 +784,7 @@ begin
 
   ctx:= TContext.Create(Context);
   try
-    TContext(ctx.NativeObject).Silent:= true;
+    ctx.SetSilent(true);
     ctx.Define(TE_SymbolRef(agg.NativeObject).Name, init.Evaluate(ctx));
 
     for i:= 0 to list.length - 1 do begin
@@ -1167,7 +1167,7 @@ begin
       sortList.Capacity:= list.Length;
       ctx:= TContext.Create(Context);
       try
-        TContext(ctx.NativeObject).Silent:= true;
+        ctx.SetSilent(true);
         for i:= 0 to list.length - 1 do begin
           sle:= TSortByListElement.Create;
           try

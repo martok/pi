@@ -340,7 +340,7 @@ const
 var
   mi, ma, n, x, dx: Number;
 begin
-  TContext(FContext.NativeObject).Silent:= true;
+  FContext.SetSilent(true);
 
   FCacheRange.XMin:= FMin;
   FCacheRange.XMax:= FMax;

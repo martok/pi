@@ -8,6 +8,7 @@ uses
 
 type
   TFunctionPackage = class;
+  TContext = class;
 
   TOperatorOptions = set of (ooUnary, ooUnparsed, ooFlat, ooUnpackInArguments, ooHoldPackedArguments);
   TMathSystem  = class(TIntfNoRefCount, IMathSystem)
@@ -41,12 +42,28 @@ type
     procedure Run(const Expr: String);
   end;
 
+  TContextWrappedOutput = class(TInterfacedObject, IOutputProvider)
+  private
+    FOutput: IOutputProvider;
+    FContext: TContext;
+  public
+    constructor Create(const Wrap: IOutputProvider; const Context: TContext);
+    destructor Destroy; override;
+    // IOutputProvider
+    procedure Input(const Line: string);
+    procedure Hint(const Line: string; Params: array of const);
+    procedure Error(const Line: string; Params: array of const);
+    procedure Result(const Line: string);
+    procedure Clear;
+  end;
+
   TContext = class(TInterfacedObject, IContext)
   private
     FExpressions: THashedStringList;
     FParent: IContext;
     FSystem: TMathSystem;
     FSilent: boolean;
+    FOutWrap: IOutputProvider;
     FContextName: string;
     function GetCount: integer;
     function GetName(index: integer): string;
@@ -60,7 +77,6 @@ type
     function Bake: TContext;
     property System: TMathSystem read FSystem;
     property ContextName: string read FContextName write FContextName;
-    property Silent: boolean read FSilent write FSilent;
 
     property Count: integer read GetCount;
     property Name[index: integer]: string read GetName;
@@ -70,7 +86,10 @@ type
     procedure Undefine(const Name: string);
     function Definition(const Name: string): IExpression;
     function Defines(const Name: string): boolean;
-    function Output: IOutputProvider;
+    function Output: IOutputProvider;           
+    function RawOutput: IOutputProvider;
+    procedure SetSilent(const Silent: Boolean);    
+    property Silent: boolean read FSilent write SetSilent;
   end;
 
 
@@ -930,6 +949,47 @@ begin
   setter.Evaluate(Context);
 end;
 
+{ TContextWrappedOutput }
+
+constructor TContextWrappedOutput.Create(const Wrap: IOutputProvider; const Context: TContext);
+begin
+  inherited Create;
+  FOutput:= Wrap;
+  FContext:= Context;
+end;
+
+destructor TContextWrappedOutput.Destroy;
+begin
+  FOutput:= nil;
+  inherited;
+end;
+
+procedure TContextWrappedOutput.Error(const Line: string; Params: array of const);
+begin
+  FOutput.Error(Line,Params);
+end;
+
+procedure TContextWrappedOutput.Hint(const Line: String; Params: array of Const);
+begin
+  if not FContext.Silent then
+    FOutput.Hint(Line,Params);
+end;
+
+procedure TContextWrappedOutput.Input(const Line: string);
+begin
+  FOutput.Input(Line);
+end;
+
+procedure TContextWrappedOutput.Result(const Line: string);
+begin
+  FOutput.Result(Line);
+end;
+
+procedure TContextWrappedOutput.Clear;
+begin
+  FOutput.Clear;
+end;
+
 { TContext }
 
 class function TContext.SystemFrom(const ref: IContext): TMathSystem;
@@ -944,6 +1004,7 @@ begin
   FParent:= AParent;
   FSystem:= ASystem;
   FSilent:= false;
+  FOutWrap:= TContextWrappedOutput.Create(FSystem.Output, Self);
 end;
 
 constructor TContext.Create(AParent: IContext);
@@ -1052,7 +1113,17 @@ end;
 
 function TContext.Output: IOutputProvider;
 begin
+  Result:= FOutWrap;
+end;
+
+function TContext.RawOutput: IOutputProvider;
+begin
   Result:= FSystem.Output;
+end;
+
+procedure TContext.SetSilent(const Silent: Boolean);
+begin
+  FSilent:= Silent;
 end;
 
 { TExpression }

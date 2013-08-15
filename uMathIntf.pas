@@ -28,7 +28,7 @@ type
   end;
 
 
-  IContext = interface['{AA415A3A-AA57-4361-8D23-95F9959CBA3B}']  
+  IContext = interface['{AA415A3A-AA57-4361-8D23-95F9959CBA3B}']
     function NativeObject: TObject;
 
     procedure Define(const Name: string; Expression: IExpression);
@@ -36,6 +36,8 @@ type
     function Definition(const Name: string): IExpression;
     function Defines(const Name: string): boolean;
     function Output: IOutputProvider;
+    function RawOutput: IOutputProvider;            
+    procedure SetSilent(const Silent: boolean);
   end;
 
   IExpression = interface['{56A7A015-3E85-483F-9EC5-4C3C0E232CA5}']
