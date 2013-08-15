@@ -63,6 +63,4 @@ begin
   Result:= args[0].Clone(true);
 end;
 
-
-
 end.

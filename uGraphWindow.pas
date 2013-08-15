@@ -135,13 +135,6 @@ begin
   Canvas.Polygon(Poly);
 end;
 
-function Floor64(const X: Extended): int64;
-begin
-  Result:= Trunc(X);
-  if Frac(X) < 0.0 then
-    Dec(Result);
-end;
-
 { TScale }
 
 function TScale.AxisLabel(p: Number): string;

@@ -25,6 +25,7 @@ function fTanh(const X: Extended): Extended;
 function fzero(x: Extended): boolean;
 function finf(x: Extended): boolean;
 function ftruncable(x: Extended): boolean;
+function Floor64(const X: Extended): int64;
 
 function fpu_maskexception(const aMask: Word): Word;
 procedure fpu_clearexc;
@@ -204,6 +205,17 @@ end;
 function ftruncable(x: Extended): boolean;
 begin
   Result:= (low(int64) <= x) and (x <= high(int64));
+end;
+
+{
+  Floor, but returning int64 instead of int
+  Return:       X rounded towards -INF
+}
+function Floor64(const X: Extended): int64;
+begin
+  Result:= Trunc(X);
+  if Frac(X) < 0.0 then
+    Dec(Result);
 end;
 
 {
