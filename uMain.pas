@@ -64,8 +64,8 @@ uses
   uFunctions, uFunctionsStatistics, uFunctionsGraphing, uFunctionsSymbolics, uMathDimensions;
 
 const
-  sProgramTitle = 'pi - Tiny Math Tool';
-  sProgramVersionStr = 'tau - Preview 1';
+  sProgramTitle = 'Pi Advanced Calculator';
+  sProgramVersionStr = 'V7';
 
 {$R *.dfm}
 
