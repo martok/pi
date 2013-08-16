@@ -1,3 +1,8 @@
+{-----------------------------------------------------------------------------
+ The TAU Math Kernel
+
+ Interface declaration for use with other modules.
+-----------------------------------------------------------------------------}
 unit uMathIntf;
 
 interface

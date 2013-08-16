@@ -1,3 +1,8 @@
+{-----------------------------------------------------------------------------
+ The TAU Math Kernel
+
+ Main class TMathSystem, expression primitives and internal packages.
+-----------------------------------------------------------------------------}
 unit uMath;
 
 interface

@@ -1,3 +1,8 @@
+{-----------------------------------------------------------------------------
+ Selftests for the kernel and several functions
+
+ NOT 100% coverage. Tests are added as needed.
+-----------------------------------------------------------------------------}
 unit uMathSelfTests;
 
 interface

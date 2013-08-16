@@ -1,3 +1,8 @@
+{-----------------------------------------------------------------------------
+ Extended precision related support routines
+
+ Contains code based off of work by Wolfgang Erhardt and others.
+-----------------------------------------------------------------------------}
 unit uFPUSupport;
 
 interface

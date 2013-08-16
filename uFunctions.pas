@@ -1,3 +1,10 @@
+{-----------------------------------------------------------------------------
+ Package: Trig
+ Package: Elementary
+ Package: Numerical
+ Package: Lists
+ Package: Data
+-----------------------------------------------------------------------------}
 unit uFunctions;
 
 interface

@@ -1,3 +1,6 @@
+{-----------------------------------------------------------------------------
+ Lookup table for constants supported via const() and constinfo()
+-----------------------------------------------------------------------------}
 unit uMathConstants;
 
 interface
@@ -33,7 +36,7 @@ const
     //Quelle dort: CODATA
     //Erweitert: Wolfram Research Mathematica, PhysicalConstants package (Auswahl)
     //Measurement
-    (LongName: 'AbsoluteZero'; Value: - 273.15; Uni: '°C'; Comment: 'for conversion purposes'),
+    (LongName: 'TriplePoint'; Value: 273.15; Uni: '°C'), // TP of water at standard pressure. Commonly known as 0°C, even if that's not correct since the last redefinition of the Celsius
     (LongName: 'AtomicUnit'; Value: 1.660539E-27; Uni: 'kg'),
     (LongName: 'SpeedOfLight'; Value: 2.99792458E8; Uni: 'm/s'),
     (LongName: 'SpeedOfSound'; Value: 343.051; Uni: 'm/s'),
