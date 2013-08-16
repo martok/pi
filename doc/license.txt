@@ -1,4 +1,4 @@
-This license applies to everything in this package, except where otherwise
+﻿This license applies to everything in this package, except where otherwise
 noted. Parts taken from other authors may be subject to their own licenses.
 
 

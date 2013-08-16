@@ -147,12 +147,6 @@
                				AssigmentDynamic. Weist der linken Seite <b>den Ausdruck</b> auf der rechten Seite zu
                			
             </li>
-            <li id="operator-arglist">
-               				<code>,</code>
-               				ArgList. Stellt sowohl Parameterlisten als auch verkette Ausdrücke dar.
-               					Ergebnis ist immer das Ergebnis des letzten Ausdrucks.
-               			
-            </li>
             <li id="operator-list">
                				<code>{ }</code>
                				List. Erzeugt eine Liste. Identisch zu <a href="#function-lists-l">L()</a>
@@ -234,6 +228,35 @@
             		oder in weiteren dynamischen Zuweisungen verwendet werden. Das ermöglicht es,
             		eine Funktion zu definieren und wiederholt für verschiedene Parameter
             		aufzurufen.
+         </p>
+         	
+      </div>
+      	
+      <h2>Einheiten</h2>
+      <div>
+         		
+         <p>Π unterstützt das Rechnen mit Einheiten direkt auf Ebene der algebraischen Funktionen.
+            		Dazu kann an einen Wert über den <a href="#operator-unit" shape="rect">Einheiten-Operator</a> <code>_</code> ein
+            		Einheitenstring angehängt werden. Dabei stehen mehrere Schreibweisen zur Verfügung:
+            Verwendung
+            		genau eines Bruchstrichs, Exponenten mit und ohne Potenzzeichen sowie Präfixe der
+            Basis 10 von yocto bis yotta.
+            		Diese können optional mit einem Doppelpunkt abgetrennt werden. Ist eine Auflösung
+            nicht eindeutig möglich,
+            		wird dieser zwingend erforderlich: <code>nmi</code>=Seemeilen, aber <code>n:mi</code>=Nano-Meilen
+         </p>
+         		
+         <p>Die Grundrechenarten sowie Wurzeln und Potenzen und einige weitere Funktionen beachten
+            Einheiten
+            		physikalisch korrekt. Jede andere Funktion wird einen dimensionierten Wert immer
+            so behandeln
+            		wie eine einfache Zahl mit dem Anzeigewert. <code>1_'km/h'</code> wird also wie 1 behandelt,
+            		obwohl der Grundwert in SI-Einheiten ungefähr <code>0.277 m/s</code> entsprechen würde.
+         </p>
+         		
+         <p>Der <code>_</code>-Operator ist als normaler Operator auch auf Variablen anwendbar, muss dann
+            		allerdings mit einem Leerzeichen abgetrennt werden. So kann man z.B. einfach Umrechnungen
+            durchführen.
          </p>
          	
       </div>
