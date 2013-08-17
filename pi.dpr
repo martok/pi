@@ -3,7 +3,7 @@ program pi;
 {$DEFINE USEFASTMM}
 
 uses
-  FastMM4,
+  {$IFDEF USEFASTMM}FastMM4,{$ENDIF}
   Forms,
   uMain in 'uMain.pas' {fmPiMain},
   uMath in 'uMath.pas',

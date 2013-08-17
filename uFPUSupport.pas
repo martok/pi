@@ -54,7 +54,7 @@ const
 
 
 
-  //NUMBER_EPSILON = 1E-18;
+  FPU_NUMBER_EPSILON = 1E-18;
   //normal numbers closest to 0, "predecessor" and "successor" of 0 in representable numbers 
   FPU_HEX_PRED0: TExtRec = (m: $4000000000000000; xp:$8000); //-2^-16383
   FPU_HEX_SUCC0: TExtRec = (m: $4000000000000000; xp:$0000); // 2^-16383

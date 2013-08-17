@@ -562,6 +562,30 @@
                   </dd>
                </dl>
             </li>
+            <li class="function" id="function-numerical-nd"><a class="function-link" href="#function-numerical-nd">#</a><code>ND(<i>expr</i>,<i>var</i>,<i>at</i>)</code><br><p>
+                  			Numerische Ableitung der Funktion <code>expr(var)</code> an der Stelle <code>var=at</code>
+                  		
+               </p><span class="function-options">Optionen:</span><dl class="function-options">
+                  <dt>Method = 'Direct'</dt>
+                  <dd>
+                     <p>Zu verwendende Methode. Immer zentrale Differenzenmethode, Koeffizienten einstellbar:</p>
+                     <table>
+                        <tr>
+                           <td class="option-value">'Direct'</td>
+                           <td>2 Punkte verwenden</td>
+                        </tr>
+                        <tr>
+                           <td class="option-value">'FivePointStencil'</td>
+                           <td>4 Punkte verwenden</td>
+                        </tr>
+                        <tr>
+                           <td class="option-value">'SixthOrder'</td>
+                           <td>6 Punkte verwenden</td>
+                        </tr>
+                     </table>
+                  </dd>
+               </dl>
+            </li>
          </ul>
          		
          <h3 id="package-lists">Package <code>Lists</code></h3>

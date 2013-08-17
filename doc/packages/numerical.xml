@@ -128,4 +128,18 @@
 			</option>
 		</options>
 	</function>
+	<function name="ND">
+		<syntax>ND(<v>expr</v>,<v>var</v>,<v>at</v>)</syntax>
+		<description>
+			Numerische Ableitung der Funktion <code>expr(var)</code> an der Stelle <code>var=at</code>
+		</description>
+		<options>
+			<option name="Method" default="'Direct'">
+				<description>Zu verwendende Methode. Immer zentrale Differenzenmethode, Koeffizienten einstellbar:</description>
+				<value value="'Direct'">2 Punkte verwenden</value>
+				<value value="'FivePointStencil'">4 Punkte verwenden</value>
+				<value value="'SixthOrder'">6 Punkte verwenden</value>
+			</option>
+		</options>
+	</function>
 </package>

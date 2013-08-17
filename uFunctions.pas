@@ -74,6 +74,8 @@ type
     function GCD_2(Context: IContext; args: TExprList): IExpression;
     function LCM_2(Context: IContext; args: TExprList): IExpression;
     function Fraction_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+
+    function ND_3_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
   end;
 
   TPackageLists = class(TFunctionPackage)
@@ -670,6 +672,92 @@ begin
     Result:= TValueList.CreateAs([TValueNumber.Create(w),TValueNumber.Create(Nom),TValueNumber.Create(den)])
   end else
     Result:= TValueList.CreateAs([TValueNumber.Create(Nom),TValueNumber.Create(den)]);
+end;
+
+
+function TPackageNumerical.ND_3_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+var
+  f: IExpression;
+  ev: ISymbolReference;
+  v: String;                        
+  opt_method: String;
+  c: IContext;
+  t,h,dr: Number;
+  r: array of array[0..1] of Number;
+
+  procedure Compute;
+  var
+    i: integer;
+  begin
+    for i:= 0 to high(r) do begin
+      c.Define(v, TValueNumber.Create(r[i, 0]));
+      r[i, 1]:= EvaluateToNumber(c, f);
+    end;
+  end;
+
+  function Method_Direct: Number;
+  begin
+    SetLength(r, 2);
+    r[0,0]:= t - h;
+    r[1,0]:= t + h;
+
+    Compute;
+
+    Result:= (r[1,1] - r[0,1]) / (r[1,0] - r[0,0]);
+  end;
+
+  function Method_FivePointStencil: Number;
+  begin
+    SetLength(r, 4);
+    r[0,0]:= t - 2*h;
+    r[1,0]:= t - h;
+    r[2,0]:= t + h;
+    r[3,0]:= t + 2*h;
+
+    Compute;
+
+    Result:= 1 / (12 * h) * (r[0,1] - 8*r[1,1] + 8*r[2,1] - r[3,1]);
+  end;
+
+  function Method_SixthOrder: Number;
+  begin
+    SetLength(r, 6);
+    r[0,0]:= t - 3*h;
+    r[1,0]:= t - 2*h;
+    r[2,0]:= t - h;
+    r[3,0]:= t + h;
+    r[4,0]:= t + 2*h;  
+    r[5,0]:= t + 3*h;
+                        
+    Compute;
+
+    Result:= 1 / (60 * h) * (-r[0,1] + 9*r[1,1] - 45*r[2,1] + 45*r[3,1] - 9*r[4,1] + r[5,1]);
+  end;
+
+begin
+  f:= args[0];
+  if not args[1].Represents(ISymbolReference, ev) then
+    raise EMathSysError.Create('Function ND requires a variable reference');
+  v:= ev.Name;
+  t:= EvaluateToNumber(Context, args[2]);
+  opt_method:= LowerCase(EvaluateToString(Context,Options.GetDefault('Method', TValueString.Create('Direct'))));
+
+  h:= Max(sqrt(FPU_NUMBER_EPSILON * abs(t)), FPU_SUCC0*10);
+  c:= TContext.Create(Context);
+  c.SetSilent(true);
+
+  if opt_method='direct' then
+    dr:= Method_Direct
+  else
+  if opt_method='fivepointstencil' then
+    dr:= Method_FivePointStencil
+  else
+  if opt_method='sixthorder' then
+    dr:= Method_SixthOrder
+  else
+    raise EMathSysError.CreateFmt('ND: unknown method specified: ''%s''',[opt_method]);
+
+  Result:= TValueNumber.Create(dr);
 end;
 
 
