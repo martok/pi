@@ -318,7 +318,8 @@ begin
         EndGroup;
       BeginGroup('Fac');
         ExpectEqual(EvalNum('fac(8)'),40320);
-        EndGroup;   
+        EndGroup;
+      EndGroup;
     BeginGroup('Geometric');
       BeginGroup('deg2rad');
         ExpectEqual(EvalNum('deg2rad(90)'),cPi/2);
