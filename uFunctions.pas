@@ -162,22 +162,22 @@ end;
 
 function TPackageTrig.ArcSin_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(ArcSin(EvaluateToNumber(Context, args[0])));
+  Result:= DimensionFromString(ArcSin(EvaluateToNumber(Context, args[0])), 'rad');
 end;
 
 function TPackageTrig.ArcCos_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(ArcCos(EvaluateToNumber(Context, args[0])));
+  Result:= DimensionFromString(ArcCos(EvaluateToNumber(Context, args[0])), 'rad');
 end;
 
 function TPackageTrig.ArcTan_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(ArcTan(EvaluateToNumber(Context, args[0])));
+  Result:= DimensionFromString(ArcTan(EvaluateToNumber(Context, args[0])), 'rad');
 end;
 
 function TPackageTrig.ArcTan_2(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(ArcTan2(EvaluateToNumber(Context, args[0]), EvaluateToNumber(Context, args[1])));
+  Result:= DimensionFromString(ArcTan2(EvaluateToNumber(Context, args[0]), EvaluateToNumber(Context, args[1])), 'rad');
 end;
 
 function TPackageTrig.Sinh_1(Context: IContext; args: TExprList): IExpression;
