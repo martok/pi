@@ -14,7 +14,8 @@ uses
   uFunctions in 'uFunctions.pas',
   uMathConstants in 'uMathConstants.pas',
   uFunctionsSymbolics in 'uFunctionsSymbolics.pas',
-  uFunctionsStatistics in 'uFunctionsStatistics.pas';
+  uFunctionsStatistics in 'uFunctionsStatistics.pas',
+  uMathDimensions in 'uMathDimensions.pas';
 
 function GetInput: string;
 var
@@ -43,6 +44,7 @@ begin
     mk.RegisterPackage(TPackageData.Create);
     mk.RegisterPackage(TPackageStatistics.Create);
     mk.RegisterPackage(TPackageSymbolics.Create);
+    mk.RegisterPackage(TPackageDimensions.Create);
     cmd:= GetInput;
     while cmd>'' do begin
       Writeln('');

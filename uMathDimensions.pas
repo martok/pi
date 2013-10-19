@@ -112,7 +112,7 @@ var
   UnitDimTable: array of TDefinedUnit;
 const
   // ATTENTION: the first element in this table needs to be the neutral element
-  DimPrefixTable: array[0..20] of TDefinedPrefix = (
+  DimPrefixTable: array[0..28] of TDefinedPrefix = (
     (Factor: 1   ; Symbol: ''; Name: ''),
     (Factor: 1e24; Symbol: 'Y'; Name: 'yotta'),
     (Factor: 1e21; Symbol: 'Z'; Name: 'zetta'),
@@ -133,7 +133,16 @@ const
     (Factor: 1e-15 ; Symbol: 'f'; Name: 'femto'),
     (Factor: 1e-18 ; Symbol: 'a'; Name: 'atto'),
     (Factor: 1e-21 ; Symbol: 'z'; Name: 'zepto'),
-    (Factor: 1e-24 ; Symbol: 'y'; Name: 'yocto')
+    (Factor: 1e-24 ; Symbol: 'y'; Name: 'yocto'),
+    
+    (Factor: Int64(1) shl 10 ; Symbol: 'Ki'; Name: 'Kibi'),
+    (Factor: Int64(1) shl 20 ; Symbol: 'Mi'; Name: 'Mebi'),
+    (Factor: Int64(1) shl 30 ; Symbol: 'Gi'; Name: 'Gibi'),
+    (Factor: Int64(1) shl 40 ; Symbol: 'Ti'; Name: 'Tebi'),
+    (Factor: Int64(1) shl 50 ; Symbol: 'Pi'; Name: 'Pebi'),
+    (Factor: Int64(1) shl 60 ; Symbol: 'Ei'; Name: 'Exbi'),
+    (Factor: Int64(1) shl 70 ; Symbol: 'Zi'; Name: 'Zebi'),
+    (Factor: Int64(1) shl 80 ; Symbol: 'Yi'; Name: 'Yobi')
   );
 
 
@@ -899,7 +908,7 @@ begin
 end;
 
 initialization
-  //                                                                   m, kg,  s,  K,mol,  A, cd,rad,
+  //                                                                   m, kg,  s,  K,mol,  A, cd,rad,bit
   //SI base
   DefineUnit(''       , ''                      , 1               , [  0,  0,  0,  0,  0,  0,  0]);
   DefineUnit('m'      , 'Meter'                 , 1               , [  1,  0,  0,  0,  0,  0,  0]);
@@ -978,5 +987,8 @@ initialization
   // Photometry
   DefineUnit('lm'     , 'lumen'                 , 1               , [  0,  0,  0,  0,  0,  0,  1, -2]);
   DefineUnit('lx'     , 'lux'                   , 1               , [ -2,  0,  0,  0,  0,  0,  1, -2]);
+  // Information Theory
+  DefineUnit('bit'    , 'Bit'                   , 1               , [  0,  0,  0,  0,  0,  0,  0,  0,  1]);
+  DefineUnit('B'      , 'Byte'                  , 8               , [  0,  0,  0,  0,  0,  0,  0,  0,  1]);
 end.
 
