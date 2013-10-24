@@ -969,12 +969,15 @@ initialization
   DefineUnit('R'      , 'Rankine'               , 1.8             , [  0,  0,  0,  1,  0,  0,  0]);
   // Substance
   DefineUnit('lb-mol' , 'pound - mole'          , 453.59237       , [  0,  0,  0,  0,  1,  0,  0]);
+  // Force
+  DefineUnit('dyn'    , 'Dyne'                  , 1e-5            , [  1,  1, -2,  0,  0,  0,  0]);
+  DefineUnit('lbf'    , 'Pound-force'           , 4.4482216152605 , [  1,  1, -2,  0,  0,  0,  0]);
   // Pressure
   DefineUnit('bar'    , 'Bar'                   , 1e5             , [ -1,  1, -2,  0,  0,  0,  0]);
   DefineUnit('atm'    , 'atmosphere'            , 1.01325e5       , [ -1,  1, -2,  0,  0,  0,  0]);
   DefineUnit('at'     , 'technical atm'         , 0.980665e5      , [ -1,  1, -2,  0,  0,  0,  0]);
   DefineUnit('Torr'   , 'Torr'                  , 133.322         , [ -1,  1, -2,  0,  0,  0,  0]);
-  DefineUnit('psi'    , 'pound per sq inch'     , 6.895e3         , [ -1,  1, -2,  0,  0,  0,  0]);
+  DefineUnit('psi'    , 'pound per sq inch'     , 6894.75729316836, [ -1,  1, -2,  0,  0,  0,  0]);
   DefineUnit('mmhg'   , 'mm mercury column'     , 133.3           , [ -1,  1, -2,  0,  0,  0,  0]);
   DefineUnit('mmwc'   , 'mm water column'       , 9.80665         , [ -1,  1, -2,  0,  0,  0,  0]);
   // Energy
