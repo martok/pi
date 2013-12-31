@@ -43,11 +43,13 @@ type
     function Output: IOutputProvider;
     function RawOutput: IOutputProvider;            
     procedure SetSilent(const Silent: boolean);
+    function Combine(const UseDefine: boolean): IExpression;
   end;
 
   IExpression = interface['{56A7A015-3E85-483F-9EC5-4C3C0E232CA5}']
     function NativeObject: TObject;
-    function Represents(const IID: TGUID; out Intf): boolean;
+    function Represents(const IID: TGUID; out Intf): boolean; overload;
+    function Represents(const IID: TGUID): boolean; overload;
     function IsClass(const Cls: TClass): boolean;
     procedure SetArgs(const aArgs: array of IExpression);
     function ArgCount: integer;
@@ -96,7 +98,10 @@ type
     property Name: string read GetName;
   end;
 
+  TAtomCompareResult = (crIncompatible, crSame, crEquivalent, crGreater, crSmaller, crDifferent);
   IExpressionAtom = interface(IExpression)['{EC6BC9B9-A248-4765-8F62-2BF378A869AB}']
+    // This is ... to/than B
+    function CompareTo(const B: IExpressionAtom): TAtomCompareResult;
   end;
 
   IValueUnassigned = interface(IExpressionAtom)['{3352D0C9-D960-43D5-A09A-5D5B4C97F663}']

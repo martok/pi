@@ -95,6 +95,7 @@ type
     function RawOutput: IOutputProvider;
     procedure SetSilent(const Silent: Boolean);    
     property Silent: boolean read FSilent write SetSilent;
+    function Combine(const UseDefine: boolean): IExpression;
   end;
 
 
@@ -111,7 +112,8 @@ type
     function NativeObject: TObject;
     function Evaluate(const Context: IContext): IExpression; virtual; abstract;
     function Clone(Deep: Boolean): IExpression; virtual; abstract;
-    function Represents(const IID: TGUID; out Intf): boolean;
+    function Represents(const IID: TGUID; out Intf): boolean; overload;
+    function Represents(const IID: TGUID): boolean; overload;
     function IsClass(const Cls: TClass): Boolean;
 
     procedure SetArgs(const aArgs: array of IExpression);
@@ -1131,6 +1133,27 @@ begin
   FSilent:= Silent;
 end;
 
+function TContext.Combine(const UseDefine: boolean): IExpression;
+var
+  ret: array of IExpression;
+  i: integer;
+  ass: IExpression;
+begin
+  SetLength(ret, Count);
+  for i:= 0 to Count-1 do begin
+    if UseDefine then
+      ass:= FSystem.Parse('a:=b')
+    else
+      ass:= FSystem.Parse('a=b');
+    ass.SetArgs([
+      TE_SymbolRef.Create(FExpressions[i]),
+      IExpression(Pointer(FExpressions.Objects[i]))
+    ]);
+    ret[i]:= ass;
+  end;
+  Result:= TValueList.CreateAs(ret);
+end;
+
 { TExpression }
 
 constructor TExpression.Create;
@@ -1162,6 +1185,11 @@ end;
 function TExpression.Represents(const IID: TGUID; out Intf): boolean;
 begin
   Result:= Supports(Self, IID, Intf);
+end;
+
+function TExpression.Represents(const IID: TGUID): boolean;
+begin
+  Result:= Supports(Self, IID);
 end;
 
 procedure TExpression.SetArgs(const aArgs: array of IExpression);
@@ -1902,7 +1930,6 @@ function TPackageCore.Hold_1(Context: IContext; args: TExprList): IExpression;
 begin
   Result:= args[0];
 end;
-
 
 function TPackageCore.AbsoluteTime_1(Context: IContext; args: TExprList): IExpression;
 var

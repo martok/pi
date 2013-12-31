@@ -105,6 +105,10 @@ HostApplication=
 Launcher=
 UseLauncher=0
 DebugCWD=
+[Language]
+ActiveLang=
+ProjectLang=
+RootDir=
 [Version Info]
 IncludeVerInfo=0
 AutoIncBuild=0
@@ -134,10 +138,9 @@ Comments=
 Count=1
 Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
 [HistoryLists\hlSearchPath]
-Count=3
-Item0=F:\Unit\Jedi\jcl\lib\D7\debug;F:\Unit\Jedi\jcl\jcl\lib\d7\debug
-Item1=$(DELPHI)\Lib\Debug;C:\Prg\Delphi7\Unit\Jedi\jcl\jcl\lib\d7\debug;F:\Unit\Jedi\jcl\lib\D7\debug;F:\Unit\Jedi\jcl\jcl\lib\d7\debug
-Item2=$(DELPHI)\Lib\Debug;F:\Unit\Jedi\jcl\lib\D7\debug;F:\Unit\Jedi\jcl\jcl\lib\d7\debug
+Count=2
+Item0=X:\Unit\DULib
+Item1=$(DELPHI)\Lib\Debug;F:\Unit\Jedi\jcl\lib\D7\debug;F:\Unit\Jedi\jcl\jcl\lib\d7\debug
 [HistoryLists\hlUnitOutputDirectory]
 Count=1
 Item0=.\bin\

@@ -13,4 +13,15 @@
 			Ausdruck zurück.
 		</description>
 	</function>
+	<function name="Match">
+		<syntax>Match(<v>expr</v>, <v>pattern</v>)</syntax>
+		<description>
+			Prüft ob <v>pattern</v> auf <v>expr</v> zutrifft und gibt eine Liste der möglichen Variablenzuordnungen oder NULL zurück.
+		</description>
+		<options>
+			<option name="vars" default="*undefined*">
+				<description>Liste von als Variable anzunehmender Bezeichner</description>
+			</option>
+		</options>
+	</function>
 </package>

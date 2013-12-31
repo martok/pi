@@ -12,17 +12,20 @@ type
   TE_Atom = class(TExpression, IExpressionAtom)
   public
     function Evaluate(const Context: IContext): IExpression; override;
+    function CompareTo(const B: IExpressionAtom): TAtomCompareResult; virtual;
   end;
 
   TValueUnassigned = class(TE_Atom, IValueUnassigned, IStringConvertible)
   public
     function Clone(Deep: Boolean): IExpression; override;
     function AsString(const Format: TStringFormat): String;
+    function CompareTo(const B: IExpressionAtom): TAtomCompareResult; override;
   end;
 
   TValueNull = class(TE_Atom, IValueNull, IStringConvertible)
     function Clone(Deep: Boolean): IExpression; override;
     function AsString(const Format: TStringFormat): String;
+    function CompareTo(const B: IExpressionAtom): TAtomCompareResult; override;
   end;
 
   TValueNumber = class(TE_Atom, IValueNumber, IStringConvertible, IOperationAddition, IOperationMultiplication, IOperationPower)
@@ -32,6 +35,7 @@ type
     constructor Create(const aVal: Number);
     // IExpression
     function Clone(Deep: Boolean): IExpression; override;
+    function CompareTo(const B: IExpressionAtom): TAtomCompareResult; override;
     // IValueNumber
     function Value: Number;
     // IStringConvertible
@@ -54,7 +58,8 @@ type
   public
     constructor Create(const aVal: String);
     // IExpression
-    function Clone(Deep: Boolean): IExpression; override;
+    function Clone(Deep: Boolean): IExpression; override;    
+    function CompareTo(const B: IExpressionAtom): TAtomCompareResult; override;
     // IValueString
     function Value: String;
     // IStringConvertible
@@ -70,6 +75,7 @@ type
     // IExpression
     function Evaluate(const Context: IContext): IExpression; override;
     function Clone(Deep: Boolean): IExpression; override;
+    function CompareTo(const B: IExpressionAtom): TAtomCompareResult; override;
     // IValueList
     function GetLength: Integer;
     procedure SetLength(const NewLength: Integer);
@@ -86,6 +92,7 @@ type
     constructor Create(Start, Step, Max: Number);
     // IExpression
     function Clone(Deep: Boolean): IExpression; override;
+    function CompareTo(const B: IExpressionAtom): TAtomCompareResult; override;
     // IValueList
     function GetLength: Integer;
     procedure SetLength(const NewLength: Integer);
@@ -192,6 +199,11 @@ begin
   Result:= Self;
 end;
 
+function TE_Atom.CompareTo(const B: IExpressionAtom): TAtomCompareResult;
+begin
+  Result:= crIncompatible;
+end;
+
 { TValueUnassigned }
 
 function TValueUnassigned.AsString(const Format: TStringFormat): String;
@@ -208,6 +220,14 @@ begin
   Result:= TValueUnassigned.Create;
 end;
 
+function TValueUnassigned.CompareTo(const B: IExpressionAtom): TAtomCompareResult;
+begin
+  if B.Represents(IValueUnassigned) then
+    Result:= crSame
+  else
+    Result:= inherited CompareTo(B);
+end;
+
 { TValueNull }
 
 function TValueNull.AsString(const Format: TStringFormat): String;
@@ -222,6 +242,14 @@ end;
 function TValueNull.Clone(Deep: Boolean): IExpression;
 begin
   Result:= TValueNull.Create;
+end;
+
+function TValueNull.CompareTo(const B: IExpressionAtom): TAtomCompareResult;
+begin
+  if B.Represents(IValueNull) then
+    Result:= crSame
+  else
+    Result:= inherited CompareTo(B);
 end;
 
 { TValueNumber }
@@ -249,6 +277,30 @@ end;
 function TValueNumber.Clone(Deep: Boolean): IExpression;
 begin
   Result:= TValueNumber.Create(FValue);
+end;
+
+function TValueNumber.CompareTo(const B: IExpressionAtom): TAtomCompareResult;
+var
+  nb: IValueNumber;
+  ub: IValueDimension;
+begin
+  if B.Represents(IValueDimension, ub) and not ub.IsScalar then
+    Result:= crIncompatible
+  else
+    if b.Represents(IValueNumber, nb) then begin
+      if Value > nb.Value then
+        Result:= crGreater
+      else if Value < nb.Value then
+        Result:= crSmaller
+      else begin
+        if B.Represents(IValueDimension) then
+          Result:= crEquivalent
+        else
+          Result:= crSame;
+      end;
+    end
+      else
+        Result:= inherited CompareTo(B);
 end;
 
 function TValueNumber.OpAdd(const B: IExpression): IExpression;
@@ -337,6 +389,21 @@ end;
 function TValueString.Clone(Deep: Boolean): IExpression;
 begin
   Result:= TValueString.Create(FValue);
+end;
+
+function TValueString.CompareTo(const B: IExpressionAtom): TAtomCompareResult;
+var
+  sb: IValueString;
+begin
+  if B.Represents(IValueString, sb) then begin
+    if Value > sb.Value then
+      Result:= crGreater
+    else if Value < sb.Value then
+      Result:= crSmaller
+    else
+      Result:= crSame;
+  end else
+    Result:= inherited CompareTo(B);
 end;
 
 constructor TValueString.Create(const aVal: String);
@@ -456,6 +523,32 @@ begin
   Result:= '{' + Result + '}';
 end;
 
+function TValueList.CompareTo(const B: IExpressionAtom): TAtomCompareResult;
+var
+  lb: IValueList;
+  ia, ib: IExpressionAtom;
+  i: integer;
+begin
+  if B.Represents(IValueList, lb) and lb.IsClass(TValueList) then begin
+    if GetLength > lb.length then
+      Result:= crGreater
+    else if GetLength < lb.length then
+      Result:= crSmaller
+    else begin
+      Result:= crSame;
+      for i:= 0 to GetLength-1 do begin
+        // TODO: handle non-atoms
+        if not Arg[i].Represents(IExpressionAtom, ia) or not lb.Item[i].Represents(IExpressionAtom, ib) or
+          (ia.CompareTo(ib)<>crSame) then begin
+          Result:= crDifferent;
+          exit;
+        end;
+      end;
+    end;
+  end else
+    Result:= inherited CompareTo(B);
+end;
+
 { TValueRange }
 
 constructor TValueRange.Create(Start, Step, Max: Number);
@@ -506,5 +599,27 @@ function TValueRange.Clone(Deep: Boolean): IExpression;
 begin
   Result:= TValueRange.Create(FStart, FStep, FEnd);
 end;
+
+function TValueRange.CompareTo(const B: IExpressionAtom): TAtomCompareResult;
+var
+  lb: IValueList;
+  bc: TValueRange;
+begin
+  if B.Represents(IValueList, lb) and lb.IsClass(TValueRange) then begin
+    if GetLength > lb.length then
+      Result:= crGreater
+    else if GetLength < lb.length then
+      Result:= crSmaller
+    else begin
+      bc:= TValueRange(lb.NativeObject);
+      if fzero(bc.FStart-FStart) and fzero(bc.FStep-fStep) and fzero(bc.FEnd-FEnd) then
+        Result:= crSame
+      else
+        Result:= crDifferent;
+    end;
+  end else
+    Result:= inherited CompareTo(B);
+end;
+
 
 end.
