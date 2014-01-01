@@ -890,15 +890,33 @@
                   		
                </p>
             </li>
+            <li class="function" id="function-symbolics-pattern"><a class="function-link" href="#function-symbolics-pattern">#</a><code>Pattern(<i>expr</i>, {<i>variables</i>})</code><br><p>
+                  			Erzeugt ein Muster, welches auf Ausdrücke passt die wie <i>expr</i> mit den freien Variablen <i>variables</i> aussehen.
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-symbolics-rule"><a class="function-link" href="#function-symbolics-rule">#</a><code>Rule(<i>expr</i>, {<i>variables</i>}, <i>target</i>)</code><br><p>
+                  			Erzeugt eine Regel, welche Ausdrücke die wie <i>expr</i> mit den freien Variablen <i>variables</i> aussehen
+                  			in <i>target</i> transformieren kann.
+                  		
+               </p>
+            </li>
             <li class="function" id="function-symbolics-match"><a class="function-link" href="#function-symbolics-match">#</a><code>Match(<i>expr</i>, <i>pattern</i>)</code><br><p>
                   			Prüft ob <i>pattern</i> auf <i>expr</i> zutrifft und gibt eine Liste der möglichen Variablenzuordnungen oder NULL zurück.
                   		
-               </p><span class="function-options">Optionen:</span><dl class="function-options">
-                  <dt>vars = *undefined*</dt>
-                  <dd>
-                     <p>Liste von als Variable anzunehmender Bezeichner</p>
-                  </dd>
-               </dl>
+               </p>
+            </li>
+            <li class="function" id="function-symbolics-replace"><a class="function-link" href="#function-symbolics-replace">#</a><code>Replace(<i>expr</i>, {<i>patterns</i>})</code><br><code>Replace(<i>expr</i>, <i>patterns</i>)</code><br><p>
+                  			Wendet die erste passende Regel aus <i>patterns</i> auf die oberste Ebene von <i>expr</i> an und gibt das Ergebnis oder
+                  			den unveränderten Ausdruck zurück.
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-symbolics-replaceall"><a class="function-link" href="#function-symbolics-replaceall">#</a><code>ReplaceAll(<i>expr</i>, {<i>patterns</i>})</code><br><code>ReplaceAll(<i>expr</i>, <i>patterns</i>)</code><br><p>
+                  			Wendet die erste passende Regel aus <i>patterns</i> auf jeder Ebene von <i>expr</i> rekursiv an und verarbeitet
+                  			auch durch freie Variablen erzeugten Unterausdrücke.
+                  		
+               </p>
             </li>
          </ul>
          		

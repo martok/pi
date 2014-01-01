@@ -89,11 +89,12 @@ type
     function NativeObject: TObject;
     procedure Define(const Name: string; Expression: IExpression);
     procedure Undefine(const Name: string);
+    procedure Clear;
     function Definition(const Name: string): IExpression;
     function Defines(const Name: string): boolean;
-    function Output: IOutputProvider;           
+    function Output: IOutputProvider;
     function RawOutput: IOutputProvider;
-    procedure SetSilent(const Silent: Boolean);    
+    procedure SetSilent(const Silent: Boolean);
     property Silent: boolean read FSilent write SetSilent;
     function Combine(const UseDefine: boolean): IExpression;
   end;
@@ -1152,6 +1153,18 @@ begin
     ret[i]:= ass;
   end;
   Result:= TValueList.CreateAs(ret);
+end;
+
+procedure TContext.Clear;
+var
+  intf: IExpression;
+  i: Integer;
+begin
+  for i:= FExpressions.Count - 1 downto 0 do begin
+    intf:= IExpression(Pointer(FExpressions.Objects[i]));
+    intf._Release;
+    FExpressions.Delete(i);
+  end;
 end;
 
 { TExpression }

@@ -38,6 +38,7 @@ type
 
     procedure Define(const Name: string; Expression: IExpression);
     procedure Undefine(const Name: string);
+    procedure Clear;
     function Definition(const Name: string): IExpression;
     function Defines(const Name: string): boolean;
     function Output: IOutputProvider;

@@ -13,15 +13,41 @@
 			Ausdruck zurück.
 		</description>
 	</function>
+
+	<function name="Pattern">
+		<syntax>Pattern(<v>expr</v>, {<v>variables</v>})</syntax>
+		<description>
+			Erzeugt ein Muster, welches auf Ausdrücke passt die wie <v>expr</v> mit den freien Variablen <v>variables</v> aussehen.
+		</description>
+	</function>
+	<function name="Rule">
+		<syntax>Rule(<v>expr</v>, {<v>variables</v>}, <v>target</v>)</syntax>
+		<description>
+			Erzeugt eine Regel, welche Ausdrücke die wie <v>expr</v> mit den freien Variablen <v>variables</v> aussehen
+			in <v>target</v> transformieren kann.
+		</description>
+	</function>
+
 	<function name="Match">
 		<syntax>Match(<v>expr</v>, <v>pattern</v>)</syntax>
 		<description>
 			Prüft ob <v>pattern</v> auf <v>expr</v> zutrifft und gibt eine Liste der möglichen Variablenzuordnungen oder NULL zurück.
 		</description>
-		<options>
-			<option name="vars" default="*undefined*">
-				<description>Liste von als Variable anzunehmender Bezeichner</description>
-			</option>
-		</options>
+	</function>
+	<function name="Replace">
+		<syntax>Replace(<v>expr</v>, {<v>patterns</v>})</syntax>
+		<syntax>Replace(<v>expr</v>, <v>patterns</v>)</syntax>
+		<description>
+			Wendet die erste passende Regel aus <v>patterns</v> auf die oberste Ebene von <v>expr</v> an und gibt das Ergebnis oder
+			den unveränderten Ausdruck zurück.
+		</description>
+	</function>
+	<function name="ReplaceAll">
+		<syntax>ReplaceAll(<v>expr</v>, {<v>patterns</v>})</syntax>
+		<syntax>ReplaceAll(<v>expr</v>, <v>patterns</v>)</syntax>
+		<description>
+			Wendet die erste passende Regel aus <v>patterns</v> auf jeder Ebene von <v>expr</v> rekursiv an und verarbeitet
+			auch durch freie Variablen erzeugten Unterausdrücke.
+		</description>
 	</function>
 </package>
