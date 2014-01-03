@@ -13,6 +13,7 @@ uses
 
 type
   TFunctionPackage = class;
+  TFunctionPackageClass = class of TFunctionPackage;
   TContext = class;
 
   TOperatorOptions = set of (ooUnary, ooUnparsed, ooFlat, ooUnpackInArguments, ooHoldPackedArguments);
@@ -41,6 +42,7 @@ type
 
     function RegisterPackage(const Package: TFunctionPackage): boolean;
     function RegisterAsInfix(Operator: String; Precedence: integer; Options: TOperatorOptions; Pack: TFunctionPackage; Func: String): boolean;
+    function GetPackageInstance(const PackageClass: TFunctionPackageClass): TFunctionPackage;
     // IMathSystem
     function Parse(const Expr: String): IExpression;
     function Evaluate(const Expr: IExpression): IExpression;
@@ -118,6 +120,7 @@ type
     function IsClass(const Cls: TClass): Boolean;
 
     procedure SetArgs(const aArgs: array of IExpression);
+    function GetArgs: ExpressionArray;
     function ArgCount: Integer;
     function GetArgument(Index: Integer): IExpression;
     property Arg[Index: integer]: IExpression read GetArgument write SetArgument;
@@ -147,7 +150,7 @@ type
 
   TUDFHeader = function(Context: IContext; Args: TExprList): IExpression of object;
   TUDFHeaderOptions = function(Context: IContext; Args: TExprList; Options: TDynamicArguments): IExpression of object;
-  TFunctionPackageClass = class of TFunctionPackage;
+
   TFunctionPackage = class
   protected
     procedure OnImport(const MS: TMathSystem); virtual;
@@ -372,6 +375,19 @@ begin
     Result:= fPackages.Add(Package) >= 0;
   if Result then
     Package.OnImport(Self);
+end;
+
+function TMathSystem.GetPackageInstance(const PackageClass: TFunctionPackageClass): TFunctionPackage;
+var
+  i: integer;
+begin
+  for i:= 0 to fPackages.Count-1 do begin
+    if fPackages[i] is PackageClass then begin
+      Result:= TFunctionPackage(fPackages[i]);
+      exit;
+    end;
+  end;
+  Result:= nil;
 end;
 
 function LSC_InfixByLength(Item1, Item2: Pointer): Integer;
@@ -1212,6 +1228,15 @@ begin
   SetLength(Arguments, Length(aArgs));
   for i:= 0 to high(aArgs) do
     Arguments[i]:= aArgs[i];
+end;
+
+function TExpression.GetArgs: ExpressionArray;
+var
+  i: integer;
+begin
+  SetLength(Result, Length(Arguments));
+  for i:= 0 to high(Arguments) do
+    Result[i]:= Arguments[i];
 end;
 
 function TExpression.StringOfArgs(fmt: TStringFormat; Delim: String): String;

@@ -47,12 +47,14 @@ type
     function Combine(const UseDefine: boolean): IExpression;
   end;
 
+  ExpressionArray = array of IExpression;
   IExpression = interface['{56A7A015-3E85-483F-9EC5-4C3C0E232CA5}']
     function NativeObject: TObject;
     function Represents(const IID: TGUID; out Intf): boolean; overload;
     function Represents(const IID: TGUID): boolean; overload;
     function IsClass(const Cls: TClass): boolean;
     procedure SetArgs(const aArgs: array of IExpression);
+    function GetArgs: ExpressionArray;
     function ArgCount: integer;
     function GetArgument(Index: Integer): IExpression;                          
     property Arg[Index: integer]: IExpression read GetArgument;
