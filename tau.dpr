@@ -15,7 +15,8 @@ uses
   uMathConstants in 'uMathConstants.pas',
   uFunctionsSymbolics in 'uFunctionsSymbolics.pas',
   uFunctionsStatistics in 'uFunctionsStatistics.pas',
-  uMathDimensions in 'uMathDimensions.pas';
+  uMathDimensions in 'uMathDimensions.pas',
+  uExpressionMatcher in 'uExpressionMatcher.pas';
 
 function GetInput: string;
 var

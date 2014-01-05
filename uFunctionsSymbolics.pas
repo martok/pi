@@ -78,10 +78,13 @@ type
     function GetTarget: IExpression;
   end;
 
+function SubstituteContextVars(const Expr: IExpression; const Context: IContext): IExpression;
+function ApplyRules(const Expr: IExpression; const Context: IContext; const rules: IValueList; const Recurse: Boolean): IExpression;
+
 implementation
 
 uses
-  Math;
+  Math, uExpressionMatcher;
 
 function SubstituteContextVars(const Expr: IExpression; const Context: IContext): IExpression;
 var
@@ -91,7 +94,7 @@ var
   var
     r: IExpression;
     s: ISymbolReference;
-    arnew: ExpressionArray;
+    arnew: TExprList;
     xfc, rfc: IFunctionCall;
     j, i, k: integer;
   begin
@@ -137,7 +140,8 @@ function ApplyRules(const Expr: IExpression; const Context: IContext; const rule
 var
   rule: ISymbolicRule;
   i, j: integer;
-  assignments: TContext;
+  assignments: IContext;
+  asso: TContext;
   v: string;
   nargs: array of IExpression;
 begin
@@ -145,16 +149,17 @@ begin
     if rules.Item[i].Represents(ISymbolicRule, rule) then begin
       assignments:= TContext.Create(TContext.SystemFrom(Context), nil);
       try
-        assignments.Silent:= true;    
+        assignments.SetSilent(true);
         if rule.Match(expr, assignments) then begin
 
           if Recurse then begin
+            asso:= TContext(assignments.NativeObject);
             // transform all assignments
-            for j:= 0 to assignments.Count-1 do begin
-              v:= assignments.Name[i];
-              assignments.Define(v,
+            for j:= 0 to asso.Count-1 do begin
+              v:= asso.Name[i];
+              asso.Define(v,
                 ApplyRules(
-                  assignments.Definition(v),
+                  asso.Definition(v),
                   Context, rules, true)
               );
             end;
@@ -171,7 +176,7 @@ begin
           end;
         end;
       finally
-        FreeAndNil(assignments);
+        assignments:= nil;
       end;
     end;
   end;
@@ -216,207 +221,14 @@ end;
 
 function TSymbolicPattern.Match(const Expr: IExpression; const Assignments: IContext): boolean;
 var
-  Package: TPackageSymbolics;
-  Vars: array of TInterfaceList;
-
-  procedure StoreFreeVariable(const v: integer; const aValue: IExpression);
-  begin
-    //TODO: only store when nothing equivalent stored
-    if Vars[v].IndexOf(aValue) < 0 then
-      Vars[v].Add(aValue);
-  end;
-
-  function FreeVar(const ex: IExpression): integer;
-  var
-    sy: ISymbolReference;
-  begin
-    Result:= -1;
-    if ex.Represents(ISymbolReference, sy) then
-      Result:= fVars.IndexOf(sy.Name);
-  end;
-
-  function BuildMatches(ex, pat: IExpression): boolean; forward;
-
-  function MatchCall(Ex, Pat: IFunctionCall; fp: TFunctionProperties): boolean;
-  var
-    i, j, vi: integer;
-    apr, apl, ael, aer: integer;
-
-    procedure PartitionIntoVars(ef,el,pf,pl: integer);
-    var
-      subset: IFunctionCall;
-      ea: ExpressionArray;
-      tr: integer;
-    begin
-      if (pf > pl) or (ef > el) then
-        exit; 
-      // pf kann jede gruppe von ef..el sein
-      for tr:= ef to el do begin
-        subset:= Ex.Clone(true) as IFunctionCall;
-        ea:= Copy(ex.GetArgs, ef, tr-ef+1);
-        subset.SetArgs(ea);
-        // diese zurodnung ablegen
-        BuildMatches(subset, Pat.Arg[pf]);
-        // rest verteilen
-        PartitionIntoVars(tr, el, pf+1, pl);
-      end;
-    end;
-
-  begin
-    Result:= false;
-    if fp.Associative then begin
-      j:= 0;
-      for i:= 0 to Pat.ArgCount-1 do begin
-        vi:= FreeVar(pat.Arg[i]);
-        if vi >=0 then begin
-          // variable, zweiten anker finden und zuordnen
-          apl:= i;
-          apr:= apl+1;
-          ael:= j;    
-          aer:= ael;
-          while (apr < Pat.ArgCount) and (FreeVar(pat.Arg[apr])>=0) do
-            inc(apr);
-          if apr < Pat.ArgCount then begin
-            // anker gefunden, in ex suchen  
-            while (aer < ex.ArgCount) and not BuildMatches(ex.Arg[aer], pat.Arg[apr]) do
-              inc(aer);
-            // anker wäre notwendig, ist aber nicht da
-            if aer = ex.ArgCount then
-              exit;
-          end else begin
-            // kein rechter anker, also alle verbraten
-            aer:= Ex.ArgCount;
-          end;
-          // apl..apr freie variablen auf ael..aer ausdrücke abbilden
-          // effektiv: alle listen-partitionen durchprobieren
-          PartitionIntoVars(ael, aer-1, apl, apr-1);
-          j:= aer
-        end else begin
-          // keine variable, mit cursor vergleichen
-          if not BuildMatches(Ex.Arg[j], pat.Arg[i]) then
-            exit;
-          inc(j);
-        end;
-      end;
-      // pattern durch, aber noch ausdruck übrigs
-      if j < Ex.ArgCount then
-        exit;
-    end else begin
-      // Nicht Assoziativ, muss also exakt stimmen
-      if ex.ArgCount <> Pat.ArgCount then
-        exit;
-      for i:= 0 to Pat.ArgCount-1 do begin
-        if not BuildMatches(ex.Arg[i], Pat.Arg[i]) then
-          Exit;
-      end;
-    end;
-
-    Result:= true;
-  end;
-
-  // wenn kommutativ, müssen nur alle *irgendwo* matchen, nicht in exakter reihenfolge
-  function MatchCallCommutative(Ex, Pat: IFunctionCall; fp: TFunctionProperties): boolean;
-  begin
-    Result:= MatchCall(ex, pat, fp);
-  end;
-
-  // 1. find possible associations
-  function BuildMatches(ex, pat: IExpression): boolean;
-  var
-    ea, pa: IExpressionAtom;
-    esy, psy: ISymbolReference;
-    efc, pfc: IFunctionCall;
-    fp: TFunctionProperties;
-    vi: Integer;
-  begin 
-    // atoms
-    if ex.Represents(IExpressionAtom, ea) and pat.Represents(IExpressionAtom, pa) then begin
-      Result:= ea.CompareTo(pa) = crSame;
-    end else
-    // symbol reference
-    if ex.Represents(ISymbolReference, esy) and pat.Represents(ISymbolReference, psy) then begin
-      vi:= fVars.IndexOf(psy.Name);
-      if vi < 0 then
-        Result:= SameText(esy.Name,psy.Name)
-      else begin
-        StoreFreeVariable(vi, esy);
-        Result:= true;
-      end;
-    end else
-    // function call
-    if ex.Represents(IFunctionCall, efc) and pat.Represents(IFunctionCall, pfc) and
-      (SameText(efc.Name, pfc.Name)) then begin
-      // check arguments
-      fp:= Package.Properties(efc.Name);
-
-      if fp.Commutative then
-        Result:= MatchCallCommutative(efc, pfc, fp)
-      else
-        Result:= MatchCall(efc, pfc, fp);
-    end else 
-    // symbol reference in pattern only
-    if pat.Represents(ISymbolReference, psy) then begin
-      vi:= fVars.IndexOf(psy.Name);
-      if vi < 0 then
-        Result:= false
-      else begin
-        StoreFreeVariable(vi, ex);
-        Result:= true;
-      end;
-    end else
-      Result:= false;
-  end;
-
-  // 3. verify for integrity
-  function VerifyVariables(const v: integer): boolean;
-  var
-    i: integer;
-    test: IExpression;
-  begin
-    Result:= false;
-    if v = fVars.Count then begin
-      // alle variablen eintragen, der ausdruck ist jetzt un-frei
-      test:= SubstituteContextVars(fPattern, Assignments);
-      // ist diese einsetzung identisch mit dem was wir suchen?
-      // BuildMatches geht, weil nix mehr frei ist, also große teile gar nicht durchlaufen werden
-      Result:= BuildMatches(Expr, test);
-    end else begin
-      for i:= 0 to Vars[v].Count-1 do begin
-        Assignments.Define(fVars[v], vars[v][i] as IExpression);
-        Result:= VerifyVariables(v+1);
-        if Result then
-          exit;
-      end;
-    end;
-  end;
-var
-  i: integer;
+  Matcher: TExpressionMatcher;
 begin
-  Package:= TPackageSymbolics(TContext.SystemFrom(Assignments).GetPackageInstance(TPackageSymbolics));
-  if not Assigned(Package) then
-    raise EMathSysError.Create('Package Symbolics not present in current Kernel');
-
-  Assignments.Clear;
-  SetLength(Vars, fVars.Count);
-  for i:= 0 to fVars.Count-1 do begin
-    assignments.Define(fVars[i], TValueUnassigned.Create);
-    Vars[i]:= TInterfaceList.Create;
-  end;
-
+  Matcher:= TExpressionMatcher.Create(TContext.SystemFrom(Assignments), fPattern, fVars);
   try
-    Result:= BuildMatches(Expr, fPattern);
-    if Result then begin
-      // wurde für jede Var etwas gefunden? wenn nicht, sollten wir gar nicht hier sein...
-      for i:= 0 to fVars.Count-1 do
-        if Vars[i].Count = 0 then begin
-          Result:= false;
-          exit;
-        end;
-      Result:= (fVars.Count=0) or VerifyVariables(0);
-    end;
+    Matcher.SetupContext(Assignments);
+    Result:= Matcher.Match(Expr);
   finally
-    for i:= 0 to fVars.Count-1 do
-      FreeAndNil(Vars[i]);
+    FreeAndNil(Matcher);
   end;
 end;
 
@@ -505,7 +317,7 @@ function TPackageSymbolics.Match_2(Context: IContext; args: TExprList; Options: 
 var
   expr: IExpression;
   pattern: ISymbolicPattern;
-  assignments: TContext;
+  assignments: IContext;
 begin
   expr:= args[0].Evaluate(Context);
   if not args[1].Evaluate(Context).Represents(ISymbolicPattern, pattern) then
@@ -513,13 +325,13 @@ begin
 
   assignments:= TContext.Create(TContext.SystemFrom(Context), nil);
   try
-    assignments.Silent:= true;
+    assignments.SetSilent(true);
     if pattern.Match(expr, assignments) then begin
       Result:= assignments.Combine(true);
     end else
       Result:= TValueNull.Create;
   finally
-    FreeAndNil(assignments);
+    assignments:= nil;
   end;
 end;
 

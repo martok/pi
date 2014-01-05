@@ -102,7 +102,6 @@ type
   end;
 
 
-  TExprList = array of IExpression;
   TExpression = class(TInterfacedObject, IExpression)
   private
     procedure SetArgument(Index: integer; const Value: IExpression);
@@ -120,7 +119,7 @@ type
     function IsClass(const Cls: TClass): Boolean;
 
     procedure SetArgs(const aArgs: array of IExpression);
-    function GetArgs: ExpressionArray;
+    function GetArgs: TExprList;
     function ArgCount: Integer;
     function GetArgument(Index: Integer): IExpression;
     property Arg[Index: integer]: IExpression read GetArgument write SetArgument;
@@ -1230,7 +1229,7 @@ begin
     Arguments[i]:= aArgs[i];
 end;
 
-function TExpression.GetArgs: ExpressionArray;
+function TExpression.GetArgs: TExprList;
 var
   i: integer;
 begin
