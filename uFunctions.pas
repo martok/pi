@@ -1056,38 +1056,65 @@ function TPackageData.Source_1(Context: IContext; args: TExprList): IExpression;
 var
   list: TStringList;
   i: integer;
-  s: string;
+  s, expr: string;
+  inPara: boolean;
   sys: TMathSystem;
-  X: IExpression;
-  sc: IStringConvertible;
+
+  procedure RunExp(s: string);   
+  var
+    X: IExpression;
+    sc: IStringConvertible;
+  begin
+    x:= sys.Parse(s);
+    if Assigned(x) then begin
+      x:= x.Evaluate(Context);
+      if Assigned(x) then begin
+        Result:= X;
+        Context.Define('ans', x);
+        if x.Represents(IStringConvertible, sc) then
+          Context.Output.Result(sc.AsString(STR_FORMAT_OUTPUT));
+      end;
+    end;
+  end;
+
 begin
   list:= TStringList.Create;
   try
     s:= EvaluateToString(Context, args[0]);
     if not FileExists(s) and FileExists(s+'.pi') then
       s:= s+'.pi';
-    list.LoadFromFile(s);
-    for i:= 0 to list.Count-1 do begin
-      s:= trim(list[i]);
-      if (Length(s)>0) and (s[1]<>';') then begin
-        try
-          sys:= TContext.SystemFrom(Context);
-
-          x:= sys.Parse(s);
-          if Assigned(x) then begin
-            x:= x.Evaluate(Context);
-            if Assigned(x) then begin
-              Context.Define('ans', x);
-              if x.Represents(IStringConvertible, sc) then
-                Context.Output.Result(sc.AsString(STR_FORMAT_OUTPUT));
-            end;
+    try
+      sys:= TContext.SystemFrom(Context);
+      list.LoadFromFile(s);
+      expr:= '';
+      inPara:= false;
+      for i:= 0 to list.Count-1 do begin
+        s:= trim(list[i]);
+        if s = '' then
+          Continue; 
+        case s[1] of
+          ';': Continue;
+          '§': begin
+            if inPara and (expr > '') then
+              RunExp(expr);
+            inPara:= true;
+            expr:= Copy(s, 2, Maxint);
           end;
-        except
-          on e: Exception do begin
-            Context.Output.Error('%s: %s',[e.ClassName, e.Message]);
-            raise;
+        else
+          begin
+            if inPara then
+              expr:= expr + s
+            else
+              RunExp(s);
           end;
         end;
+      end;
+      if inPara and (expr > '') then
+        RunExp(expr);
+    except
+      on e: Exception do begin
+        Context.Output.Error('%s: %s',[e.ClassName, e.Message]);
+        raise;
       end;
     end;
   finally
