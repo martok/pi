@@ -96,8 +96,10 @@ type
     function Defines(const Name: string): boolean;
     function Output: IOutputProvider;
     function RawOutput: IOutputProvider;
+    function GetSystem: IMathSystem;
     procedure SetSilent(const Silent: Boolean);
-    property Silent: boolean read FSilent write SetSilent;
+    function GetSilent: Boolean;
+    property Silent: boolean read GetSilent write SetSilent;
     function Combine(const UseDefine: boolean): IExpression;
   end;
 
@@ -231,7 +233,8 @@ type
     function constinfo_1(Context: IContext; args: TExprList): IExpression;
 
     //function nvl_2(Context: IContext; args: TExprList): IExpression;
-    function Hold_1(Context: IContext; args: TExprList): IExpression;
+    function Hold_1(Context: IContext; args: TExprList): IExpression; 
+    function Eval_1(Context: IContext; args: TExprList): IExpression;
     function AbsoluteTime_1(Context: IContext; args: TExprList): IExpression;
   end;
 
@@ -1182,6 +1185,16 @@ begin
   end;
 end;
 
+function TContext.GetSystem: IMathSystem;
+begin
+  Result:= FSystem as IMathSystem;
+end;
+
+function TContext.GetSilent: Boolean;
+begin
+  Result:= FSilent;
+end;
+
 { TExpression }
 
 constructor TExpression.Create;
@@ -1629,17 +1642,12 @@ var
 begin
   x:= Context.Definition(FName);
   if Assigned(x) then begin
-    TContext.SystemFrom(Context).EvaluationBegin(FName);
-    try
-      Result:= x.Evaluate(Context)
-    finally
-      TContext.SystemFrom(Context).EvaluationEnd;
-    end;
+    Result:= x;
   end
   else begin
     Result:= TValueUnassigned.Create;
     raise EMathSysError.CreateFmt('Expression unknown in current Context: %s', [Name]);
-  end;;
+  end;
 end;
 
 function TE_SymbolRef.Clone(Deep: Boolean): IExpression;
@@ -1788,12 +1796,17 @@ var
   target: IExpression;
   i: integer;
 begin
-  ctx:= TContext.Create(TContext.SystemFrom(Context), TContext(Context.NativeObject));
+  ctx:= TContext.Create(Context);
   try
-    target:= Context.Definition(FName);
-    for i:= 0 to high(Arguments) do
-      Arguments[i].Evaluate(ctx);
-    Result:= target.Evaluate(ctx);
+    target:= Context.Definition(Name);   
+    if Assigned(target) then begin
+      for i:= 0 to high(Arguments) do
+        Arguments[i].Evaluate(ctx);
+      Result:= target.Evaluate(ctx);
+    end else begin
+      Result:= TValueUnassigned.Create;
+      raise EMathSysError.CreateFmt('Expression unknown in current Context: %s', [Name]);
+    end;
   finally
     ctx:= nil;
   end;
@@ -1966,6 +1979,11 @@ end;
 function TPackageCore.Hold_1(Context: IContext; args: TExprList): IExpression;
 begin
   Result:= args[0];
+end;
+
+function TPackageCore.Eval_1(Context: IContext; args: TExprList): IExpression;
+begin
+  Result:= args[0].Evaluate(Context);
 end;
 
 function TPackageCore.AbsoluteTime_1(Context: IContext; args: TExprList): IExpression;

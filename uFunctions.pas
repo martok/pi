@@ -1071,7 +1071,7 @@ var
       if Assigned(x) then begin
         Result:= X;
         Context.Define('ans', x);
-        if x.Represents(IStringConvertible, sc) then
+        if not Context.Silent and x.Represents(IStringConvertible, sc) then
           Context.Output.Result(sc.AsString(STR_FORMAT_OUTPUT));
       end;
     end;

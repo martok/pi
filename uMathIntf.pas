@@ -42,8 +42,11 @@ type
     function Definition(const Name: string): IExpression;
     function Defines(const Name: string): boolean;
     function Output: IOutputProvider;
-    function RawOutput: IOutputProvider;            
+    function RawOutput: IOutputProvider;  
+    function GetSystem: IMathSystem;
     procedure SetSilent(const Silent: boolean);
+    function GetSilent: boolean;
+    property Silent: boolean read GetSilent write SetSilent;
     function Combine(const UseDefine: boolean): IExpression;
   end;
 
