@@ -310,6 +310,11 @@
                   		
                </p>
             </li>
+            <li class="function" id="function-core-eval"><a class="function-link" href="#function-core-eval">#</a><code>Eval(<i>Expr</i>)</code><br><p>
+                  			Gibt die Expression <i>expr</i> evaluiert zurück. Gedacht zur Verwendung auf der rechten Seite von <a href="#function-symbolics-rule">Regeln</a>.
+                  		
+               </p>
+            </li>
             <li class="function" id="function-core-absolutetime"><a class="function-link" href="#function-core-absolutetime">#</a><code>AbsoluteTime(<i>Expr</i>)</code><br><p>
                   			Gibt die Ausführungszeit in Sekunden sowie das Ergebnis der Auswertung von <i>Expr</i> zurück
                   		
@@ -913,8 +918,12 @@
                </p>
             </li>
             <li class="function" id="function-symbolics-replaceall"><a class="function-link" href="#function-symbolics-replaceall">#</a><code>ReplaceAll(<i>expr</i>, {<i>patterns</i>})</code><br><code>ReplaceAll(<i>expr</i>, <i>patterns</i>)</code><br><p>
-                  			Wendet die erste passende Regel aus <i>patterns</i> auf jeder Ebene von <i>expr</i> rekursiv an und verarbeitet
-                  			auch durch freie Variablen erzeugten Unterausdrücke.
+                  			Wendet die erste passende Regel aus <i>patterns</i> auf jeder Ebene von <i>expr</i> rekursiv an.
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-symbolics-diff"><a class="function-link" href="#function-symbolics-diff">#</a><code>Diff(<i>expr</i>, <i>var</i>)</code><br><p>
+                  			Differenziert <i>expr</i> symbolisch nach <i>var</i>.
                   		
                </p>
             </li>

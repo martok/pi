@@ -5,7 +5,7 @@ unit uFunctionsSymbolics;
 
 interface
 
-uses SysUtils, uMathIntf, uMath, Classes, uMathValues, Contnrs;
+uses SysUtils, uMathIntf, uMath, Classes, uMathValues, Contnrs, uFunctions;
 
 type
   ISymbolicPattern = interface(IExpressionAtom)['{826E9E16-602F-406D-B2CD-F19617BA3752}']
@@ -46,6 +46,8 @@ type
 
     function Replace_2(Context: IContext; args: TExprList): IExpression;
     function ReplaceAll_2(Context: IContext; args: TExprList): IExpression;
+
+    function Diff_2(Context: IContext; args: TExprList): IExpression;
   end;
 
   TSymbolicPattern = class(TE_Atom, ISymbolicPattern, IStringConvertible)
@@ -79,7 +81,7 @@ type
   end;
 
 function SubstituteContextVars(const Expr: IExpression; const Context: IContext): IExpression;
-function ApplyRules(const Expr: IExpression; const Context: IContext; const rules: IValueList; const Recurse: Boolean): IExpression;
+function ApplyRules(const Expr: IExpression; const Context: IContext; const rules: IValueList; const Subparts, Nested: Boolean): IExpression;
 
 implementation
 
@@ -136,7 +138,31 @@ begin
   Replace(Result);
 end;
 
-function ApplyRules(const Expr: IExpression; const Context: IContext; const rules: IValueList; const Recurse: Boolean): IExpression;
+function RunEvals(const Expr: IExpression; const Context: IContext): IExpression;
+
+  procedure Replace(var x: IExpression);
+  var
+    arnew: TExprList;
+    xfc: IFunctionCall;
+    j: integer;
+  begin
+    if x.Represents(IFunctionCall, xfc) and SameText(xfc.Name, 'Eval') then
+      x:= xfc.Evaluate(Context)
+    else begin
+      SetLength(arnew, x.ArgCount);
+      for j:= 0 to x.ArgCount-1 do begin
+        arnew[j]:= x.Arg[j];
+        Replace(arnew[j]);
+      end;
+      x.SetArgs(arnew);
+    end;
+  end;
+begin
+  Result:= Expr.Clone(true);
+  Replace(Result);
+end;
+
+function ApplyRules(const Expr: IExpression; const Context: IContext; const rules: IValueList; const Subparts, Nested: Boolean): IExpression;
 var
   rule: ISymbolicRule;
   i, j: integer;
@@ -152,33 +178,32 @@ begin
         assignments.SetSilent(true);
         if rule.Match(expr, assignments) then begin
 
-          if Recurse then begin
+          if Nested and Subparts then begin
             asso:= TContext(assignments.NativeObject);
             // transform all assignments
             for j:= 0 to asso.Count-1 do begin
-              v:= asso.Name[i];
+              v:= asso.Name[j];
               asso.Define(v,
                 ApplyRules(
                   asso.Definition(v),
-                  Context, rules, true)
+                  Context, rules, SubParts, Nested)
               );
             end;
           end;  
           // apply (transformed) subparts
-          Result:= SubstituteContextVars(rule.GetTarget, assignments);
+          Result:= RunEvals(SubstituteContextVars(rule.GetTarget, assignments), Context);
           exit;
-        end else begin
-          if Recurse then begin
-            SetLength(nargs, Expr.ArgCount);
-            for j:= 0 to Expr.ArgCount-1 do
-              nargs[j]:= ApplyRules(Expr.Arg[j], Context, rules, true);
-            Expr.SetArgs(nargs);
-          end;
         end;
       finally
         assignments:= nil;
       end;
     end;
+  end;
+  if Subparts then begin
+    SetLength(nargs, Expr.ArgCount);
+    for j:= 0 to Expr.ArgCount-1 do
+      nargs[j]:= ApplyRules(Expr.Arg[j], Context, rules, Subparts, Nested);
+    Expr.SetArgs(nargs);
   end;
   Result:= expr;
 end;
@@ -340,6 +365,8 @@ var
   pat: IExpression;
   ls: IValueList;
   vs: ISymbolReference;
+  va: IFunctionCall;
+  vc: IValueString;
   varList: TStringList;
   i: integer;
 begin
@@ -354,6 +381,10 @@ begin
     for i:= 0 to ls.Length-1 do begin
       if ls.Item[i].Represents(ISymbolReference, vs) then
         varList.Add(vs.Name)
+      else if ls.Item[i].Represents(IFunctionCall, va) and SameText(va.Name, '_define') and
+        (va.ArgCount = 2) and
+        va.Arg[0].Represents(ISymbolReference, vs) and va.Arg[1].Represents(IValueString, vc) then
+        varList.Add(vs.Name+'='+vc.Value)
       else
         raise EMathSysError.Create('Pattern variable list needs to be a list of symbolic references');
     end;
@@ -368,7 +399,9 @@ function TPackageSymbolics.Rule_3(Context: IContext; args: TExprList): IExpressi
 var
   pat,tar: IExpression;
   ls: IValueList;
-  vs: ISymbolReference;
+  vs: ISymbolReference;  
+  va: IFunctionCall;
+  vc: IValueString;
   varList: TStringList;
   i: integer;
 begin
@@ -384,6 +417,10 @@ begin
     for i:= 0 to ls.Length-1 do begin
       if ls.Item[i].Represents(ISymbolReference, vs) then
         varList.Add(vs.Name)
+      else if ls.Item[i].Represents(IFunctionCall, va) and SameText(va.Name, '_define') and
+        (va.ArgCount = 2) and
+        va.Arg[0].Represents(ISymbolReference, vs) and va.Arg[1].Represents(IValueString, vc) then
+        varList.Add(vs.Name+'='+vc.Value)
       else
         raise EMathSysError.Create('Rule variable list needs to be a list of symbolic references');
     end;
@@ -413,7 +450,7 @@ begin
     if not rules.Item[i].Represents(ISymbolicRule, rule) then
       raise EMathSysError.Create('Replace requires a list of rules to apply');
 
-  Result:= ApplyRules(Expr, Context, rules, false);
+  Result:= ApplyRules(Expr, Context, rules, False, false);
 end;
 
 function TPackageSymbolics.ReplaceAll_2(Context: IContext; args: TExprList): IExpression;
@@ -435,7 +472,7 @@ begin
     if not rules.Item[i].Represents(ISymbolicRule, rule) then
       raise EMathSysError.Create('ReplaceAll requires a list of rules to apply');
 
-  Result:= ApplyRules(Expr, Context, rules, true);
+  Result:= ApplyRules(Expr, Context, rules, true, false);
 end;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -484,6 +521,26 @@ begin
     Result:= TFunctionProperties(fFunctionProperties.Objects[i])
   else
     Result:= fDefaultProperties;
+end;
+
+function TPackageSymbolics.Diff_2(Context: IContext; args: TExprList): IExpression;
+var
+  ctx: IContext;
+  rules: IExpression;
+  expr: IExpression;
+  vs: ISymbolReference;
+begin
+  expr:= args[0].Evaluate(Context);
+  if not args[1].Represents(ISymbolReference, vs) then
+    raise EMathSysError.Create('Diff requires a variable to differentiate by.');
+
+  ctx:= TContext.Create(Context);
+  ctx.SetSilent(true);
+  Context.GetSystem.Parse('rules=ReplaceAll('+
+          'source('+QuotedStr(ExtractFilePath(ParamStr(0)) + 'rules_diff.pi')+')'+
+          ', rule(hold(x), {}, hold('+vs.Name+')))').Evaluate(ctx);
+  rules:= ctx.Definition('rules').Evaluate(Context);
+  Result:= ApplyRules(expr, Context, rules as IValueList, true, false);
 end;
 
 end.

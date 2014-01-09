@@ -1,0 +1,18 @@
+§hold({
+  ; basics
+  rule(hold(a),         {a:='Const'},    0),
+  rule(hold(u*v),       {u, v},          hold(u*eval(diff(hold(v), x)) + eval(diff(hold(u), x))*v)),
+  rule(hold(u+v),       {u, v},          hold(eval(diff(hold(u), x)) + eval(diff(hold(v), x)))),
+  rule(hold(u/v),       {u, v},          hold((eval(diff(hold(u), x))*v-u*eval(diff(hold(v), x)))/v^2)),
+
+  
+  rule(hold(x),         {},         hold(1)),
+  rule(hold(x^n),       {n},        hold(n*x^(n-1))),
+  rule(hold(a^x),       {a},        hold(a^x*ln(x))),
+
+  ; functions
+  rule(hold(sin(x)),    {},         hold(cos(x))),
+  rule(hold(cos(x)),    {},         hold(-sin(x))),
+  rule(hold(tan(x)),    {},         hold(1+tan(x)^2)),
+  rule(hold(ln(x)),     {},         hold(1/x))
+})

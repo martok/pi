@@ -15,6 +15,8 @@ type
     fFreeVars: TStringList;
     fVars: array of THashedStringList;
     function VerifyVariables(const Expr: IExpression; const v: integer): boolean;
+    function FreeVarName(const i: integer): string;
+    function FreeVarIndex(const name: string): integer;
     procedure StoreFreeVariable(const v: integer; const aValue: IExpression);
   protected
     function MatchExpression(const Ex, Pat: IExpression): boolean;
@@ -86,7 +88,7 @@ begin
 
     SetLength(fVars, fFreeVars.Count);
     for i:= 0 to fFreeVars.Count-1 do begin
-      fContext.Define(fFreeVars[i], TValueUnassigned.Create);
+      fContext.Define(FreeVarName(i), TValueUnassigned.Create);
       fVars[i]:= THashedStringList.Create;
     end;
   end;
@@ -101,7 +103,7 @@ function TExpressionMatcher.Match(const Expr: IExpression): boolean;
   begin
     Writeln('Candidates dump:');
     for i:= 0 to high(fVars) do begin
-      Writeln(fFreeVars[i], ' = ');
+      Writeln(FreeVarName(i), ' = ');
       for j:= 0 to fVars[i].Count-1 do begin
         e:= TVariableAssignment(fVars[i].Objects[j]).Value;
         if e.Represents(IStringConvertible, sc) then
@@ -145,7 +147,7 @@ begin
     Result:= MatchExpression(Expr, test);
   end else begin
     for i:= 0 to fVars[v].Count-1 do begin
-      fContext.Define(fFreeVars[v], TVariableAssignment(fVars[v].Objects[i]).Value);
+      fContext.Define(FreeVarName(v), TVariableAssignment(fVars[v].Objects[i]).Value);
       Result:= VerifyVariables(Expr, v+1);
       if Result then
         exit;
@@ -156,9 +158,15 @@ end;
 procedure TExpressionMatcher.StoreFreeVariable(const v: integer; const aValue: IExpression);
 var
   sc: IStringConvertible;
-  k: string;
+  c,k: string;
   va: TVariableAssignment;
 begin
+  // Constraints
+  c:= LowerCase(fFreeVars.ValueFromIndex[v]);
+  if c > '' then begin
+    if (c='const') and not aValue.Represents(IExpressionAtom) then exit;
+  end;
+
   // yes, a faster hashCode would be nice, but this is just so cheap to code :)
   if aValue.Represents(IStringConvertible, sc) then
     k:= sc.AsString(STR_FORMAT_INPUT)
@@ -186,7 +194,7 @@ begin
   end else
   // symbol reference
   if ex.Represents(ISymbolReference, esy) and pat.Represents(ISymbolReference, psy) then begin
-    vi:= fFreeVars.IndexOf(psy.Name);
+    vi:= FreeVarIndex(psy.Name);
     if vi < 0 then
       Result:= SameText(esy.Name,psy.Name)
     else begin
@@ -209,7 +217,7 @@ begin
   end else 
   // symbol reference in pattern only
   if pat.Represents(ISymbolReference, psy) then begin
-    vi:= fFreeVars.IndexOf(psy.Name);
+    vi:= FreeVarIndex(psy.Name);
     if vi < 0 then
       Result:= false
     else begin
@@ -339,7 +347,7 @@ function TExpressionMatcher.MatchCallOrderless(const Ex, Pat: TExprList; const f
   begin
     Result:= -1;
     if e.Represents(ISymbolReference, sy) then
-      Result:= fFreeVars.IndexOf(sy.Name);
+      Result:= FreeVarIndex(sy.Name);
   end;
 
   procedure PushList(var List: TExprList; Item: IExpression);
@@ -409,6 +417,20 @@ begin
     if Result then
       exit;
   until not IndexPermutationNext(pati);
+end;
+
+function TExpressionMatcher.FreeVarName(const i: integer): string;
+begin
+  Result:= fFreeVars.Names[i];
+  if Result='' then
+    Result:= fFreeVars[i];
+end;
+
+function TExpressionMatcher.FreeVarIndex(const name: string): integer;
+begin
+  Result:= fFreeVars.IndexOf(name);
+  if Result<0 then
+    Result:= fFreeVars.IndexOfName(name);
 end;
 
 end.

@@ -47,6 +47,12 @@
 			Gibt die Expression <v>expr</v> unevaluiert zurück.
 		</description>
 	</function>
+	<function name="Eval">
+		<syntax>Eval(<v>Expr</v>)</syntax>
+		<description>
+			Gibt die Expression <v>expr</v> evaluiert zurück. Gedacht zur Verwendung auf der rechten Seite von <seealso p="symbolics" n="rule">Regeln</seealso>.
+		</description>
+	</function>
 	<function name="AbsoluteTime">
 		<syntax>AbsoluteTime(<v>Expr</v>)</syntax>
 		<description>

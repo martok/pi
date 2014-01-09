@@ -46,8 +46,14 @@
 		<syntax>ReplaceAll(<v>expr</v>, {<v>patterns</v>})</syntax>
 		<syntax>ReplaceAll(<v>expr</v>, <v>patterns</v>)</syntax>
 		<description>
-			Wendet die erste passende Regel aus <v>patterns</v> auf jeder Ebene von <v>expr</v> rekursiv an und verarbeitet
-			auch durch freie Variablen erzeugten Unterausdrücke.
+			Wendet die erste passende Regel aus <v>patterns</v> auf jeder Ebene von <v>expr</v> rekursiv an.
+		</description>
+	</function>
+
+	<function name="Diff">
+		<syntax>Diff(<v>expr</v>, <v>var</v>)</syntax>
+		<description>
+			Differenziert <v>expr</v> symbolisch nach <v>var</v>.
 		</description>
 	</function>
 </package>
