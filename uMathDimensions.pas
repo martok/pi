@@ -9,43 +9,24 @@ unit uMathDimensions;
 interface
 
 uses
-  uMathIntf, uMathValues, uMath, Classes, Math;
+  uMathIntf, uMath, Classes, Math;
 
 type
   EMathDimensionError = class(EMathSysError);
 
-  TValueDimension = class(TE_Atom, IValueNumber, IValueDimension, IStringConvertible, IOperationAddition, IOperationMultiplication, IOperationPower)
+  TValueDimension = class(TAggregatedObject, IDimensions)
   private
-    FSIValue: Number;
     FUnits: TMathUnits;
+    FScale: Number;
     FCreatedAs: String;
   public
-    constructor Create(const aVal: Number; const aUnits: TMathUnits; const aCreatedAs: String = '');
-
-    // IExpression
-    function Clone(Deep: Boolean): IExpression; override;
-    // IValueNumber
-    function NumberValue: Number;
-    function IValueNumber.Value = NumberValue;
-    // IValueDimension
-    function Value: Number;
-    function Units: TMathUnits;
-    function IsCompatible(const Units: TMathUnits): boolean;
+    constructor Create(const Owner: IValueNumber; const Scale: Number; const Dimension: TMathUnits; const CreatedAs: string='');
     function IsScalar: boolean;
-    // IStringConvertible
-    function AsString(const Format: TStringFormat): string;
-    // IOperationAddition;
-    function OpAdd(const B: IExpression): IExpression;
-    function OpSubtract(const B: IExpression): IExpression;
-    // IOperationMultiplication
-    function OpDivide(const B: IExpression): IExpression;
-    function OpMultiply(const B: IExpression): IExpression;
-    function OpNegate: IExpression;
-    // IOperationPower
-    function OpPower(const B: Number): IExpression;
-    function OpRoot(const B: Number): IExpression;
+    function Units: TMathUnits;
+    function UnitCompatible(const Units: TMathUnits): boolean;
   end;
 
+  {
   TPackageDimensions = class(TFunctionPackage)
   protected
     procedure OnImport(const MS: TMathSystem); override;
@@ -54,6 +35,7 @@ type
     function Convert_2(Context: IContext; args: TExprList): IExpression;
     function Express_2_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
   end;
+  }
 
   TDimensionsList = array of record
     DimIndex: Integer;
@@ -89,7 +71,6 @@ function PowerDimensions(const A: TMathUnits; const Expo: integer): TMathUnits;
 function RootDimensions(const A: TMathUnits; const Expo: integer): TMathUnits;
 function DimensionIsScalar(const A: TMathUnits): boolean;                
 function SameDimension(const A, B: TMathUnits): boolean;
-function DimensionFromString(const Value: Number; Const Uni: String): IValueDimension;
 
 implementation
 
@@ -158,6 +139,30 @@ begin
   UnitDimTable[i].Dim:= MakeDimension(Dim);
 end;
 
+{ TValueDimension }
+
+constructor TValueDimension.Create(const Owner: IValueNumber; const Scale: Number; const Dimension: TMathUnits; const CreatedAs: string);
+begin
+  inherited Create(Owner);
+  FScale:= Scale;
+  FUnits:= Dimension;
+  FCreatedAs:= CreatedAs;
+end;
+
+function TValueDimension.IsScalar: boolean;
+begin
+  Result:= DimensionIsScalar(FUnits);
+end;
+
+function TValueDimension.UnitCompatible(const Units: TMathUnits): boolean;
+begin
+  // TODO Unit compare
+end;
+
+function TValueDimension.Units: TMathUnits;
+begin
+  Result:= FUnits;
+end;
 
 { TDimensionParser }
 
@@ -505,179 +510,8 @@ begin
   Result:= true;
 end;
 
-function DimensionFromString(const Value: Number; Const Uni: String): IValueDimension;
-var
-  dp: TDimensionParser;
-  f: Number;
-  u: TMathUnits;
-begin
-  u:= dp.ParseUnitString(uni, f);
-  Result:= TValueDimension.Create(Value * f, u, uni);
-end;
-
-{ TValueDimension }
-
-constructor TValueDimension.Create(const aVal: Number; const aUnits: TMathUnits; const aCreatedAs: String);
-begin
-  inherited Create;
-  FSIValue:= aVal;
-  FUnits:= aUnits;
-  FCreatedAs:= aCreatedAs;
-end;
-
-function TValueDimension.Clone(Deep: Boolean): IExpression;
-begin
-  Result:= TValueDimension.Create(FSIValue, FUnits);
-end;
-
-function TValueDimension.IsCompatible(const Units: TMathUnits): boolean;
-var
-  d: TMathBaseUnit;
-begin
-  Result:= true;
-  for d:= low(d) to high(d) do
-    if Units[d] <> FUnits[d] then begin
-      Result:= false;
-      exit;
-    end;
-end;
-
-function TValueDimension.NumberValue: Number;
-var
-  dp: TDimensionParser;
-  u: TMathUnits;
-  f: Number;
-begin
-  u:= dp.ParseUnitString(FCreatedAs, f);
-
-  Result:= FSIValue / f;
-end;
-
-function TValueDimension.Units: TMathUnits;
-begin
-  Result:= FUnits;
-end;
-
-function TValueDimension.Value: Number;
-begin
-  Result:= FSIValue;
-end;
-
-function TValueDimension.IsScalar: boolean;
-begin
-  Result:= DimensionIsScalar(FUnits);
-end;
-
-function TValueDimension.AsString(const Format: TStringFormat): string;
-var
-  dp: TDimensionParser;
-begin
-  case Format of
-    STR_FORMAT_OUTPUT: begin
-      Result:= (TValueNumber.Create(NumberValue) as IStringConvertible).AsString(Format);
-      if FCreatedAs >'' then
-         Result:= Result + ' ' + FCreatedAs
-      else
-         Result:= Result + ' ' + dp.GetSIString(FUnits, false);
-    end;
-  else
-    Result:=
-      (TValueNumber.Create(FSIValue) as IStringConvertible).AsString(Format) + ' ' +
-      dp.GetSIString(FUnits, false);
-  end;
-end;
-
-function TValueDimension.OpAdd(const B: IExpression): IExpression;
-var
-  nb: IValueNumber;
-  ub: IValueDimension;
-begin
-   if b.Represents(IValueDimension, ub) then begin
-      if IsCompatible(ub.Units) then
-        Result:= TValueDimension.Create(FSIValue + ub.Value, FUnits)
-      else
-        raise EMathDimensionError.Create('Only objects of the same dimension can be added');
-    end else begin
-      if b.Represents(IValueNumber, nb) then begin
-        if IsScalar then
-          Result:= TValueNumber.Create(FSIValue + nb.Value)
-        else
-          raise EMathDimensionError.Create('Only objects of the same dimension can be added');
-      end else
-        raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
-   end;
-end;
-
-function TValueDimension.OpSubtract(const B: IExpression): IExpression;
-var
-  nb: IValueNumber;
-  ub: IValueDimension;
-begin
-   if b.Represents(IValueDimension, ub) then begin
-      if IsCompatible(ub.Units) then
-        Result:= TValueDimension.Create(FSIValue - ub.Value, FUnits)
-      else
-        raise EMathDimensionError.Create('Only objects of the same dimension can be subtracted');
-    end else begin
-      if b.Represents(IValueNumber, nb) then begin
-        if IsScalar then
-          Result:= TValueNumber.Create(FSIValue - nb.Value)
-        else
-          raise EMathDimensionError.Create('Only objects of the same dimension can be subtracted');
-      end else
-        raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
-   end;
-end;
-
-function TValueDimension.OpDivide(const B: IExpression): IExpression;
-var
-  nd: IValueNumber;
-  ud: IValueDimension;
-begin
-  if B.Represents(IValueDimension, ud) then
-    Result:= TValueDimension.Create(fdiv(FSIValue, ud.Value), MultDimensions(FUnits, InverseDimensions(ud.Units)))
-  else if B.Represents(IValueNumber, nd) then
-    Result:= TValueDimension.Create(fdiv(FSIValue, nd.Value), FUnits)
-  else
-    raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
-end;
-
-function TValueDimension.OpMultiply(const B: IExpression): IExpression;
-var
-  nb: IValueNumber;
-  ub: IValueDimension;
-begin
-  if b.Represents(IValueDimension, ub) then
-    Result:= TValueDimension.Create(FSIValue * ub.Value, MultDimensions(FUnits, ub.Units))
-  else if b.Represents(IValueNumber, nb) then
-    Result:= TValueDimension.Create(FSIValue * nb.Value, FUnits)
-  else
-    raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
-end;
-
-function TValueDimension.OpNegate: IExpression;
-begin
-  Result:= TValueDimension.Create(-FSIValue, FUnits, FCreatedAs);
-end;
-
-function TValueDimension.OpPower(const B: Number): IExpression;
-begin
-  if fzero(frac(b)) then
-    Result:= TValueDimension.Create(IntPower(FSIValue, trunc(b)), PowerDimensions(FUnits, trunc(b)))
-  else
-    raise EMathDimensionError.Create('Exponent has to be a whole number');
-end;
-
-function TValueDimension.OpRoot(const B: Number): IExpression;
-begin
-  if fzero(frac(B)) then
-    Result:= TValueDimension.Create(Math.Power(FSIValue, 1 / B), RootDimensions(FUnits, trunc(B)))
-  else
-    raise EMathDimensionError.Create('Root has to be a whole number');
-end;
-
 { TPackageDimensions }
-
+(*)
 function TPackageDimensions.Unit_2(Context: IContext; args: TExprList): IExpression;
 var
   nn: IExpression;
@@ -906,6 +740,7 @@ begin
   inherited;
   MS.RegisterAsInfix('_', 1, [],Self,'unit');
 end;
+*)
 
 initialization
   //                                                                   m, kg,  s,  K,mol,  A, cd,rad,bit

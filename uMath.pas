@@ -43,10 +43,13 @@ type
     function RegisterPackage(const Package: TFunctionPackage): boolean;
     function RegisterAsInfix(Operator: String; Precedence: integer; Options: TOperatorOptions; Pack: TFunctionPackage; Func: String): boolean;
     function GetPackageInstance(const PackageClass: TFunctionPackageClass): TFunctionPackage;
-    // IMathSystem
-    function Parse(const Expr: String): IExpression;
+
     function Evaluate(const Expr: IExpression): IExpression;
     procedure Run(const Expr: String);
+    // IMathSystem
+    function Parse(const Expr: String): IExpression;
+    function HasPackage(const PackageClassName: string): Boolean;
+    function HasFunction(const FuncName: String; const ArgCount: integer): IPackagedFunction;
   end;
 
   TContextWrappedOutput = class(TInterfacedObject, IOutputProvider)
@@ -103,7 +106,6 @@ type
     function Combine(const UseDefine: boolean): IExpression;
   end;
 
-
   TExpression = class(TInterfacedObject, IExpression)
   private
     procedure SetArgument(Index: integer; const Value: IExpression);
@@ -152,6 +154,18 @@ type
   TUDFHeader = function(Context: IContext; Args: TExprList): IExpression of object;
   TUDFHeaderOptions = function(Context: IContext; Args: TExprList; Options: TDynamicArguments): IExpression of object;
 
+  TPackagedFunction = class(TInterfacedObject, IPackagedFunction)
+  private
+    FName: string;
+    FPtr: TUDFHeader;
+    FDynamicFrom: integer;
+  public
+    constructor Create(const Name: string; const Ptr: TUDFHeader; const DynamicFrom: integer);
+    function Call(Context: IContext; Args: TExprList): IExpression;
+    function GetName: String;
+    function IsDynamic: boolean;
+  end;
+
   TFunctionPackage = class
   protected
     procedure OnImport(const MS: TMathSystem); virtual;
@@ -184,8 +198,7 @@ type
   private
     FName: string;      
     FFunctionBound: Boolean;      
-    FFunction: TUDFHeader;
-    FFirstDynamic: Integer;
+    FFunction: IPackagedFunction;
     FCreatedFrom: Pointer;
     class function CheckSysCalls(StringForm: string): Boolean;
     function GetName: string;
@@ -220,7 +233,8 @@ type
     procedure OnImport(const MS: TMathSystem); override;
   published
     function _dump_1(Context: IContext; Args: TExprList): IExpression;
-    function _describe_1(Context: IContext; Args: TExprList): IExpression;
+    function _describe_1(Context: IContext; Args: TExprList): IExpression;   
+    function TypeOf_1(Context: IContext; Args: TExprList): IExpression;
 
     function Undef_1(Context: IContext; args: TExprList): IExpression;
     function New_0(Context: IContext; args: TExprList): IExpression;
@@ -233,7 +247,7 @@ type
     function constinfo_1(Context: IContext; args: TExprList): IExpression;
 
     //function nvl_2(Context: IContext; args: TExprList): IExpression;
-    function Hold_1(Context: IContext; args: TExprList): IExpression; 
+    function Hold_1(Context: IContext; args: TExprList): IExpression;
     function Eval_1(Context: IContext; args: TExprList): IExpression;
     function AbsoluteTime_1(Context: IContext; args: TExprList): IExpression;
   end;
@@ -741,7 +755,7 @@ var
       case Tokens[i].Kind of
         tokNumber: begin
             Tokens[i].Kind:= tokExpression;
-            Tokens[i].Expr:= TValueNumber.Create(StrToFloat(Tokens[i].Value, NeutralFormatSettings));
+            Tokens[i].Expr:= TValueFactory.FromString(Tokens[i].Value, NeutralFormatSettings);
           end;
         tokString: begin
             Tokens[i].Kind:= tokExpression;
@@ -973,6 +987,31 @@ begin
   Code:= Code + Format(',%s=const(''%0:s'')',['e']);
   setter:= Parse(Code);
   setter.Evaluate(Context);
+end;
+
+function TMathSystem.HasPackage(const PackageClassName: string): Boolean;
+var
+  i: integer;
+begin
+  Result:= false;
+  for i:= 0 to fPackages.Count-1 do
+    if fPackages[i].ClassName = PackageClassName then begin
+      Result:= True;
+      exit;
+    end;
+end;
+
+function TMathSystem.HasFunction(const FuncName: String; const ArgCount: integer): IPackagedFunction;
+var
+  i, fdyn: integer;
+  func: TUDFHeader;
+begin
+  Result:= nil;
+  for i:= 0 to fPackages.Count-1 do begin
+    func:= TFunctionPackage(fPackages[i]).GetFunction(FuncName, ArgCount, fdyn);
+    if Assigned(func) then
+      Result:= TPackagedFunction.Create(FuncName, func, fdyn);
+  end;
 end;
 
 { TContextWrappedOutput }
@@ -1442,10 +1481,10 @@ end;
 
 function TPackageAlgebra._char_1(Context: IContext; Args: TExprList): IExpression;
 var
-  v: Number;
+  v: IValueNumber;
 begin
-  if EvaluateToNumber(Context, Args[0], v) then
-    Result:= TValueString.Create(chr(trunc(v)))
+  if Args[0].Evaluate(Context).Represents(IValueNumber, v) then
+    Result:= TValueString.Create(chr(v.ValueInt))
   else
     raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
 end;
@@ -1470,7 +1509,7 @@ begin
   ea:= args[0].Evaluate(Context);
 
   if ea.Represents(IOperationPower, op) then
-    Result:= op.OpPower(EvaluateToNumber(Context, args[1]))
+    Result:= op.OpPower(args[1].Evaluate(Context))
   else
     raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Power']);
 end;
@@ -1510,23 +1549,26 @@ end;
 
 function TPackageAlgebra._mod_2(Context: IContext; Args: TExprList): IExpression;
 var
-  a,b,f: Number;
+  a,b: IValueNumber;
+  va,vb,f: MTFloat;
 begin
-  if EvaluateToNumber(Context, Args[0], a) and
-     EvaluateToNumber(Context, Args[1], b) then begin
-    if b > a then
-      Result:= TValueNumber.Create(a)
+  if Args[0].Evaluate(Context).Represents(IValueNumber, a) and
+     Args[1].Evaluate(Context).Represents(IValueNumber, b) then begin
+    if b.ValueFloat > a.ValueFloat then
+      Result:= a
     else
-    if fzero(a) then
-      Result:= TValueNumber.Create(0.0)
+    if fzero(a.ValueFloat) then
+      Result:= TValueFactory.Zero
     else begin
-      if fzero((a/b) - ((a-1)/b)) or
-         fzero(((a+1)/b) - (a/b)) then
+      va:= a.ValueFloat;
+      vb:= b.ValueFloat;
+      if fzero((va/vb) - ((va-1)/vb)) or
+         fzero(((va+1)/vb) - (va/vb)) then
         Context.Output.Hint('Mod: result is not exact.',[]);
 //      f:= a - Int(a / b) * b;
 //      f:= frac(a / b) * b;
-      f:= fmod(a, b);
-      Result:= TValueNumber.Create(f);
+      f:= fmod(va, vb);
+      Result:= TValueFactory.Float(f);
     end;
   end
   else
@@ -1670,33 +1712,15 @@ begin
 end;
 
 function TE_Call.Evaluate(const Context: IContext): IExpression;
-var
-  i: integer;
-  dyn: TDynamicArguments;
-  pks: TObjectList;
 begin
   if not FFunctionBound then begin
     FFunctionBound:= True;
-    pks:= TContext.SystemFrom(Context).fPackages;
-    for i:= 0 to pks.Count-1 do begin
-      FFunction:= TFunctionPackage(pks[i]).GetFunction(FName, Length(Arguments), FFirstDynamic);
-      if Assigned(FFunction) then
-        break;
-    end;
+    FFunction:= Context.GetSystem.HasFunction(FName, length(Arguments));
   end;
 
-  if Assigned(FFunction) then begin
-    if FFirstDynamic >= 0 then begin
-      dyn:= TDynamicArguments.Create(Arguments, FFirstDynamic, Context);
-      try
-        Result:= TUDFHeaderOptions(FFunction)(Context, Arguments, dyn);
-      finally
-        FreeAndNil(dyn);
-      end;
-    end else
-      Result:= FFunction(Context, Arguments);
-    exit;
-  end else
+  if Assigned(FFunction) then
+    Result:= FFunction.Call(Context, Arguments)
+  else
     raise EMathSysError.CreateFmt('Function %s has no version with %d parameters', [FName, Length(Arguments)]);
 end;
 
@@ -1867,6 +1891,39 @@ begin
     Result:= TValueString.Create('<Unknown>');
 end;
 
+function TPackageCore.TypeOf_1(Context: IContext; Args: TExprList): IExpression;
+var
+  x: IExpression;
+  n: IValueNumber;
+  d: string;
+begin
+  x:= args[0].Evaluate(Context);
+  if x.Represents(IValueNull) then
+    Result:= TValueString.Create('Null')
+  else
+  if x.Represents(IValueUnassigned) then
+    Result:= TValueString.Create('Unassigned')
+  else
+  if x.Represents(IValueString) then
+    Result:= TValueString.Create('String')
+  else
+  if x.Represents(IValueList) then
+    Result:= TValueString.Create('List')
+  else
+  if x.Represents(IValueNumber, n) then begin
+    if n.Represents(IDimensions) then
+      d:= 'Dimension'
+    else
+      d:= '';
+    case n.BaseType of
+      tiUnknown: Result:= TValueString.Create('Number'+d);
+      tiInt: Result:= TValueString.Create('Integer'+d);
+      tiFloat: Result:= TValueString.Create('Float'+d);
+    end;
+  end else
+    Result:= TValueString.Create('Unknown');
+end;
+
 function TPackageCore.New_0(Context: IContext; args: TExprList): IExpression;
 begin
   TContext.SystemFrom(Context).NewContext('');
@@ -1931,13 +1988,16 @@ function TPackageCore.const_1(Context: IContext; args: TExprList): IExpression;
 var
   nm: string;
   res: TConstantDef;
+  f: IPackagedFunction;
 begin
   nm:= EvaluateToString(Context, args[0]);
   if FindConstant(nm, res) then begin
-    if res.Uni>'' then
-      Result:= DimensionFromString(res.Value, res.Uni)
-    else
-      Result:= TValueNumber.Create(res.Value);
+    Result:= TValueFactory.Float(res.Value);
+    if (res.Uni>'') then begin
+      f:= Context.GetSystem.HasFunction('unit', 2);
+      if Assigned(f) then
+        Result:= f.Call(Context, MakeArgs([Result, TValueString.Create(res.Uni)]));
+    end;
   end else
     raise EMathSysError.CreateFmt('Unknown Constant: %s', [nm]);
 end;
@@ -1961,7 +2021,7 @@ begin
   Count:= 0;
   ListIn(@MathematicalConstants, Low(MathematicalConstants), high(MathematicalConstants));
   ListIn(@PhysicalConstants, Low(PhysicalConstants), high(PhysicalConstants));
-  Result:= TValueNumber.Create(Count);
+  Result:= TValueFactory.Integer(Count);
 end;
 
 function TPackageCore.constinfo_1(Context: IContext; args: TExprList): IExpression;
@@ -1996,7 +2056,42 @@ begin
   st:= args[0].Evaluate(Context);
   QueryPerformanceCounter(pc2);
 
-  Result:= TValueList.CreateAs([TValueNumber.Create((pc2-pc1) / pf), st]);
+  Result:= TValueList.CreateAs([TValueFactory.Float((pc2-pc1) / pf), st]);
+end;
+
+{ TPackagedFunction }
+
+constructor TPackagedFunction.Create(const Name: string; const Ptr: TUDFHeader; const DynamicFrom: integer);
+begin
+  inherited Create;
+  FName:= Name;
+  FPtr:= Ptr;
+  FDynamicFrom:= DynamicFrom;
+end;
+
+function TPackagedFunction.Call(Context: IContext; Args: TExprList): IExpression;
+var
+  dyn: TDynamicArguments;
+begin
+  if IsDynamic then begin
+    dyn:= TDynamicArguments.Create(Args, FDynamicFrom, Context);
+    try
+      Result:= TUDFHeaderOptions(FPtr)(Context, Args, dyn);
+    finally
+      FreeAndNil(dyn);
+    end;
+  end else
+    Result:= FPtr(Context, Args);
+end;
+
+function TPackagedFunction.GetName: String;
+begin
+  Result:= FName;
+end;
+
+function TPackagedFunction.IsDynamic: boolean;
+begin
+  Result:= FDynamicFrom >= 0;
 end;
 
 initialization

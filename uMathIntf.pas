@@ -12,12 +12,15 @@ uses
 
 type
   Number = type Extended;
+  MTInteger = type Int64;
+  MTFloat   = Number;
 
   EMathSysError = class(Exception);
   ESyntaxError = class(EMathSysError);
   EMathTypeError = class(EMathSysError);
 
   IExpression = interface;
+  IPackagedFunction = interface;
   IContext = interface;
 
   IOutputProvider = interface['{CDB4BA33-F6B1-4172-9AF9-EA7A8FAF4C9F}']
@@ -30,6 +33,8 @@ type
 
   IMathSystem = interface ['{3F3F358B-3066-43C6-8021-872145A5927C}']
     function Parse(const Expr: String): IExpression;
+    function HasPackage(const PackageClassName: string): Boolean;  
+    function HasFunction(const FuncName: string; const ArgCount: integer): IPackagedFunction;
   end;
 
 
@@ -70,6 +75,80 @@ type
     function AsString(const Format: TStringFormat): string;
   end;
 
+  ISymbolReference = interface(IExpression)['{1B46951B-6531-4499-B251-6C59A3E21B0A}']
+    function GetName: string;
+    property Name: string read GetName;
+  end;
+
+  IFunctionCall = interface(IExpression)['{F717E01E-6329-4326-91B2-CC7F742D9493}']  
+    function GetName: string;
+    property Name: string read GetName;
+  end;
+
+  IPackagedFunction = interface['{5E6324DF-4F1B-4711-A6F4-CF1D62315911}']
+    function GetName: string;
+    function IsDynamic: boolean;
+    function Call(Context: IContext; Args: TExprList): IExpression;
+  end;
+
+  TAtomCompareResult = (crIncompatible, crSame, crEquivalent, crGreater, crSmaller, crDifferent);
+  IExpressionAtom = interface(IExpression)['{EC6BC9B9-A248-4765-8F62-2BF378A869AB}']
+    // This is ... to/than B
+    function CompareTo(const B: IExpressionAtom): TAtomCompareResult;
+  end;
+
+  IValueUnassigned = interface(IExpressionAtom)['{3352D0C9-D960-43D5-A09A-5D5B4C97F663}']
+  end;
+
+  IValueNull = interface(IExpressionAtom)['{915EE73F-F88E-4806-B04D-66C5B0836D85}']
+  end;
+
+  TMathBaseUnit = (siM, siKG, siS, siK, siMOL, siA, siCD, siRAD, siBIT);
+  TMathUnits = array[TMathBaseUnit] of Shortint;
+  IDimensions = interface['{0048A6D6-0B10-4C87-9F84-630F43CA6FC4}']
+    // Dimension handling for any kind of Number                
+    function IsScalar: boolean;
+    function Units: TMathUnits;
+    function UnitCompatible(const Units: TMathUnits): boolean;
+  end;
+
+  TValueNumeralType = (
+    tiUnknown = 0,
+    tiInt = 1,
+    tiFloat = 2
+    //tiRational = 3
+  );
+  IValueNumber = interface(IExpressionAtom)['{FFE94239-E1C3-4F53-9D94-FAC80C4BD085}']
+    // Description of this value for specialised handling
+    function BaseType: TValueNumeralType;
+    function IsScalar: boolean;
+    // Numbers, raises EMathTypeError (too large, float->int)
+    function ValueFloat: MTFloat;
+    function ValueInt: MTInteger;   
+
+    // Promote Self and Other to a compatible type
+    //   ThisC, OtherC: can be just the same objects if no change neccessary
+    //   return false if not possible
+    function Promote(const Other: IValueNumber; out ThisC, OtherC: IValueNumber): boolean; overload;
+    // Promote Self and Other to a compatible type
+    //   Result, OtherC: can be just the same objects if no change neccessary
+    //   raise EMathTypeError if not possible
+    function Promote(const Other: IValueNumber; out OtherC: IValueNumber): IValueNumber; overload;
+  end;
+
+  IValueString = interface(IExpressionAtom)['{6B954DBB-0C95-4CD1-A533-4E28204B71DB}']
+    function Value: String;
+  end;
+
+  IValueList = interface(IExpressionAtom)['{C63F0621-9E52-408C-867B-501691E859EB}']
+    function GetLength: integer;
+    procedure SetLength(const NewLength: integer);
+    property Length: integer read GetLength write SetLength;
+    procedure SetItem(Index: integer; val: IExpression);
+    function GetItem(Index: integer): IExpression;
+    property Item[Index: integer]: IExpression read GetItem write SetItem;
+  end;
+
   IOperationAddition = interface['{4BBFAF74-4630-4B05-8732-888C1D9C5A24}']
     // Result = This + B
     function OpAdd(const B: IExpression): IExpression;
@@ -88,59 +167,11 @@ type
 
   IOperationPower = interface['{B59CF38E-1800-4BF6-8FCB-20B687FEB17E}']
     // Result = This ^ B
-    function OpPower(const B: Number): IExpression;
+    function OpPower(const B: IExpression): IExpression;
     // Result = This ^ (1 / B)
-    function OpRoot(const B: Number): IExpression;
+    function OpRoot(const B: IExpression): IExpression;
   end;
-
-
-  ISymbolReference = interface(IExpression)['{1B46951B-6531-4499-B251-6C59A3E21B0A}']
-    function GetName: string;
-    property Name: string read GetName;
-  end;
-
-  IFunctionCall = interface(IExpression)['{F717E01E-6329-4326-91B2-CC7F742D9493}']  
-    function GetName: string;
-    property Name: string read GetName;
-  end;
-
-  TAtomCompareResult = (crIncompatible, crSame, crEquivalent, crGreater, crSmaller, crDifferent);
-  IExpressionAtom = interface(IExpression)['{EC6BC9B9-A248-4765-8F62-2BF378A869AB}']
-    // This is ... to/than B
-    function CompareTo(const B: IExpressionAtom): TAtomCompareResult;
-  end;
-
-  IValueUnassigned = interface(IExpressionAtom)['{3352D0C9-D960-43D5-A09A-5D5B4C97F663}']
-  end;
-
-  IValueNull = interface(IExpressionAtom)['{915EE73F-F88E-4806-B04D-66C5B0836D85}']
-  end;
-
-  IValueNumber = interface(IExpressionAtom)['{915EE73F-F88E-4806-B04D-66C5B0836D85}']
-    function Value: Number;
-  end;
-
-  TMathBaseUnit = (siM, siKG, siS, siK, siMOL, siA, siCD, siRAD, siBIT);
-  TMathUnits = array[TMathBaseUnit] of Shortint;
-  IValueDimension = interface(IExpressionAtom)['{90EC8315-7C53-4306-A724-A68A611E0BDB}']
-    function Value: Number;
-    function Units: TMathUnits;
-    function IsCompatible(const Units: TMathUnits): boolean;
-    function IsScalar: boolean;
-  end;
-
-  IValueString = interface(IExpressionAtom)['{6B954DBB-0C95-4CD1-A533-4E28204B71DB}']
-    function Value: String;
-  end;
-
-  IValueList = interface(IExpressionAtom)['{C63F0621-9E52-408C-867B-501691E859EB}']
-    function GetLength: integer;
-    procedure SetLength(const NewLength: integer);
-    property Length: integer read GetLength write SetLength;
-    procedure SetItem(Index: integer; val: IExpression);
-    function GetItem(Index: integer): IExpression;
-    property Item[Index: integer]: IExpression read GetItem write SetItem;
-  end;
+  
 
 
 const

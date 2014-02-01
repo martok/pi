@@ -6,7 +6,7 @@ unit uMathValues;
 interface
 
 uses
-  SysUtils, Math, uMath, uMathIntf, uFPUSupport;
+  SysUtils, Math, uMath, uMathIntf, uFPUSupport, uMathDimensions;
 
 type
   TE_Atom = class(TExpression, IExpressionAtom)
@@ -28,28 +28,73 @@ type
     function CompareTo(const B: IExpressionAtom): TAtomCompareResult; override;
   end;
 
-  TValueNumber = class(TE_Atom, IValueNumber, IStringConvertible, IOperationAddition, IOperationMultiplication, IOperationPower)
-  private
-    FValue: Number;
+  TValueFactory = class
+    class function FromString(const Str: String; const FS: TFormatSettings): IValueNumber;
+    class function Zero: IValueNumber;
+    class function ZeroF: IValueNumber;
+    class function Float(const Val: MTFloat): IValueNumber;
+    class function Integer(const Val: MTInteger): IValueNumber;
+  end;
+
+  TValueNumberBase = class(TE_Atom, IValueNumber)
+  protected
+    function PromoteTypes(const RaiseException: boolean; var A, B: IValueNumber): boolean;
+
+    function Promote(const Other: IValueNumber; out ThisC, OtherC: IValueNumber): boolean; overload;
+    function Promote(const Other: IValueNumber; out OtherC: IValueNumber): IValueNumber; overload;
   public
-    constructor Create(const aVal: Number);
-    // IExpression
-    function Clone(Deep: Boolean): IExpression; override;
-    function CompareTo(const B: IExpressionAtom): TAtomCompareResult; override;
+    function BaseType: TValueNumeralType;
+    function IsScalar: Boolean;
+    function ValueFloat: MTFloat;
+    function ValueInt: MTInteger;
+  end;
+
+  TValueInteger = class(TValueNumberBase, IValueNumber, IStringConvertible)
+  private
+    FVal: MTInteger;
+  public
+    constructor Create(const Value: MTInteger);
     // IValueNumber
-    function Value: Number;
+    function BaseType: TValueNumeralType;
+    function ValueFloat: MTFloat;
+    function ValueInt: MTInteger;
+    function Clone(Deep: Boolean): IExpression; override;
     // IStringConvertible
     function AsString(const Format: TStringFormat): String;
-    // IOperationAddition;
-    function OpAdd(const B: IExpression): IExpression;
-    function OpSubtract(const B: IExpression): IExpression;
-    // IOperationMultiplication
-    function OpDivide(const B: IExpression): IExpression;
-    function OpMultiply(const B: IExpression): IExpression;
-    function OpNegate: IExpression;
-    // IOperationPower
-    function OpPower(const B: Number): IExpression;
-    function OpRoot(const B: Number): IExpression;
+  end;
+
+  TValueIntegerDimension = class(TValueInteger, IDimensions, IStringConvertible)
+  private
+    FDim: IDimensions;
+  public
+    constructor Create(const aVal: MTInteger; const aScale: MTFloat; const aUnits: TMathUnits; const aCreatedAs: String = '');
+    property Dim: IDimensions read FDim implements IDimensions;
+    // IStringConvertible
+    function AsString(const Format: TStringFormat): String;
+  end;
+
+  TValueFloat = class(TValueNumberBase, IValueNumber, IStringConvertible)
+  private
+    FVal: MTFloat;
+  public
+    constructor Create(const Value: MTFloat);
+    // IValueNumber
+    function BaseType: TValueNumeralType;
+    function ValueFloat: MTFloat;
+    function ValueInt: MTInteger;
+    function Clone(Deep: Boolean): IExpression; override;      
+    // IStringConvertible
+    function AsString(const Format: TStringFormat): String;
+  end;
+
+  TValueFloatDimension = class(TValueFloat, IDimensions, IStringConvertible)
+  private
+    FDim: IDimensions;
+  public
+    constructor Create(const aVal: MTFloat; const aScale: MTFloat; const aUnits: TMathUnits; const aCreatedAs: String = '');
+    property Dim: IDimensions read FDim implements IDimensions;
+    // IStringConvertible
+    function AsString(const Format: TStringFormat): String;
   end;
 
   TValueString = class(TE_Atom, IValueString, IStringConvertible)
@@ -102,34 +147,13 @@ type
     function AsString(const Format: TStringFormat): String;
   end;
 
-function CastToNumber(const Exp: IExpression): Number;
 function CastToString(const Exp: IExpression): String;
 function CheckForTuples(Param: IValueList; count: integer): boolean;
 
-function EvaluateToNumber(Context: IContext; ex: IExpression; out n: Number): Boolean; overload;     
-function EvaluateToNumber(Context: IContext; ex: IExpression): Number; overload;
 function EvaluateToString(Context: IContext; ex: IExpression; out s: string): Boolean; overload;
 function EvaluateToString(Context: IContext; ex: IExpression): String; overload;
 
 implementation
-
-uses
-  uMathDimensions;
-
-function CastToNumber(const Exp: IExpression): Number;
-var
-  v: IValueNumber;
-  s: IStringConvertible;
-begin
-  if Exp.Represents(IValueNumber, v) then
-    Result:= v.Value
-  else begin
-    if Exp.Represents(IStringConvertible, s) then
-      raise EMathTypeError.CreateFmt('Cannot convert expression to Number: %s',[s.AsString(STR_FORMAT_INPUT)])
-    else
-      raise EMathTypeError.CreateFmt('Cannot convert expression to Number: <%s>',[exp.NativeObject.ClassName]);
-  end;
-end;
 
 function CastToString(const Exp: IExpression): String;
 var
@@ -158,22 +182,6 @@ begin
          Result:= false;
          exit;
        end;
-end;
-
-function EvaluateToNumber(Context: IContext; ex: IExpression; out n: Number): Boolean;
-var
-  e: IExpression;
-  v: IValueNumber;
-begin
-  e:= ex.Evaluate(Context);
-  Result:= Assigned(e) and e.Represents(IValueNumber, v);
-  if Result then
-    n:= v.Value;
-end;
-
-function EvaluateToNumber(Context: IContext; ex: IExpression): Number;
-begin
-  Result:= CastToNumber(ex.Evaluate(Context));
 end;
 
 function EvaluateToString(Context: IContext; ex: IExpression; out s: string): Boolean;
@@ -250,128 +258,6 @@ begin
     Result:= crSame
   else
     Result:= inherited CompareTo(B);
-end;
-
-{ TValueNumber }
-
-constructor TValueNumber.Create(const aVal: Number);
-begin
-  inherited Create;
-  FValue:= aVal;
-end;
-
-function TValueNumber.Value: Number;
-begin
-  Result:= FValue;
-end;
- 
-function TValueNumber.AsString(const Format: TStringFormat): String;
-begin
-  case Format of
-    STR_FORMAT_OUTPUT: Result:= NumberToStr(FValue,NeutralFormatSettings, true);
-  else
-     Result:= NumberToStr(FValue,NeutralFormatSettings, false);
-  end;
-end;
-
-function TValueNumber.Clone(Deep: Boolean): IExpression;
-begin
-  Result:= TValueNumber.Create(FValue);
-end;
-
-function TValueNumber.CompareTo(const B: IExpressionAtom): TAtomCompareResult;
-var
-  nb: IValueNumber;
-  ub: IValueDimension;
-begin
-  if B.Represents(IValueDimension, ub) and not ub.IsScalar then
-    Result:= crIncompatible
-  else
-    if b.Represents(IValueNumber, nb) then begin
-      if Value > nb.Value then
-        Result:= crGreater
-      else if Value < nb.Value then
-        Result:= crSmaller
-      else begin
-        if B.Represents(IValueDimension) then
-          Result:= crEquivalent
-        else
-          Result:= crSame;
-      end;
-    end
-      else
-        Result:= inherited CompareTo(B);
-end;
-
-function TValueNumber.OpAdd(const B: IExpression): IExpression;
-var
-  nb: IValueNumber;
-  ub: IValueDimension;
-begin
-  if B.Represents(IValueDimension, ub) then begin
-    if ub.IsScalar then
-      Result:= TValueNumber.Create(FValue + ub.Value)
-    else
-      raise EMathDimensionError.Create('Only objects of the same dimension can be added');
-  end else
-    if b.Represents(IValueNumber, nb) then
-      Result:= TValueNumber.Create(FValue + nb.Value);
-end;
-
-function TValueNumber.OpSubtract(const B: IExpression): IExpression;
-var
-  nb: IValueNumber;
-  ub: IValueDimension;
-begin
-  if B.Represents(IValueDimension, ub) then begin
-    if ub.IsScalar then
-      Result:= TValueNumber.Create(FValue - ub.Value)
-    else
-      raise EMathDimensionError.Create('Only objects of the same dimension can be subtracted');
-  end else
-    if b.Represents(IValueNumber, nb) then
-      Result:= TValueNumber.Create(FValue - nb.Value);
-end;
-
-function TValueNumber.OpDivide(const B: IExpression): IExpression;
-var
-  ud: IValueDimension;
-  nd: IValueNumber;
-begin
-  if B.Represents(IValueDimension, ud) then
-    Result:= TValueDimension.Create(fdiv(FValue, ud.Value), InverseDimensions(ud.Units))
-  else if B.Represents(IValueNumber, nd) then
-    Result:= TValueNumber.Create(fdiv(FValue, nd.Value))
-  else
-    raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
-end;
-
-function TValueNumber.OpMultiply(const B: IExpression): IExpression;
-var
-  ud: IValueDimension;
-  nd: IValueNumber;
-begin
-  if B.Represents(IValueDimension, ud) then
-    Result:= TValueDimension.Create(FValue * ud.Value, ud.Units)
-  else if B.Represents(IValueNumber, nd) then
-    Result:= TValueNumber.Create(FValue * nd.Value)
-  else
-    raise EMathTypeError.CreateFmt(sCannotConvertExpression, ['Number']);
-end;
-
-function TValueNumber.OpNegate: IExpression;
-begin
-  Result:= TValueNumber.Create(-FValue);
-end;
-
-function TValueNumber.OpPower(const B: Number): IExpression;
-begin
-  Result:= TValueNumber.Create(fpower(FValue, b));
-end;
-
-function TValueNumber.OpRoot(const B: Number): IExpression;
-begin
-  Result:= TValueNumber.Create(Power(FValue, 1 / B));
 end;
 
 { TValueString }
@@ -561,7 +447,7 @@ end;
 
 function TValueRange.GetItem(Index: Integer): IExpression;
 begin
-  Result:= TValueNumber.Create(FStart + Index * FStep);
+  Result:= TValueFactory.Float(FStart + Index * FStep);
 end;
 
 function TValueRange.GetLength: Integer;
@@ -621,5 +507,191 @@ begin
     Result:= inherited CompareTo(B);
 end;
 
+{ TValueFactory }
+
+class function TValueFactory.FromString(const Str: String; const FS: TFormatSettings): IValueNumber;
+var
+  t: Int64;
+begin
+  {$IF NOT( (SizeOf(Int64)=SizeOf(MTInteger)) and (High(MTInteger)=high(Int64)) )}
+    {$ERROR Int64 != MTInteger}
+  {$IFEND}
+  if TryStrToInt64(Str, t) then
+    Result:= TValueFactory.Integer(t)
+  else
+    Result:= TValueFactory.Float(StrToFloat(Str, FS));
+end;
+
+class function TValueFactory.Float(const Val: MTFloat): IValueNumber;
+begin
+  Result:= TValueFloat.Create(Val);
+end;
+
+class function TValueFactory.Integer(const Val: MTInteger): IValueNumber;
+begin
+  Result:= TValueInteger.Create(Val);
+end;
+
+class function TValueFactory.Zero: IValueNumber;
+begin
+  Result:= TValueInteger.Create(0);
+end;
+
+class function TValueFactory.ZeroF: IValueNumber;
+begin
+  Result:= TValueFloat.Create(0.0);
+end;
+
+{ TValueNumberBase }
+
+function TValueNumberBase.Promote(const Other: IValueNumber; out ThisC, OtherC: IValueNumber): boolean;
+begin
+  Assert(Self.Represents(IValueNumber));
+
+  ThisC:= Self as IValueNumber;
+  OtherC:= Other;
+  Result:= PromoteTypes(false, ThisC, OtherC);
+end;
+
+function TValueNumberBase.Promote(const Other: IValueNumber; out OtherC: IValueNumber): IValueNumber;
+begin
+  Assert(Self.Represents(IValueNumber));
+
+  Result:= Self as IValueNumber;
+  OtherC:= Other;
+  PromoteTypes(true, Result, OtherC);
+end;
+
+function TValueNumberBase.PromoteTypes(const RaiseException: boolean; var A, B: IValueNumber): boolean;
+begin
+  //TODO
+end;
+
+function TValueNumberBase.BaseType: TValueNumeralType;
+begin
+  Result:= tiUnknown;
+end;
+
+function TValueNumberBase.IsScalar: Boolean;
+var
+  d: IDimensions;
+begin
+  Result:= not Represents(IDimensions, d) or d.IsScalar;
+end;
+
+function TValueNumberBase.ValueFloat: Number;
+begin
+  Result:= NAN;
+end;
+
+function TValueNumberBase.ValueInt: MTInteger;
+begin
+  Result:= 0;
+end;
+
+{ TValueInteger }
+
+constructor TValueInteger.Create(const Value: MTInteger);
+begin
+  inherited Create;
+  FVal:= Value;
+end;
+
+function TValueInteger.BaseType: TValueNumeralType;
+begin
+  Result:= tiInt;
+end;
+
+function TValueInteger.ValueFloat: Number;
+begin
+  Result:= FVal;
+end;
+
+function TValueInteger.ValueInt: MTInteger;
+begin
+  Result:= FVal;
+end;
+
+function TValueInteger.Clone(Deep: Boolean): IExpression;
+begin
+  Result:= TValueInteger.Create(FVal);
+end;
+
+function TValueInteger.AsString(const Format: TStringFormat): String;
+begin
+  //TODO IntToStr?
+  case Format of
+    STR_FORMAT_OUTPUT: Result:= NumberToStr(FVal,NeutralFormatSettings, true);
+  else
+     Result:= NumberToStr(FVal,NeutralFormatSettings, false);
+  end;
+end;
+
+{ TValueFloat }
+
+constructor TValueFloat.Create(const Value: MTFloat);
+begin
+  inherited Create;
+  FVal:= Value;
+end;
+
+function TValueFloat.BaseType: TValueNumeralType;
+begin
+  Result:= tiFloat;
+end;
+
+function TValueFloat.ValueFloat: MTFloat;
+begin
+  Result:= FVal;
+end;
+
+function TValueFloat.ValueInt: MTInteger;
+begin
+  if ftruncable(FVal) and fzero(frac(FVal)) then
+    Result:= Floor64(FVal)
+  else
+    raise EMathTypeError.CreateFmt('Cannot cast Float to Integer: %f',[FVal]);
+  //TODO Systemweite Formatierung nutzen
+end;
+
+function TValueFloat.Clone(Deep: Boolean): IExpression;
+begin
+  Result:= TValueFloat.Create(FVal);
+end;
+
+function TValueFloat.AsString(const Format: TStringFormat): String;
+begin
+  case Format of
+    STR_FORMAT_OUTPUT: Result:= NumberToStr(FVal,NeutralFormatSettings, true);
+  else
+     Result:= NumberToStr(FVal,NeutralFormatSettings, false);
+  end;
+end;
+
+{ TValueIntegerDimension }
+
+function TValueIntegerDimension.AsString(const Format: TStringFormat): String;
+begin
+  //TODO
+end;
+
+constructor TValueIntegerDimension.Create(const aVal: MTInteger; const aScale: MTFloat; const aUnits: TMathUnits; const aCreatedAs: String);
+begin
+  inherited Create(aVal);
+  FDim:= TValueDimension.Create(Self, aScale, aUnits, aCreatedAs);
+end;
+
+{ TValueFloatDimension }
+
+function TValueFloatDimension.AsString(const Format: TStringFormat): String;
+begin
+  //TODO
+end;
+
+constructor TValueFloatDimension.Create(const aVal, aScale: MTFloat; const aUnits: TMathUnits; const aCreatedAs: String);
+begin
+  inherited Create(aVal);
+  FDim:= TValueDimension.Create(Self, aScale, aUnits, aCreatedAs);
+end;
 
 end.
