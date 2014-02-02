@@ -24,9 +24,10 @@ type
     function IsScalar: boolean;
     function Units: TMathUnits;
     function UnitCompatible(const Units: TMathUnits): boolean;
+    function UnitFactor: Number;
+    function UnitString: String;
   end;
 
-  {
   TPackageDimensions = class(TFunctionPackage)
   protected
     procedure OnImport(const MS: TMathSystem); override;
@@ -35,7 +36,6 @@ type
     function Convert_2(Context: IContext; args: TExprList): IExpression;
     function Express_2_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
   end;
-  }
 
   TDimensionsList = array of record
     DimIndex: Integer;
@@ -50,6 +50,7 @@ type
     function FormatExponent(const base: String; u: ShortInt): string;
     function FormatSIExponent(Dim: TMathBaseUnit; u: ShortInt): string;
     function GetStringFromList(const Units: TDimensionsList; const UseExponents: boolean): string;
+    function GetFactorFromList(const Units: TDimensionsList): MTFloat;
     function FormatPrefix(const pref, un: String): string;
   protected
     function CombineDL(const A, B: TDimensionsList): TDimensionsList;
@@ -72,10 +73,12 @@ function RootDimensions(const A: TMathUnits; const Expo: integer): TMathUnits;
 function DimensionIsScalar(const A: TMathUnits): boolean;                
 function SameDimension(const A, B: TMathUnits): boolean;
 
+function MakeQuantity(const N: IValueNumber; const uni: String): IValueNumber;
+
 implementation
 
 uses
-  SysUtils, StrUtils, uCIntegerBucketList, uMathConstants, uFPUSupport;
+  SysUtils, StrUtils, uCIntegerBucketList, uMathConstants, uFPUSupport, uMathValues;
 
 type
   TDefinedUnit = record
@@ -139,6 +142,17 @@ begin
   UnitDimTable[i].Dim:= MakeDimension(Dim);
 end;
 
+
+function MakeQuantity(const N: IValueNumber; const uni: String): IValueNumber;
+var
+  u: TMathUnits;
+  f: MTFloat;
+  dp: TDimensionParser;
+begin
+  u:= dp.ParseUnitString(uni, f);
+  Result:= TValueFloatDimension.Create(N.ValueFloat * f, f, u, uni);
+end;
+
 { TValueDimension }
 
 constructor TValueDimension.Create(const Owner: IValueNumber; const Scale: Number; const Dimension: TMathUnits; const CreatedAs: string);
@@ -156,12 +170,23 @@ end;
 
 function TValueDimension.UnitCompatible(const Units: TMathUnits): boolean;
 begin
-  // TODO Unit compare
+  Result:= SameDimension(FUnits, Units);
+end;
+
+function TValueDimension.UnitFactor: Number;
+begin
+  Result:= FScale;
 end;
 
 function TValueDimension.Units: TMathUnits;
 begin
   Result:= FUnits;
+end;
+
+function TValueDimension.UnitString: String;
+begin
+  //TODO
+  Result:= FCreatedAs;
 end;
 
 { TDimensionParser }
@@ -433,6 +458,18 @@ begin
   Result:= TrimRight(Result);
 end;
 
+function TDimensionParser.GetFactorFromList(const Units: TDimensionsList): MTFloat;
+var
+  i: integer;
+begin
+  Result:= 1.0;
+  for i:= 0 to high(Units) do
+    if Units[i].Exponent<>0 then
+      Result:= Result * Power(
+        DimPrefixTable[Units[i].PrefixIndex].Factor*UnitDimTable[Units[i].DimIndex].Factor,
+        Units[i].Exponent);
+end;
+
 
 function MakeDimension(const Dim: array of Shortint): TMathUnits;
 var
@@ -511,44 +548,49 @@ begin
 end;
 
 { TPackageDimensions }
-(*)
+
 function TPackageDimensions.Unit_2(Context: IContext; args: TExprList): IExpression;
 var
   nn: IExpression;
-  nd: IValueDimension;
-  n: Number;
+  n: IValueNumber;
   un: string;
 begin
   nn:= args[0].Evaluate(Context);
 
-  if nn.Represents(IValueDimension, nd) then begin
+  if nn.Represents(IDimensions) then begin
     Result:= Convert_2(Context, Args);
-  end else begin
-    n:= CastToNumber(nn);
+  end else
+  if nn.Represents(IValueNumber, n) then begin
     un:= EvaluateToString(Context, args[1]);
-    Result:= DimensionFromString(n, un);
-  end;
+    Result:= MakeQuantity(n, un);
+  end else
+    raise EMathSysError.Create('Convert requires a unit value.');
 end;
 
 function TPackageDimensions.Convert_2(Context: IContext; args: TExprList): IExpression;
 var
   dp: TDimensionParser;
   nn: IExpression;
-  nd: IValueDimension;
+  nv: IValueNumber;
+  nd: IDimensions;
   f: Number;
   u: TMathUnits;
   un: string;
 begin
   nn:= args[0].Evaluate(Context);
 
-  un:= EvaluateToString(Context, args[1]);
-  u:= dp.ParseUnitString(un, f);
-  if not nn.Represents(IValueDimension, nd) then
+  if not nn.Represents(IValueNumber, nv) then
     raise EMathSysError.Create('Convert requires a unit value.');
 
-  if not nd.IsCompatible(u) then
+  if not nn.Represents(IDimensions, nd) then
+    raise EMathSysError.Create('Convert requires a unit value.');
+
+  un:= EvaluateToString(Context, args[1]);
+  u:= dp.ParseUnitString(un, f);
+
+  if not nd.UnitCompatible(u) then
     raise EMathDimensionError.Create('Dimension of the target unit differs from current object.');
-  Result:= TValueDimension.Create(nd.Value, nd.Units, un);
+  Result:= TValueFloatDimension.Create(nv.ValueFloat, f, u, un);
 end;
 
 function TPackageDimensions.Express_2_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
@@ -556,7 +598,8 @@ var
   optAcceptSameDimensions: boolean;
   dp: TDimensionParser;
   e: IExpression;
-  nd: IValueDimension;
+  nn: IValueNumber;
+  nd: IDimensions;
   l: IValueList;
   ls: IValueString;
   unitNames: TStringList;
@@ -590,7 +633,7 @@ var
     dim: TMathUnits;
     f: Number;
     e: Integer;
-  begin                    
+  begin
     remDim:= nd.Units;
     buildDim:= MakeDimension([]);
 
@@ -699,8 +742,11 @@ var
 begin
   e:= args[0].Evaluate(Context);
 
-  if not e.Represents(IValueDimension, nd) then
-    raise EMathSysError.Create('Convert requires a unit value.');
+  if not e.Represents(IValueNumber, nn) then
+    raise EMathSysError.Create('Express requires a unit value.');
+
+  if not e.Represents(IDimensions, nd) then
+    raise EMathSysError.Create('Express requires a unit value.');
 
   e:= args[1].Evaluate(Context);
 
@@ -729,7 +775,7 @@ begin
 
     FindMoreUnits;
 
-    Result:= TValueDimension.Create(nd.Value, buildDim, dp.GetStringFromList(usedUnits, false));
+    Result:= TValueFloatDimension.Create(nn.ValueFloat, dp.GetFactorFromList(usedUnits), buildDim, dp.GetStringFromList(usedUnits, false));
   finally
     FreeAndNil(unitNames);
   end;
@@ -740,7 +786,6 @@ begin
   inherited;
   MS.RegisterAsInfix('_', 1, [],Self,'unit');
 end;
-*)
 
 initialization
   //                                                                   m, kg,  s,  K,mol,  A, cd,rad,bit

@@ -10,12 +10,12 @@ uses
   uMath in 'uMath.pas',
   uMathIntf in 'uMathIntf.pas',
   uMathOutputStdout in 'uMathOutputStdout.pas',
-  uMathValues in 'uMathValues.pas'{,
+  uMathValues in 'uMathValues.pas',
+  uMathDimensions in 'uMathDimensions.pas',  
+  uMathConstants in 'uMathConstants.pas'{,
   uFunctions in 'uFunctions.pas',
-  uMathConstants in 'uMathConstants.pas',
   uFunctionsSymbolics in 'uFunctionsSymbolics.pas',
   uFunctionsStatistics in 'uFunctionsStatistics.pas',
-  uMathDimensions in 'uMathDimensions.pas',
   uExpressionMatcher in 'uExpressionMatcher.pas'};
 
 function GetInput: string;
@@ -37,15 +37,15 @@ var
   mk: TMathSystem;
 begin
   mk:= TMathSystem.Create(TOutputStdOut.Create);
-  try
+  try                          
+    mk.RegisterPackage(TPackageDimensions.Create);
    { mk.RegisterPackage(TPackageTrig.Create);
     mk.RegisterPackage(TPackageElementary.Create);
     mk.RegisterPackage(TPackageNumerical.Create);
     mk.RegisterPackage(TPackageLists.Create);
     mk.RegisterPackage(TPackageData.Create);
     mk.RegisterPackage(TPackageStatistics.Create);
-    mk.RegisterPackage(TPackageSymbolics.Create);
-    mk.RegisterPackage(TPackageDimensions.Create);  }
+    mk.RegisterPackage(TPackageSymbolics.Create); }
     cmd:= GetInput;
     while cmd>'' do begin
       Writeln('');

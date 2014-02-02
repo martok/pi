@@ -29,9 +29,11 @@ type
   end;
 
   TValueFactory = class
-    class function FromString(const Str: String; const FS: TFormatSettings): IValueNumber;
     class function Zero: IValueNumber;
     class function ZeroF: IValueNumber;
+
+    class function FromString(const Str: String; const FS: TFormatSettings): IValueNumber;
+
     class function Float(const Val: MTFloat): IValueNumber;
     class function Integer(const Val: MTInteger): IValueNumber;
   end;
@@ -63,16 +65,6 @@ type
     function AsString(const Format: TStringFormat): String;
   end;
 
-  TValueIntegerDimension = class(TValueInteger, IDimensions, IStringConvertible)
-  private
-    FDim: IDimensions;
-  public
-    constructor Create(const aVal: MTInteger; const aScale: MTFloat; const aUnits: TMathUnits; const aCreatedAs: String = '');
-    property Dim: IDimensions read FDim implements IDimensions;
-    // IStringConvertible
-    function AsString(const Format: TStringFormat): String;
-  end;
-
   TValueFloat = class(TValueNumberBase, IValueNumber, IStringConvertible)
   private
     FVal: MTFloat;
@@ -91,7 +83,8 @@ type
   private
     FDim: IDimensions;
   public
-    constructor Create(const aVal: MTFloat; const aScale: MTFloat; const aUnits: TMathUnits; const aCreatedAs: String = '');
+    // 1km: aValueSIBase=1000, aScale=1000, aUnits=[1 0..] aCreatedAs='km'
+    constructor Create(const aValueSIBase: MTFloat; const aScale: MTFloat; const aUnits: TMathUnits; const aCreatedAs: String = '');
     property Dim: IDimensions read FDim implements IDimensions;
     // IStringConvertible
     function AsString(const Format: TStringFormat): String;
@@ -509,6 +502,16 @@ end;
 
 { TValueFactory }
 
+class function TValueFactory.Zero: IValueNumber;
+begin
+  Result:= TValueInteger.Create(0);
+end;
+
+class function TValueFactory.ZeroF: IValueNumber;
+begin
+  Result:= TValueFloat.Create(0.0);
+end;
+
 class function TValueFactory.FromString(const Str: String; const FS: TFormatSettings): IValueNumber;
 var
   t: Int64;
@@ -530,16 +533,6 @@ end;
 class function TValueFactory.Integer(const Val: MTInteger): IValueNumber;
 begin
   Result:= TValueInteger.Create(Val);
-end;
-
-class function TValueFactory.Zero: IValueNumber;
-begin
-  Result:= TValueInteger.Create(0);
-end;
-
-class function TValueFactory.ZeroF: IValueNumber;
-begin
-  Result:= TValueFloat.Create(0.0);
 end;
 
 { TValueNumberBase }
@@ -668,29 +661,25 @@ begin
   end;
 end;
 
-{ TValueIntegerDimension }
-
-function TValueIntegerDimension.AsString(const Format: TStringFormat): String;
-begin
-  //TODO
-end;
-
-constructor TValueIntegerDimension.Create(const aVal: MTInteger; const aScale: MTFloat; const aUnits: TMathUnits; const aCreatedAs: String);
-begin
-  inherited Create(aVal);
-  FDim:= TValueDimension.Create(Self, aScale, aUnits, aCreatedAs);
-end;
-
 { TValueFloatDimension }
 
 function TValueFloatDimension.AsString(const Format: TStringFormat): String;
+var
+  ds: string;
 begin
-  //TODO
+  case Format of
+    STR_FORMAT_OUTPUT: Result:= NumberToStr(FVal / FDim.UnitFactor,NeutralFormatSettings, true);
+  else
+     Result:= NumberToStr(FVal / FDim.UnitFactor,NeutralFormatSettings, false);
+  end;
+  ds:= FDim.UnitString;
+  if ds > '' then
+    Result:= Result + ' ' + ds;
 end;
 
-constructor TValueFloatDimension.Create(const aVal, aScale: MTFloat; const aUnits: TMathUnits; const aCreatedAs: String);
+constructor TValueFloatDimension.Create(const aValueSIBase, aScale: MTFloat; const aUnits: TMathUnits; const aCreatedAs: String);
 begin
-  inherited Create(aVal);
+  inherited Create(aValueSIBase);
   FDim:= TValueDimension.Create(Self, aScale, aUnits, aCreatedAs);
 end;
 

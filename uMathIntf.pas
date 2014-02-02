@@ -108,6 +108,8 @@ type
   IDimensions = interface['{0048A6D6-0B10-4C87-9F84-630F43CA6FC4}']
     // Dimension handling for any kind of Number                
     function IsScalar: boolean;
+    function UnitFactor: MTFloat;
+    function UnitString: string;
     function Units: TMathUnits;
     function UnitCompatible(const Units: TMathUnits): boolean;
   end;
