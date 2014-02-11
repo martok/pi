@@ -1496,21 +1496,23 @@ var
 begin
   e:= Args[0].Evaluate(Context);
   if e.Represents(IOperationMultiplication, op) then
-    Result:= op.OpNegate
-  else
+    Result:= op.OpNegate;
+  if not Assigned(Result) then
     raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Negate']);
 end;
 
 function TPackageAlgebra._pow_2(Context: IContext; Args: TExprList): IExpression;
 var
-  ea: IExpression;
+  b,e: IExpression;
   op: IOperationPower;
 begin
-  ea:= args[0].Evaluate(Context);
+  b:= Args[0].Evaluate(Context);
+  e:= Args[1].Evaluate(Context);
 
-  if ea.Represents(IOperationPower, op) then
-    Result:= op.OpPower(args[1].Evaluate(Context))
-  else
+  Result:= nil;
+  if b.Represents(IOperationPower, op) then
+    Result:= op.OpPower(e);
+  if not Assigned(Result) then
     raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Power']);
 end;
 
@@ -1518,6 +1520,7 @@ function TPackageAlgebra._mult_N(Context: IContext; Args: TExprList): IExpressio
 var
   i: integer;
   op: IOperationMultiplication;
+  v, r: IExpression;
 begin
   if Length(Args)=0 then
     Result:= TValueUnassigned.Create
@@ -1525,10 +1528,15 @@ begin
     Result:= Args[0].Evaluate(Context);
 
     for i:= 1 to high(Args) do begin
+      v:= Args[i].Evaluate(Context);
+      r:= nil;
       if Result.Represents(IOperationMultiplication, op) then
-        Result:= op.OpMultiply(Args[i].Evaluate(Context))
-      else
+        r:= op.OpMultiply(v);
+      if not Assigned(r) and v.Represents(IOperationMultiplication, op) then
+        r:= op.OpMultiply(Result);
+      if not Assigned(r) then
         raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Multiply']);
+      Result:= r;
     end;
   end;
 end;
@@ -1541,9 +1549,10 @@ begin
   n:= Args[0].Evaluate(Context);
   d:= Args[1].Evaluate(Context);
 
+  Result:= nil;
   if n.Represents(IOperationMultiplication, op) then
-    Result:= op.OpDivide(d)
-  else
+    Result:= op.OpMultiply(d);
+  if not Assigned(Result) then
     raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Divide']);
 end;
 
@@ -1554,6 +1563,7 @@ var
 begin
   if Args[0].Evaluate(Context).Represents(IValueNumber, a) and
      Args[1].Evaluate(Context).Represents(IValueNumber, b) then begin
+    //TODO: native integer ops
     if b.ValueFloat > a.ValueFloat then
       Result:= a
     else
@@ -1579,6 +1589,7 @@ function TPackageAlgebra._plus_N(Context: IContext; Args: TExprList): IExpressio
 var
   i: integer;
   op: IOperationAddition;
+  v, r: IExpression;
 begin
   if Length(Args)=0 then
     Result:= TValueUnassigned.Create
@@ -1586,10 +1597,15 @@ begin
     Result:= Args[0].Evaluate(Context);
 
     for i:= 1 to high(Args) do begin
+      v:= Args[i].Evaluate(Context);
+      r:= nil;
       if Result.Represents(IOperationAddition, op) then
-        Result:= op.OpAdd(Args[i].Evaluate(Context))
-      else
+        r:= op.OpAdd(v);
+      if not Assigned(r) and v.Represents(IOperationAddition, op) then
+        r:= op.OpAdd(Result);
+      if not Assigned(r) then
         raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Add']);
+      Result:= r;
     end;
   end;
 end;
@@ -1598,17 +1614,24 @@ function TPackageAlgebra._subtract_N(Context: IContext; Args: TExprList): IExpre
 var
   i: integer;
   op: IOperationAddition;
+  v, r: IExpression;
 begin
   if Length(Args)=0 then
     Result:= TValueUnassigned.Create
   else begin
     Result:= Args[0].Evaluate(Context);
+    //TODO: needed, or is Add(Negate(B)) better/faster/stronger?
 
     for i:= 1 to high(Args) do begin
+      v:= Args[i].Evaluate(Context);
+      r:= nil;
       if Result.Represents(IOperationAddition, op) then
-        Result:= op.OpSubtract(Args[i].Evaluate(Context))
-      else
+        r:= op.OpSubtract(v);
+      if not Assigned(r) and v.Represents(IOperationAddition, op) then
+        r:= op.OpSubtract(Result);
+      if not Assigned(r) then
         raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Subtract']);
+      Result:= r;
     end;
   end;
 end;

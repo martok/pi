@@ -116,12 +116,12 @@ uses Math, uCCSVList, uMathDimensions;
 
 function TPackageTrig.Deg2Rad_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(DegToRad(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(DegToRad(EvaluateToNumber(Context, args[0])));
 end;
 
 function TPackageTrig.Rad2Deg_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(RadToDeg(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(RadToDeg(EvaluateToNumber(Context, args[0])));
 end;
 
 function TPackageTrig.Sin_1(Context: IContext; args: TExprList): IExpression;
@@ -131,9 +131,9 @@ var
 begin
   a:= args[0].Evaluate(Context);
   if a.Represents(IValueDimension, d) then
-    Result:= TValueNumber.Create(Sin(d.Value))
+    Result:= TValueFactory.Float(Sin(d.Value))
   else
-    Result:= TValueNumber.Create(Sin(CastToNumber(a)));
+    Result:= TValueFactory.Float(Sin(CastToNumber(a)));
 end;
 
 function TPackageTrig.Cos_1(Context: IContext; args: TExprList): IExpression;
@@ -143,9 +143,9 @@ var
 begin
   a:= args[0].Evaluate(Context);
   if a.Represents(IValueDimension, d) then
-    Result:= TValueNumber.Create(Cos(d.Value))
+    Result:= TValueFactory.Float(Cos(d.Value))
   else
-    Result:= TValueNumber.Create(Cos(CastToNumber(a)));
+    Result:= TValueFactory.Float(Cos(CastToNumber(a)));
 end;
 
 function TPackageTrig.Tan_1(Context: IContext; args: TExprList): IExpression;
@@ -155,9 +155,9 @@ var
 begin
   a:= args[0].Evaluate(Context);
   if a.Represents(IValueDimension, d) then
-    Result:= TValueNumber.Create(Tan(d.Value))
+    Result:= TValueFactory.Float(Tan(d.Value))
   else
-    Result:= TValueNumber.Create(Tan(CastToNumber(a)));
+    Result:= TValueFactory.Float(Tan(CastToNumber(a)));
 end;
 
 function TPackageTrig.ArcSin_1(Context: IContext; args: TExprList): IExpression;
@@ -182,48 +182,48 @@ end;
 
 function TPackageTrig.Sinh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(fSinh(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(fSinh(EvaluateToNumber(Context, args[0])));
 end;
 
 function TPackageTrig.Cosh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(Cosh(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(Cosh(EvaluateToNumber(Context, args[0])));
 end;
 
 function TPackageTrig.Tanh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(fTanh(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(fTanh(EvaluateToNumber(Context, args[0])));
 end;
 
 function TPackageTrig.ArSinh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(ArcSinh(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(ArcSinh(EvaluateToNumber(Context, args[0])));
 end;
 
 function TPackageTrig.ArCosh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(ArcCosh(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(ArcCosh(EvaluateToNumber(Context, args[0])));
 end;
 
 function TPackageTrig.ArTanh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(ArcTanh(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(ArcTanh(EvaluateToNumber(Context, args[0])));
 end;
 
 { TPackageElementary }
 
 function TPackageElementary.Exp_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(System.Exp(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(System.Exp(EvaluateToNumber(Context, args[0])));
 end;
 
 function TPackageElementary.LogPossible(Val: Number; var FailVal: IExpression): boolean;
 begin
   Result:= false;
   if fzero(Val) then
-    FailVal:= TValueNumber.Create(NegInfinity)
+    FailVal:= TValueFactory.Float(NegInfinity)
   else if Val < 0 then
-    FailVal:= TValueNumber.Create(NaN)
+    FailVal:= TValueFactory.Float(NaN)
   else
     Result:= true;
 end;
@@ -234,7 +234,7 @@ var
 begin
   a:= EvaluateToNumber(Context, args[0]);
   if LogPossible(a, Result) then
-    Result:= TValueNumber.Create(System.Ln(a));
+    Result:= TValueFactory.Float(System.Ln(a));
 end;
 
 function TPackageElementary.Lg_1(Context: IContext; args: TExprList): IExpression;
@@ -243,7 +243,7 @@ var
 begin
   a:= EvaluateToNumber(Context, args[0]);
   if LogPossible(a, Result) then
-    Result:= TValueNumber.Create(Math.Log10(a));
+    Result:= TValueFactory.Float(Math.Log10(a));
 end;
 
 function TPackageElementary.Ld_1(Context: IContext; args: TExprList): IExpression;
@@ -252,7 +252,7 @@ var
 begin
   a:= EvaluateToNumber(Context, args[0]);
   if LogPossible(a, Result) then
-    Result:= TValueNumber.Create(Math.Log2(a));
+    Result:= TValueFactory.Float(Math.Log2(a));
 end;
 
 function TPackageElementary.Loga_2(Context: IContext; args: TExprList): IExpression;
@@ -262,12 +262,12 @@ begin
   b:= EvaluateToNumber(Context, args[0]);
   a:= EvaluateToNumber(Context, args[1]);
   if LogPossible(a, Result) then
-    Result:= TValueNumber.Create(Math.LogN(b, a));
+    Result:= TValueFactory.Float(Math.LogN(b, a));
 end;
 
 function TPackageElementary.Sqrt_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= NRt_2(Context, MakeArgs([TValueNumber.Create(2), args[0]]));
+  Result:= NRt_2(Context, MakeArgs([TValueFactory.Float(2), args[0]]));
 end;
 
 function TPackageElementary.NRt_2(Context: IContext; args: TExprList): IExpression;
@@ -278,7 +278,7 @@ var
 begin
   x:= EvaluateToNumber(Context, args[0]);
   if fzero(x) then begin
-    Result:= TValueNumber.Create(NaN);
+    Result:= TValueFactory.Float(NaN);
     exit;
   end;
 
@@ -291,14 +291,14 @@ end;
 
 function TPackageElementary.Random_0(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(Random);
+  Result:= TValueFactory.Float(Random);
 end;
 
 { TPackageNumerical }
 
 function TPackageNumerical.Abs_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(System.Abs(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(System.Abs(EvaluateToNumber(Context, args[0])));
 end;
 
 function TPackageNumerical.Sign_1(Context: IContext; args: TExprList): IExpression;
@@ -312,7 +312,7 @@ begin
     m:= -1.0
   else
     m:= 0.0;
-  Result:= TValueNumber.Create(m);
+  Result:= TValueFactory.Float(m);
 end;
 
 function TPackageNumerical.Step_1(Context: IContext; args: TExprList): IExpression;
@@ -324,7 +324,7 @@ begin
     m:= 1.0
   else
     m:= 0;
-  Result:= TValueNumber.Create(m);
+  Result:= TValueFactory.Float(m);
 end;
 
 function TPackageNumerical.Round_1(Context: IContext; args: TExprList): IExpression;
@@ -333,7 +333,7 @@ var
 begin
   v:= EvaluateToNumber(Context, args[0]);
   v:= Round(v);
-  Result:= TValueNumber.Create(v);
+  Result:= TValueFactory.Float(v);
 end;
 
 function TPackageNumerical.Round_2(Context: IContext; args: TExprList): IExpression;
@@ -345,22 +345,22 @@ begin
   pot:= trunc(EvaluateToNumber(Context, args[1]));
   f:= IntPower(10, pot);
   v:= Round(v / f) * f;
-  Result:= TValueNumber.Create(v);
+  Result:= TValueFactory.Float(v);
 end;
 
 function TPackageNumerical.Trunc_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(trunc(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(trunc(EvaluateToNumber(Context, args[0])));
 end;
 
 function TPackageNumerical.Ceil_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(Ceil(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(Ceil(EvaluateToNumber(Context, args[0])));
 end;
 
 function TPackageNumerical.Floor_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(Floor(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(Floor(EvaluateToNumber(Context, args[0])));
 end;
 
 
@@ -383,7 +383,7 @@ begin
     accu:= SQRT_2PI * fpower(p, 0.5) * fPower(p/cE, p);
     Context.Output.Hint('Fac: Using Stirling''s approximation.',[]);
   end;
-  Result:= TValueNumber.Create(accu);
+  Result:= TValueFactory.Float(accu);
 end;
 
 function bin(n,k: int64): int64;
@@ -414,7 +414,7 @@ begin
   n:= trunc(EvaluateToNumber(Context, args[0]));
   k:= trunc(EvaluateToNumber(Context, args[1]));
   p:= bin(n,k);
-  Result:= TValueNumber.Create(p);
+  Result:= TValueFactory.Float(p);
 end;
 
 function TPackageNumerical.Permutations_2(Context: IContext; args: TExprList): IExpression;
@@ -428,7 +428,7 @@ begin
     p:= p * k;
     Dec(k);
   end;
-  Result:= TValueNumber.Create(p);
+  Result:= TValueFactory.Float(p);
 end;
 
 const
@@ -451,7 +451,7 @@ begin
       raise EMathSysError.CreateFmt('Invalid numeral in base %d: ''%s''', [base, n[i]]);
     v:= v * base + j;
   end;
-  Result:= TValueNumber.Create(v);
+  Result:= TValueFactory.Float(v);
 end;
 
 function TPackageNumerical.Base_itoa(base: integer; Param: IValueNumber): IExpressionAtom;
@@ -561,7 +561,7 @@ begin
   if v.Represents(IValueString, s) then  begin
     a.xp:= StrToInt('$' + copy(s.Value, 1, 4));
     a.m:= StrToInt64('$' + copy(s.Value, 5, 16));
-    Result:= TValueNumber.Create(a.e);
+    Result:= TValueFactory.Float(a.e);
   end else if v.Represents(IValueNumber, n) then begin
     a.e:= n.Value;
     Result:= TValueString.Create(IntToHex(a.xp,4) + IntToHex(a.m,16))
@@ -591,7 +591,7 @@ begin
   a:= Trunc(EvaluateToNumber(Context, args[0]));
   b:= Trunc(EvaluateToNumber(Context, args[1]));
 
-  Result:= TValueNumber.Create(GCD(a,b));
+  Result:= TValueFactory.Float(GCD(a,b));
 end;
 
 function TPackageNumerical.LCM_2(Context: IContext; args: TExprList): IExpression;
@@ -603,9 +603,9 @@ begin
 
   g:= gcd(a,b);
   if g<>0 then
-    Result:= TValueNumber.Create(a div g * b)
+    Result:= TValueFactory.Float(a div g * b)
   else
-    Result:= TValueNumber.Create(0);
+    Result:= TValueFactory.Float(0);
 end;
 
 function TPackageNumerical.Fraction_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
@@ -616,7 +616,7 @@ var
   x, p, lastp, q, lastq, ptemp, qtemp, u, err, d: Number;
   nom,den,w: int64;
 begin
-  prec:= EvaluateToNumber(Context, Options.GetDefault('precision', TValueNumber.Create(1E-11))) / 100;
+  prec:= EvaluateToNumber(Context, Options.GetDefault('precision', TValueFactory.Float(1E-11))) / 100;
   mixed:= Options.IsSet('mixed');
 
   x:= EvaluateToNumber(Context, Args[0]);
@@ -669,9 +669,9 @@ begin
     if w<>0 then
       nom:= abs(nom);
     nom:= nom mod den;
-    Result:= TValueList.CreateAs([TValueNumber.Create(w),TValueNumber.Create(Nom),TValueNumber.Create(den)])
+    Result:= TValueList.CreateAs([TValueFactory.Float(w),TValueFactory.Float(Nom),TValueFactory.Float(den)])
   end else
-    Result:= TValueList.CreateAs([TValueNumber.Create(Nom),TValueNumber.Create(den)]);
+    Result:= TValueList.CreateAs([TValueFactory.Float(Nom),TValueFactory.Float(den)]);
 end;
 
 
@@ -690,7 +690,7 @@ var
     i: integer;
   begin
     for i:= 0 to high(r) do begin
-      c.Define(v, TValueNumber.Create(r[i, 0]));
+      c.Define(v, TValueFactory.Float(r[i, 0]));
       r[i, 1]:= EvaluateToNumber(c, f);
     end;
   end;
@@ -757,7 +757,7 @@ begin
   else
     raise EMathSysError.CreateFmt('ND: unknown method specified: ''%s''',[opt_method]);
 
-  Result:= TValueNumber.Create(dr);
+  Result:= TValueFactory.Float(dr);
 end;
 
 
@@ -963,7 +963,7 @@ var
 begin
   if not Supports(args[0].Evaluate(Context), IValueList, a) then
     raise EMathSysError.Create('Count requires a list.');
-  Result:= TValueNumber.Create(a.Length);
+  Result:= TValueFactory.Integer(a.Length);
 end;
 
 procedure TPackageLists.OnImport(const MS: TMathSystem);
@@ -1038,7 +1038,7 @@ begin
       row:= TValueList.Create;
       row.Length:= line.Count;
       for j:= 0 to row.Length - 1 do begin
-        cn:= TValueNumber.Create(StrToFloat(Line[j], NeutralFormatSettings));
+        cn:= TValueFactory.Float(StrToFloat(Line[j], NeutralFormatSettings));
         row.Item[j]:= cn;
       end;
       res.Item[i - first]:= row as IExpression;
@@ -1153,7 +1153,7 @@ begin
     end;
     Context.Output.Hint('%s', [l]);
   end;
-  Result:= TValueNumber.Create(total);
+  Result:= TValueFactory.Float(total);
 end;
 
 function TPackageData.Bucket_4(Context: IContext; args: TExprList): IExpression;
@@ -1185,8 +1185,8 @@ begin
   for i:= 0 to high(Counter) do begin
     e:= TValueList.Create;
     e.Length:= 2;
-    e.Item[0]:= TValueNumber.Create(mi + width * (i + 0.5));
-    e.Item[1]:= TValueNumber.Create(Counter[i]);
+    e.Item[0]:= TValueFactory.Float(mi + width * (i + 0.5));
+    e.Item[1]:= TValueFactory.Float(Counter[i]);
 
     r.Item[i]:= e as IExpression;
   end;
@@ -1207,7 +1207,7 @@ begin
     if n > m then
       m:= n;
   end;
-  Result:= TValueNumber.Create(m);
+  Result:= TValueFactory.Float(m);
 end;
 
 function TPackageData.Min_1(Context: IContext; args: TExprList): IExpression;
@@ -1224,7 +1224,7 @@ begin
     if n < m then
       m:= n;
   end;
-  Result:= TValueNumber.Create(m);
+  Result:= TValueFactory.Float(m);
 end;
 
 type
@@ -1354,8 +1354,8 @@ begin
     y:= CastToNumber(tup.Item[1]);
     tup:= TValueList.Create;
     tup.Length:= 2;
-    tup.Item[0]:= TValueNumber.Create((x+a) / 2);
-    tup.Item[1]:= TValueNumber.Create((y-b) / (x-a));
+    tup.Item[0]:= TValueFactory.Float((x+a) / 2);
+    tup.Item[1]:= TValueFactory.Float((y-b) / (x-a));
     Res.Item[i-1]:= tup as IExpression;
     a:= x;
     b:= y;

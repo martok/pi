@@ -39,11 +39,6 @@ type
   end;
 
   TValueNumberBase = class(TE_Atom, IValueNumber)
-  protected
-    function PromoteTypes(const RaiseException: boolean; var A, B: IValueNumber): boolean;
-
-    function Promote(const Other: IValueNumber; out ThisC, OtherC: IValueNumber): boolean; overload;
-    function Promote(const Other: IValueNumber; out OtherC: IValueNumber): IValueNumber; overload;
   public
     function BaseType: TValueNumeralType;
     function IsScalar: Boolean;
@@ -51,7 +46,8 @@ type
     function ValueInt: MTInteger;
   end;
 
-  TValueInteger = class(TValueNumberBase, IValueNumber, IStringConvertible)
+  TValueInteger = class(TValueNumberBase, IValueNumber, IStringConvertible,
+    IOperationAddition, IOperationMultiplication, IOperationPower)
   private
     FVal: MTInteger;
   public
@@ -63,9 +59,20 @@ type
     function Clone(Deep: Boolean): IExpression; override;
     // IStringConvertible
     function AsString(const Format: TStringFormat): String;
+    // IOperationAddition
+    function OpAdd(const B: IExpression): IExpression;
+    function OpSubtract(const B: IExpression): IExpression;
+    // IOperationMultiplication
+    function OpMultiply(const B: IExpression): IExpression;
+    function OpDivide(const B: IExpression): IExpression;
+    function OpNegate: IExpression;
+    // IOperationPower
+    function OpPower(const B: IExpression): IExpression;
+    function OpRoot(const B: IExpression): IExpression;
   end;
 
-  TValueFloat = class(TValueNumberBase, IValueNumber, IStringConvertible)
+  TValueFloat = class(TValueNumberBase, IValueNumber, IStringConvertible,
+    IOperationAddition, IOperationMultiplication, IOperationPower)
   private
     FVal: MTFloat;
   public
@@ -77,6 +84,16 @@ type
     function Clone(Deep: Boolean): IExpression; override;      
     // IStringConvertible
     function AsString(const Format: TStringFormat): String;
+    // IOperationAddition
+    function OpAdd(const B: IExpression): IExpression;
+    function OpSubtract(const B: IExpression): IExpression;
+    // IOperationMultiplication
+    function OpMultiply(const B: IExpression): IExpression;
+    function OpDivide(const B: IExpression): IExpression;
+    function OpNegate: IExpression;
+    // IOperationPower
+    function OpPower(const B: IExpression): IExpression;
+    function OpRoot(const B: IExpression): IExpression;
   end;
 
   TValueFloatDimension = class(TValueFloat, IDimensions, IStringConvertible)
@@ -537,29 +554,6 @@ end;
 
 { TValueNumberBase }
 
-function TValueNumberBase.Promote(const Other: IValueNumber; out ThisC, OtherC: IValueNumber): boolean;
-begin
-  Assert(Self.Represents(IValueNumber));
-
-  ThisC:= Self as IValueNumber;
-  OtherC:= Other;
-  Result:= PromoteTypes(false, ThisC, OtherC);
-end;
-
-function TValueNumberBase.Promote(const Other: IValueNumber; out OtherC: IValueNumber): IValueNumber;
-begin
-  Assert(Self.Represents(IValueNumber));
-
-  Result:= Self as IValueNumber;
-  OtherC:= Other;
-  PromoteTypes(true, Result, OtherC);
-end;
-
-function TValueNumberBase.PromoteTypes(const RaiseException: boolean; var A, B: IValueNumber): boolean;
-begin
-  //TODO
-end;
-
 function TValueNumberBase.BaseType: TValueNumeralType;
 begin
   Result:= tiUnknown;
@@ -620,6 +614,89 @@ begin
   end;
 end;
 
+function TValueInteger.OpAdd(const B: IExpression): IExpression;
+var
+  v: IValueNumber;
+begin
+  Result:= nil;
+  if B.Represents(IDimensions) then
+    exit; // let IDimensions handle that
+  if B.Represents(IValueNumber, v) then begin
+    case v.BaseType of
+      tiInt: Result:= TValueFactory.Integer(FVal + v.ValueInt);
+      tiFloat: Result:= TValueFactory.Float(FVal + v.ValueFloat);
+    end;
+  end;
+end;
+
+function TValueInteger.OpSubtract(const B: IExpression): IExpression;
+var
+  v: IValueNumber;
+begin
+  Result:= nil;
+  if B.Represents(IDimensions) then
+    exit; // let IDimensions handle that
+  if B.Represents(IValueNumber, v) then begin
+    case v.BaseType of
+      tiInt: Result:= TValueFactory.Integer(FVal - v.ValueInt);
+      tiFloat: Result:= TValueFactory.Float(FVal - v.ValueFloat);
+    end;
+  end;
+end;
+
+function TValueInteger.OpMultiply(const B: IExpression): IExpression;
+var
+  v: IValueNumber;
+begin
+  Result:= nil;
+  if B.Represents(IDimensions) then
+    exit; // let IDimensions handle that
+  if B.Represents(IValueNumber, v) then begin
+    case v.BaseType of
+      tiInt: Result:= TValueFactory.Integer(FVal * v.ValueInt);
+      tiFloat: Result:= TValueFactory.Float(FVal * v.ValueFloat);
+    end;
+  end;
+end;
+
+function TValueInteger.OpDivide(const B: IExpression): IExpression;
+var
+  v: IValueNumber;
+begin
+  Result:= nil;
+  if B.Represents(IDimensions) then
+    exit; // let IDimensions handle that
+  if B.Represents(IValueNumber, v) then begin
+    case v.BaseType of
+      tiInt: Result:= TValueFactory.Float(FVal / v.ValueInt);
+      tiFloat: Result:= TValueFactory.Float(FVal / v.ValueFloat);
+    end;
+  end;
+end;
+
+function TValueInteger.OpNegate: IExpression;
+begin
+  Result:= TValueFactory.Integer(-FVal);
+end;
+
+function TValueInteger.OpPower(const B: IExpression): IExpression;
+var
+  v: IValueNumber;
+begin
+  Result:= nil;
+  if B.Represents(IValueNumber, v) then
+    Result:= TValueFactory.Float(Power(FVal, v.ValueFloat));
+end;
+
+function TValueInteger.OpRoot(const B: IExpression): IExpression;
+var
+  v: IValueNumber;
+begin
+  Result:= nil;
+  if B.Represents(IValueNumber, v) then
+    Result:= TValueFactory.Float(Power(FVal, 1 / v.ValueFloat));
+end;
+
 { TValueFloat }
 
 constructor TValueFloat.Create(const Value: MTFloat);
@@ -659,6 +736,77 @@ begin
   else
      Result:= NumberToStr(FVal,NeutralFormatSettings, false);
   end;
+end;
+
+function TValueFloat.OpAdd(const B: IExpression): IExpression;
+var
+  v: IValueNumber;
+begin
+  Result:= nil;
+  if B.Represents(IDimensions) then
+    exit; // let IDimensions handle that
+  if B.Represents(IValueNumber, v) then begin
+    Result:= TValueFactory.Float(FVal + v.ValueFloat);
+  end;
+end;
+
+function TValueFloat.OpSubtract(const B: IExpression): IExpression;
+var
+  v: IValueNumber;
+begin
+  Result:= nil;
+  if B.Represents(IDimensions) then
+    exit; // let IDimensions handle that
+  if B.Represents(IValueNumber, v) then begin
+    Result:= TValueFactory.Float(FVal - v.ValueFloat);
+  end;
+end;
+
+function TValueFloat.OpMultiply(const B: IExpression): IExpression;
+var
+  v: IValueNumber;
+begin
+  Result:= nil;
+  if B.Represents(IDimensions) then
+    exit; // let IDimensions handle that
+  if B.Represents(IValueNumber, v) then begin
+    Result:= TValueFactory.Float(FVal * v.ValueFloat);
+  end;
+end;
+
+function TValueFloat.OpDivide(const B: IExpression): IExpression;
+var
+  v: IValueNumber;
+begin
+  Result:= nil;
+  if B.Represents(IDimensions) then
+    exit; // let IDimensions handle that
+  if B.Represents(IValueNumber, v) then begin
+    Result:= TValueFactory.Float(FVal / v.ValueFloat);
+  end;
+end;
+
+function TValueFloat.OpNegate: IExpression;
+begin
+  Result:= TValueFactory.Float(-FVal);
+end;
+
+function TValueFloat.OpPower(const B: IExpression): IExpression;
+var
+  v: IValueNumber;
+begin
+  Result:= nil;
+  if B.Represents(IValueNumber, v) then
+    Result:= TValueFactory.Float(Power(FVal, v.ValueFloat));
+end;
+
+function TValueFloat.OpRoot(const B: IExpression): IExpression;
+var
+  v: IValueNumber;
+begin
+  Result:= nil;
+  if B.Represents(IValueNumber, v) then
+    Result:= TValueFactory.Float(Power(FVal, 1 / v.ValueFloat));
 end;
 
 { TValueFloatDimension }

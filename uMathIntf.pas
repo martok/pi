@@ -11,6 +11,9 @@ uses
   SysUtils, Classes;
 
 type
+////////////////////////////////////////////////////////////////////////////////
+//   Fundamental Types
+////////////////////////////////////////////////////////////////////////////////
   Number = type Extended;
   MTInteger = type Int64;
   MTFloat   = Number;
@@ -55,6 +58,9 @@ type
     function Combine(const UseDefine: boolean): IExpression;
   end;
 
+////////////////////////////////////////////////////////////////////////////////
+//   Expressions
+////////////////////////////////////////////////////////////////////////////////
   TExprList = array of IExpression;
   IExpression = interface['{56A7A015-3E85-483F-9EC5-4C3C0E232CA5}']
     function NativeObject: TObject;
@@ -80,7 +86,7 @@ type
     property Name: string read GetName;
   end;
 
-  IFunctionCall = interface(IExpression)['{F717E01E-6329-4326-91B2-CC7F742D9493}']  
+  IFunctionCall = interface(IExpression)['{F717E01E-6329-4326-91B2-CC7F742D9493}']
     function GetName: string;
     property Name: string read GetName;
   end;
@@ -91,6 +97,9 @@ type
     function Call(Context: IContext; Args: TExprList): IExpression;
   end;
 
+////////////////////////////////////////////////////////////////////////////////
+//   Atomic Expressions
+////////////////////////////////////////////////////////////////////////////////
   TAtomCompareResult = (crIncompatible, crSame, crEquivalent, crGreater, crSmaller, crDifferent);
   IExpressionAtom = interface(IExpression)['{EC6BC9B9-A248-4765-8F62-2BF378A869AB}']
     // This is ... to/than B
@@ -127,15 +136,6 @@ type
     // Numbers, raises EMathTypeError (too large, float->int)
     function ValueFloat: MTFloat;
     function ValueInt: MTInteger;   
-
-    // Promote Self and Other to a compatible type
-    //   ThisC, OtherC: can be just the same objects if no change neccessary
-    //   return false if not possible
-    function Promote(const Other: IValueNumber; out ThisC, OtherC: IValueNumber): boolean; overload;
-    // Promote Self and Other to a compatible type
-    //   Result, OtherC: can be just the same objects if no change neccessary
-    //   raise EMathTypeError if not possible
-    function Promote(const Other: IValueNumber; out OtherC: IValueNumber): IValueNumber; overload;
   end;
 
   IValueString = interface(IExpressionAtom)['{6B954DBB-0C95-4CD1-A533-4E28204B71DB}']
@@ -151,6 +151,22 @@ type
     property Item[Index: integer]: IExpression read GetItem write SetItem;
   end;
 
+////////////////////////////////////////////////////////////////////////////////
+//   Operations used by function implementations
+////////////////////////////////////////////////////////////////////////////////
+{
+  Implementor's Note:
+  Any call MAY return nil to signify that the operation is not currently possible
+  for any reason, i.e.:
+    * Bad RHS type
+    * Unsupported in current state
+    * etc.
+  Kernel Note:
+    Functions SHOULD always try other orders if appropriate, ie.
+     A + B can be evaluated as A.OpAdd(B) as well as B.OpAdd(A)
+    Usually, special behaviour is only handled in one direction, the other SHOULD
+    return nil to cause evaluation of the other direction
+}
   IOperationAddition = interface['{4BBFAF74-4630-4B05-8732-888C1D9C5A24}']
     // Result = This + B
     function OpAdd(const B: IExpression): IExpression;
