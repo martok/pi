@@ -501,8 +501,8 @@ end;
 procedure TPackageSymbolics.SetupAlgebra;
 begin
   with fFunctionProperties do begin
-    AddObject('_plus', TFunctionProperties.Create(true, true, TValueNumber.Create(0)));
-    AddObject('_mult', TFunctionProperties.Create(true, true, TValueNumber.Create(1)));
+    AddObject('_plus', TFunctionProperties.Create(true, true, TValueFactory.Zero));
+    AddObject('_mult', TFunctionProperties.Create(true, true, TValueFactory.Integer(1)));
   end;
 end;
 

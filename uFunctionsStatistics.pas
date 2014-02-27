@@ -148,42 +148,42 @@ end;
 
 function TPackageStatistics.Erf_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(erf(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(erf(EvaluateToFloat(Context, args[0])));
 end;
 
 function TPackageStatistics.ErfC_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(erfc(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(erfc(EvaluateToFloat(Context, args[0])));
 end;
 
 function TPackageStatistics.StdNormCDF_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(0.5 * (1 + erf(EvaluateToNumber(Context, args[0])/sqrt(2))));
+  Result:= TValueFactory.Float(0.5 * (1 + erf(EvaluateToFloat(Context, args[0])/sqrt(2))));
 end;
 
 function TPackageStatistics.StdNormPDF_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(stdnormdist(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(stdnormdist(EvaluateToFloat(Context, args[0])));
 end;
 
 function TPackageStatistics.NormPDF_3(Context: IContext; args: TExprList): IExpression;
 var
   x,s,u: Number;
 begin
-  x:= EvaluateToNumber(Context, args[0]);
-  u:= EvaluateToNumber(Context, args[1]);
-  s:= EvaluateToNumber(Context, args[2]);
-  Result:= TValueNumber.Create(1/s * stdnormdist((x-u)/s));
+  x:= EvaluateToFloat(Context, args[0]);
+  u:= EvaluateToFloat(Context, args[1]);
+  s:= EvaluateToFloat(Context, args[2]);
+  Result:= TValueFactory.Float(1/s * stdnormdist((x-u)/s));
 end;
 
 function TPackageStatistics.InvStdNormCDF_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(invstdnormdist(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(invstdnormdist(EvaluateToFloat(Context, args[0])));
 end;
 
 function TPackageStatistics.StdNormRand_0(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueNumber.Create(invstdnormdist(random));
+  Result:= TValueFactory.Float(invstdnormdist(random));
 end;
 
 end.

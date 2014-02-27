@@ -13,10 +13,10 @@ uses
   uMathValues in 'uMathValues.pas',
   uMathDimensions in 'uMathDimensions.pas',  
   uMathConstants in 'uMathConstants.pas',
-  uFunctions in 'uFunctions.pas'{,
+  uFunctions in 'uFunctions.pas',
   uFunctionsSymbolics in 'uFunctionsSymbolics.pas',
   uFunctionsStatistics in 'uFunctionsStatistics.pas',
-  uExpressionMatcher in 'uExpressionMatcher.pas'};
+  uExpressionMatcher in 'uExpressionMatcher.pas';
 
 function GetInput: string;
 var
@@ -44,8 +44,8 @@ begin
     mk.RegisterPackage(TPackageNumerical.Create);
     mk.RegisterPackage(TPackageLists.Create);
     mk.RegisterPackage(TPackageData.Create);
-   { mk.RegisterPackage(TPackageStatistics.Create);
-    mk.RegisterPackage(TPackageSymbolics.Create); }
+    mk.RegisterPackage(TPackageStatistics.Create);
+    mk.RegisterPackage(TPackageSymbolics.Create);
     cmd:= GetInput;
     while cmd>'' do begin
       Writeln('');
