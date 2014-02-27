@@ -287,7 +287,7 @@ resourcestring
   sWork = 'Work';
 
   sCannotConvertExpression = 'Cannot convert expression to type %s';
-  sUnsupportedOperation = 'Unsupportedn operation: %s';
+  sUnsupportedOperation = 'Unsupported operation: %s';
 
 implementation
 
@@ -1511,16 +1511,24 @@ begin
 
   Result:= nil;
   if b.Represents(IOperationPower, op) then
-    Result:= op.OpPower(e);
-  if not Assigned(Result) then
+    Result:= op.OpPower(e)
+  else
     raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Power']);
 end;
 
 function TPackageAlgebra._mult_N(Context: IContext; Args: TExprList): IExpression;
+  function mul(a,b: IExpression): IExpression;
+  var
+    op: IOperationMultiplication;
+  begin
+    if a.Represents(IOperationMultiplication, op) then
+      Result:= op.OpMultiply(b)
+    else
+      raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Multiply']);
+  end;
 var
   i: integer;
-  op: IOperationMultiplication;
-  v, r: IExpression;
+  v: IExpression;
 begin
   if Length(Args)=0 then
     Result:= TValueUnassigned.Create
@@ -1529,14 +1537,9 @@ begin
 
     for i:= 1 to high(Args) do begin
       v:= Args[i].Evaluate(Context);
-      r:= nil;
-      if Result.Represents(IOperationMultiplication, op) then
-        r:= op.OpMultiply(v);
-      if not Assigned(r) and v.Represents(IOperationMultiplication, op) then
-        r:= op.OpMultiply(Result);
-      if not Assigned(r) then
+      Result:= mul(Result, v);    
+      if not Assigned(Result) then
         raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Multiply']);
-      Result:= r;
     end;
   end;
 end;
@@ -1551,7 +1554,7 @@ begin
 
   Result:= nil;
   if n.Represents(IOperationMultiplication, op) then
-    Result:= op.OpMultiply(d);
+    Result:= op.OpDivide(d);
   if not Assigned(Result) then
     raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Divide']);
 end;
@@ -1586,10 +1589,18 @@ begin
 end;
 
 function TPackageAlgebra._plus_N(Context: IContext; Args: TExprList): IExpression;
+  function add(a,b: IExpression): IExpression;
+  var
+    op: IOperationAddition;
+  begin
+    if a.Represents(IOperationAddition, op) then
+      Result:= op.OpAdd(b)
+    else
+      raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Add']);
+  end;
 var
   i: integer;
-  op: IOperationAddition;
-  v, r: IExpression;
+  v: IExpression;
 begin
   if Length(Args)=0 then
     Result:= TValueUnassigned.Create
@@ -1598,40 +1609,37 @@ begin
 
     for i:= 1 to high(Args) do begin
       v:= Args[i].Evaluate(Context);
-      r:= nil;
-      if Result.Represents(IOperationAddition, op) then
-        r:= op.OpAdd(v);
-      if not Assigned(r) and v.Represents(IOperationAddition, op) then
-        r:= op.OpAdd(Result);
-      if not Assigned(r) then
+      Result:= add(Result, v);    
+      if not Assigned(Result) then
         raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Add']);
-      Result:= r;
     end;
   end;
 end;
 
 function TPackageAlgebra._subtract_N(Context: IContext; Args: TExprList): IExpression;
+  function sub(a,b: IExpression): IExpression;
+  var
+    op: IOperationAddition;
+  begin
+    if a.Represents(IOperationAddition, op) then
+      Result:= op.OpSubtract(b)
+    else
+      raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Subtract']);
+  end;
 var
   i: integer;
-  op: IOperationAddition;
-  v, r: IExpression;
+  v: IExpression;
 begin
   if Length(Args)=0 then
     Result:= TValueUnassigned.Create
   else begin
     Result:= Args[0].Evaluate(Context);
-    //TODO: needed, or is Add(Negate(B)) better/faster/stronger?
 
     for i:= 1 to high(Args) do begin
       v:= Args[i].Evaluate(Context);
-      r:= nil;
-      if Result.Represents(IOperationAddition, op) then
-        r:= op.OpSubtract(v);
-      if not Assigned(r) and v.Represents(IOperationAddition, op) then
-        r:= op.OpSubtract(Result);
-      if not Assigned(r) then
+      Result:= sub(Result, v);
+      if not Assigned(Result) then
         raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Subtract']);
-      Result:= r;
     end;
   end;
 end;

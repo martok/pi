@@ -18,7 +18,7 @@ type
   private
     FUnits: TMathUnits;
     FScale: Number;
-    FCreatedAs: String;
+    FCreatedAs,FDisplayString: String;
   public
     constructor Create(const Owner: IValueNumber; const Scale: Number; const Dimension: TMathUnits; const CreatedAs: string='');
     function IsScalar: boolean;
@@ -150,7 +150,7 @@ var
   dp: TDimensionParser;
 begin
   u:= dp.ParseUnitString(uni, f);
-  Result:= TValueFloatDimension.Create(N.ValueFloat * f, f, u, uni);
+  Result:= TValueFloatDimension.Create(N.ValueFloat * f, u, f, uni);
 end;
 
 { TValueDimension }
@@ -184,9 +184,16 @@ begin
 end;
 
 function TValueDimension.UnitString: String;
+var
+  dp: TDimensionParser;
 begin
-  //TODO
-  Result:= FCreatedAs;
+  if (FDisplayString = '') and not IsScalar then begin
+    if FCreatedAs>'' then
+      FDisplayString:= FCreatedAs
+    else
+      FDisplayString:= dp.GetSIString(FUnits, false);
+  end;
+  Result:= FDisplayString;
 end;
 
 { TDimensionParser }
@@ -590,7 +597,7 @@ begin
 
   if not nd.UnitCompatible(u) then
     raise EMathDimensionError.Create('Dimension of the target unit differs from current object.');
-  Result:= TValueFloatDimension.Create(nv.ValueFloat, f, u, un);
+  Result:= TValueFloatDimension.Create(nv.ValueFloat, u, f, un);
 end;
 
 function TPackageDimensions.Express_2_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
@@ -775,7 +782,7 @@ begin
 
     FindMoreUnits;
 
-    Result:= TValueFloatDimension.Create(nn.ValueFloat, dp.GetFactorFromList(usedUnits), buildDim, dp.GetStringFromList(usedUnits, false));
+    Result:= TValueFloatDimension.Create(nn.ValueFloat, buildDim, dp.GetFactorFromList(usedUnits), dp.GetStringFromList(usedUnits, false));
   finally
     FreeAndNil(unitNames);
   end;
