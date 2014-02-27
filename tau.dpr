@@ -12,8 +12,8 @@ uses
   uMathOutputStdout in 'uMathOutputStdout.pas',
   uMathValues in 'uMathValues.pas',
   uMathDimensions in 'uMathDimensions.pas',  
-  uMathConstants in 'uMathConstants.pas'{,
-  uFunctions in 'uFunctions.pas',
+  uMathConstants in 'uMathConstants.pas',
+  uFunctions in 'uFunctions.pas'{,
   uFunctionsSymbolics in 'uFunctionsSymbolics.pas',
   uFunctionsStatistics in 'uFunctionsStatistics.pas',
   uExpressionMatcher in 'uExpressionMatcher.pas'};
@@ -39,12 +39,12 @@ begin
   mk:= TMathSystem.Create(TOutputStdOut.Create);
   try                          
     mk.RegisterPackage(TPackageDimensions.Create);
-   { mk.RegisterPackage(TPackageTrig.Create);
+    mk.RegisterPackage(TPackageTrig.Create);
     mk.RegisterPackage(TPackageElementary.Create);
     mk.RegisterPackage(TPackageNumerical.Create);
     mk.RegisterPackage(TPackageLists.Create);
     mk.RegisterPackage(TPackageData.Create);
-    mk.RegisterPackage(TPackageStatistics.Create);
+   { mk.RegisterPackage(TPackageStatistics.Create);
     mk.RegisterPackage(TPackageSymbolics.Create); }
     cmd:= GetInput;
     while cmd>'' do begin

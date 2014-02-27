@@ -14,8 +14,6 @@ uses SysUtils, Classes, uMathIntf, uMath, uMathValues, uFPUSupport, uMathConstan
 type
   TPackageTrig = class(TFunctionPackage)
   published
-    function Deg2Rad_1(Context: IContext; args: TExprList): IExpression;
-    function Rad2Deg_1(Context: IContext; args: TExprList): IExpression;
     function Sin_1(Context: IContext; args: TExprList): IExpression;
     function Cos_1(Context: IContext; args: TExprList): IExpression;
     function Tan_1(Context: IContext; args: TExprList): IExpression;
@@ -112,109 +110,115 @@ implementation
 
 uses Math, uCCSVList, uMathDimensions;
 
+const
+  UNITS_RAD: TMathUnits = (0, 0, 0, 0, 0, 0, 0, 1, 0);
+  sTrigFunctionAngle = '%s needs argument as quantity in Rad or as scalar';
+
 { TPackageTrig }
-
-function TPackageTrig.Deg2Rad_1(Context: IContext; args: TExprList): IExpression;
-begin
-  Result:= TValueFactory.Float(DegToRad(EvaluateToNumber(Context, args[0])));
-end;
-
-function TPackageTrig.Rad2Deg_1(Context: IContext; args: TExprList): IExpression;
-begin
-  Result:= TValueFactory.Float(RadToDeg(EvaluateToNumber(Context, args[0])));
-end;
 
 function TPackageTrig.Sin_1(Context: IContext; args: TExprList): IExpression;
 var
   a: IExpression;
-  d: IValueDimension;
+  v: IValueNumber;
 begin
   a:= args[0].Evaluate(Context);
-  if a.Represents(IValueDimension, d) then
-    Result:= TValueFactory.Float(Sin(d.Value))
+  if not a.Represents(IValueNumber, v) then
+    raise EMathTypeError.CreateFmt(sTrigFunctionAngle, ['Sin']);
+  if not v.Represents(IDimensions) then
+    v:= MakeQuantity(v, 'rad');
+  if (v as IDimensions).UnitCompatible(UNITS_RAD) then
+    Result:= TValueFactory.Float(Sin(v.ValueFloat))
   else
-    Result:= TValueFactory.Float(Sin(CastToNumber(a)));
+    raise EMathTypeError.CreateFmt(sTrigFunctionAngle, ['Sin']);
 end;
 
 function TPackageTrig.Cos_1(Context: IContext; args: TExprList): IExpression;
 var
   a: IExpression;
-  d: IValueDimension;
+  v: IValueNumber;
 begin
   a:= args[0].Evaluate(Context);
-  if a.Represents(IValueDimension, d) then
-    Result:= TValueFactory.Float(Cos(d.Value))
+  if not a.Represents(IValueNumber, v) then
+    raise EMathTypeError.CreateFmt(sTrigFunctionAngle, ['Cos']);
+  if not v.Represents(IDimensions) then
+    v:= MakeQuantity(v, 'rad');
+  if (v as IDimensions).UnitCompatible(UNITS_RAD) then
+    Result:= TValueFactory.Float(Cos(v.ValueFloat))
   else
-    Result:= TValueFactory.Float(Cos(CastToNumber(a)));
+    raise EMathTypeError.CreateFmt(sTrigFunctionAngle, ['Cos']);
 end;
 
 function TPackageTrig.Tan_1(Context: IContext; args: TExprList): IExpression;
 var
   a: IExpression;
-  d: IValueDimension;
+  v: IValueNumber;
 begin
   a:= args[0].Evaluate(Context);
-  if a.Represents(IValueDimension, d) then
-    Result:= TValueFactory.Float(Tan(d.Value))
+  if not a.Represents(IValueNumber, v) then
+    raise EMathTypeError.CreateFmt(sTrigFunctionAngle, ['Tan']);
+  if not v.Represents(IDimensions) then
+    v:= MakeQuantity(v, 'rad');
+  if (v as IDimensions).UnitCompatible(UNITS_RAD) then
+    Result:= TValueFactory.Float(Tan(v.ValueFloat))
   else
-    Result:= TValueFactory.Float(Tan(CastToNumber(a)));
+    raise EMathTypeError.CreateFmt(sTrigFunctionAngle, ['Tan']);
 end;
 
 function TPackageTrig.ArcSin_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= DimensionFromString(ArcSin(EvaluateToNumber(Context, args[0])), 'rad');
+  Result:= TValueFactory.DimFloat(ArcSin(EvaluateToFloat(Context, args[0])), UNITS_RAD);
 end;
 
 function TPackageTrig.ArcCos_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= DimensionFromString(ArcCos(EvaluateToNumber(Context, args[0])), 'rad');
+  Result:= TValueFactory.DimFloat(ArcCos(EvaluateToFloat(Context, args[0])), UNITS_RAD);
 end;
 
 function TPackageTrig.ArcTan_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= DimensionFromString(ArcTan(EvaluateToNumber(Context, args[0])), 'rad');
+  Result:= TValueFactory.DimFloat(ArcTan(EvaluateToFloat(Context, args[0])), UNITS_RAD);
 end;
 
 function TPackageTrig.ArcTan_2(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= DimensionFromString(ArcTan2(EvaluateToNumber(Context, args[0]), EvaluateToNumber(Context, args[1])), 'rad');
+  Result:= TValueFactory.DimFloat(ArcTan2(EvaluateToFloat(Context, args[0]), EvaluateToFloat(Context, args[1])), UNITS_RAD);
 end;
 
 function TPackageTrig.Sinh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueFactory.Float(fSinh(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(fSinh(EvaluateToFloat(Context, args[0])));
 end;
 
 function TPackageTrig.Cosh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueFactory.Float(Cosh(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(Cosh(EvaluateToFloat(Context, args[0])));
 end;
 
 function TPackageTrig.Tanh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueFactory.Float(fTanh(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(fTanh(EvaluateToFloat(Context, args[0])));
 end;
 
 function TPackageTrig.ArSinh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueFactory.Float(ArcSinh(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(ArcSinh(EvaluateToFloat(Context, args[0])));
 end;
 
 function TPackageTrig.ArCosh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueFactory.Float(ArcCosh(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(ArcCosh(EvaluateToFloat(Context, args[0])));
 end;
 
 function TPackageTrig.ArTanh_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueFactory.Float(ArcTanh(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(ArcTanh(EvaluateToFloat(Context, args[0])));
 end;
 
 { TPackageElementary }
 
 function TPackageElementary.Exp_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueFactory.Float(System.Exp(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(System.Exp(EvaluateToFloat(Context, args[0])));
 end;
 
 function TPackageElementary.LogPossible(Val: Number; var FailVal: IExpression): boolean;
@@ -232,7 +236,7 @@ function TPackageElementary.Ln_1(Context: IContext; args: TExprList): IExpressio
 var
   a: Number;
 begin
-  a:= EvaluateToNumber(Context, args[0]);
+  a:= EvaluateToFloat(Context, args[0]);
   if LogPossible(a, Result) then
     Result:= TValueFactory.Float(System.Ln(a));
 end;
@@ -241,7 +245,7 @@ function TPackageElementary.Lg_1(Context: IContext; args: TExprList): IExpressio
 var
   a: Number;
 begin
-  a:= EvaluateToNumber(Context, args[0]);
+  a:= EvaluateToFloat(Context, args[0]);
   if LogPossible(a, Result) then
     Result:= TValueFactory.Float(Math.Log10(a));
 end;
@@ -250,7 +254,7 @@ function TPackageElementary.Ld_1(Context: IContext; args: TExprList): IExpressio
 var
   a: Number;
 begin
-  a:= EvaluateToNumber(Context, args[0]);
+  a:= EvaluateToFloat(Context, args[0]);
   if LogPossible(a, Result) then
     Result:= TValueFactory.Float(Math.Log2(a));
 end;
@@ -259,8 +263,8 @@ function TPackageElementary.Loga_2(Context: IContext; args: TExprList): IExpress
 var
   b, a: Number;
 begin
-  b:= EvaluateToNumber(Context, args[0]);
-  a:= EvaluateToNumber(Context, args[1]);
+  b:= EvaluateToFloat(Context, args[0]);
+  a:= EvaluateToFloat(Context, args[1]);
   if LogPossible(a, Result) then
     Result:= TValueFactory.Float(Math.LogN(b, a));
 end;
@@ -272,20 +276,16 @@ end;
 
 function TPackageElementary.NRt_2(Context: IContext; args: TExprList): IExpression;
 var
-  x: Number;
-  a: IExpression;
+  a,b: IExpression;
   op: IOperationPower;
 begin
-  x:= EvaluateToNumber(Context, args[0]);
-  if fzero(x) then begin
-    Result:= TValueFactory.Float(NaN);
-    exit;
-  end;
-
+  b:= args[0].Evaluate(Context);
   a:= args[1].Evaluate(Context);
+
+  Result:= nil;
   if a.Represents(IOperationPower, op) then
-    Result:= op.OpRoot(x)
-  else
+    Result:= op.OpRoot(b);
+  if not Assigned(Result) then
     raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Root']);
 end;
 
@@ -298,14 +298,14 @@ end;
 
 function TPackageNumerical.Abs_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueFactory.Float(System.Abs(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(System.Abs(EvaluateToFloat(Context, args[0])));
 end;
 
 function TPackageNumerical.Sign_1(Context: IContext; args: TExprList): IExpression;
 var
   n, m: Number;
 begin
-  n:= EvaluateToNumber(Context, args[0]);
+  n:= EvaluateToFloat(Context, args[0]);
   if n>0 then
     m:= 1.0
   else if n<0 then
@@ -319,7 +319,7 @@ function TPackageNumerical.Step_1(Context: IContext; args: TExprList): IExpressi
 var
   n, m: Number;
 begin
-  n:= EvaluateToNumber(Context, args[0]);
+  n:= EvaluateToFloat(Context, args[0]);
   if fzero(n) or (n>0) then
     m:= 1.0
   else
@@ -331,7 +331,7 @@ function TPackageNumerical.Round_1(Context: IContext; args: TExprList): IExpress
 var
   v: Number;
 begin
-  v:= EvaluateToNumber(Context, args[0]);
+  v:= EvaluateToFloat(Context, args[0]);
   v:= Round(v);
   Result:= TValueFactory.Float(v);
 end;
@@ -341,8 +341,8 @@ var
   pot: integer;
   f,v: Number;
 begin
-  v:= EvaluateToNumber(Context, args[0]);
-  pot:= trunc(EvaluateToNumber(Context, args[1]));
+  v:= EvaluateToFloat(Context, args[0]);
+  pot:= trunc(EvaluateToFloat(Context, args[1]));
   f:= IntPower(10, pot);
   v:= Round(v / f) * f;
   Result:= TValueFactory.Float(v);
@@ -350,17 +350,17 @@ end;
 
 function TPackageNumerical.Trunc_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueFactory.Float(trunc(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(trunc(EvaluateToFloat(Context, args[0])));
 end;
 
 function TPackageNumerical.Ceil_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueFactory.Float(Ceil(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(Ceil(EvaluateToFloat(Context, args[0])));
 end;
 
 function TPackageNumerical.Floor_1(Context: IContext; args: TExprList): IExpression;
 begin
-  Result:= TValueFactory.Float(Floor(EvaluateToNumber(Context, args[0])));
+  Result:= TValueFactory.Float(Floor(EvaluateToFloat(Context, args[0])));
 end;
 
 
@@ -371,7 +371,7 @@ var
   accu, p: Number;
   desiredFact: Int64;
 begin
-  p:= EvaluateToNumber(Context, args[0]);
+  p:= EvaluateToFloat(Context, args[0]);
   if ftruncable(p) and not Options.IsSet('Approximate') then begin
     accu:= 1;
     desiredFact:= trunc(p);
@@ -411,8 +411,8 @@ function TPackageNumerical.Binomial_2(Context: IContext; args: TExprList): IExpr
 var
   n,k,p: Int64;
 begin
-  n:= trunc(EvaluateToNumber(Context, args[0]));
-  k:= trunc(EvaluateToNumber(Context, args[1]));
+  n:= trunc(EvaluateToFloat(Context, args[0]));
+  k:= trunc(EvaluateToFloat(Context, args[1]));
   p:= bin(n,k);
   Result:= TValueFactory.Float(p);
 end;
@@ -421,8 +421,8 @@ function TPackageNumerical.Permutations_2(Context: IContext; args: TExprList): I
 var
   n,k,p: Int64;
 begin
-  n:= trunc(EvaluateToNumber(Context, args[0]));
-  k:= trunc(EvaluateToNumber(Context, args[1]));
+  n:= trunc(EvaluateToFloat(Context, args[0]));
+  k:= trunc(EvaluateToFloat(Context, args[1]));
   p:= bin(n,k);
   while k >= 2 do begin
     p:= p * k;
@@ -437,7 +437,7 @@ const
 function TPackageNumerical.Base_atoi(base: integer; Param: IValueString): IExpressionAtom;
 var
   i, j: integer;
-  v: int64;
+  v: MTInteger;
   n: string;
 begin
   n:= Param.Value;
@@ -451,16 +451,16 @@ begin
       raise EMathSysError.CreateFmt('Invalid numeral in base %d: ''%s''', [base, n[i]]);
     v:= v * base + j;
   end;
-  Result:= TValueFactory.Float(v);
+  Result:= TValueFactory.Integer(v);
 end;
 
 function TPackageNumerical.Base_itoa(base: integer; Param: IValueNumber): IExpressionAtom;
 var
   i: integer;
   n: string;
-  v: int64;
+  v: MTInteger;
 begin
-  v:= Trunc(Param.Value);
+  v:= Param.ValueInt;
 
   if v = 0 then begin
     Result:= TValueString.Create('0');
@@ -485,7 +485,7 @@ var
   base: integer;
   st: IValueString;
 begin
-  base:= Trunc(EvaluateToNumber(Context, args[1]));
+  base:= Trunc(EvaluateToFloat(Context, args[1]));
   if args[0].Evaluate(Context).Represents(IValueString, st) then
     Result:= Base_atoi(base, st) as IExpression
   else
@@ -497,7 +497,7 @@ var
   base: integer;
   st: IValueNumber;
 begin
-  base:= Trunc(EvaluateToNumber(Context, args[1]));
+  base:= Trunc(EvaluateToFloat(Context, args[1]));
   if args[0].Evaluate(Context).Represents(IValueNumber, st) then
     Result:= Base_itoa(base, st) as IExpression
   else
@@ -563,7 +563,7 @@ begin
     a.m:= StrToInt64('$' + copy(s.Value, 5, 16));
     Result:= TValueFactory.Float(a.e);
   end else if v.Represents(IValueNumber, n) then begin
-    a.e:= n.Value;
+    a.e:= n.ValueFloat;
     Result:= TValueString.Create(IntToHex(a.xp,4) + IntToHex(a.m,16))
   end
   else
@@ -586,26 +586,26 @@ end;
 
 function TPackageNumerical.GCD_2(Context: IContext; args: TExprList): IExpression;
 var
-  a,b: int64;
+  a,b: MTInteger;
 begin
-  a:= Trunc(EvaluateToNumber(Context, args[0]));
-  b:= Trunc(EvaluateToNumber(Context, args[1]));
+  a:= EvaluateToInteger(Context, args[0]);
+  b:= EvaluateToInteger(Context, args[1]);
 
   Result:= TValueFactory.Float(GCD(a,b));
 end;
 
 function TPackageNumerical.LCM_2(Context: IContext; args: TExprList): IExpression;
 var
-  a,b,g: int64;
+  a,b,g: MTInteger;
 begin
-  a:= Trunc(EvaluateToNumber(Context, args[0]));
-  b:= Trunc(EvaluateToNumber(Context, args[1]));
+  a:= EvaluateToInteger(Context, args[0]);
+  b:= EvaluateToInteger(Context, args[1]);
 
   g:= gcd(a,b);
   if g<>0 then
-    Result:= TValueFactory.Float(a div g * b)
+    Result:= TValueFactory.Integer(a div g * b)
   else
-    Result:= TValueFactory.Float(0);
+    Result:= TValueFactory.Zero;
 end;
 
 function TPackageNumerical.Fraction_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
@@ -616,10 +616,10 @@ var
   x, p, lastp, q, lastq, ptemp, qtemp, u, err, d: Number;
   nom,den,w: int64;
 begin
-  prec:= EvaluateToNumber(Context, Options.GetDefault('precision', TValueFactory.Float(1E-11))) / 100;
+  prec:= EvaluateToFloat(Context, Options.GetDefault('precision', TValueFactory.Float(1E-11))) / 100;
   mixed:= Options.IsSet('mixed');
 
-  x:= EvaluateToNumber(Context, Args[0]);
+  x:= EvaluateToFloat(Context, Args[0]);
 
   // Initialisierung
   p := 1;
@@ -691,7 +691,7 @@ var
   begin
     for i:= 0 to high(r) do begin
       c.Define(v, TValueFactory.Float(r[i, 0]));
-      r[i, 1]:= EvaluateToNumber(c, f);
+      r[i, 1]:= EvaluateToFloat(c, f);
     end;
   end;
 
@@ -739,7 +739,7 @@ begin
   if not args[1].Represents(ISymbolReference, ev) then
     raise EMathSysError.Create('Function ND requires a variable reference');
   v:= ev.Name;
-  t:= EvaluateToNumber(Context, args[2]);
+  t:= EvaluateToFloat(Context, args[2]);
   opt_method:= LowerCase(EvaluateToString(Context,Options.GetDefault('Method', TValueString.Create('Direct'))));
 
   h:= Max(sqrt(FPU_NUMBER_EPSILON * abs(t)), FPU_SUCC0*10);
@@ -779,9 +779,9 @@ function TPackageLists.Range_3(Context: IContext; args: TExprList): IExpression;
 var
   a, max, st: Number;
 begin
-  a:= EvaluateToNumber(Context, args[0]);
-  max:= EvaluateToNumber(Context, args[1]);
-  st:= EvaluateToNumber(Context, args[2]);
+  a:= EvaluateToFloat(Context, args[0]);
+  max:= EvaluateToFloat(Context, args[1]);
+  st:= EvaluateToFloat(Context, args[2]);
   Result:= TValueRange.Create(a, st, max);
 end;
 
@@ -918,8 +918,8 @@ var
 begin
   if not Supports(args[0].Evaluate(Context), IValueList, a) then
     raise EMathSysError.Create('Part requires a list.');
-  f:= trunc(EvaluateToNumber(Context, args[1]));
-  l:= trunc(EvaluateToNumber(Context, args[2]));
+  f:= EvaluateToInteger(Context, args[1]);
+  l:= EvaluateToInteger(Context, args[2]);
   if f >= a.Length then
     f:= a.Length - 1;
   if l >= a.Length then
@@ -946,7 +946,7 @@ var
 begin
   if not args[0].Evaluate(Context).Represents(IValueList, a) then
     raise EMathSysError.Create('LGet requires a list.');
-  f:= trunc(EvaluateToNumber(Context, args[1]));
+  f:= EvaluateToInteger(Context, args[1]);
   if f < 0 then
     f:= a.Length + f;
   if f < 0 then
@@ -1018,13 +1018,13 @@ begin
     list.LoadFromFile(EvaluateToString(Context, args[0]));
 
     if Options.IsSet('Skip') then
-      skip:= trunc(CastToNumber(Options['Skip']))
+      skip:= CastToInteger(Options['Skip'])
     else
       skip:= 0;
 
     first:= skip;
     if Options.IsSet('Count') then begin
-      count:= trunc(CastToNumber(Options['Count']));
+      count:= CastToInteger(Options['Count']);
       last:= first + count - 1;
       if last>List.Count-1 then
         last:= List.Count-1;
@@ -1159,23 +1159,24 @@ end;
 function TPackageData.Bucket_4(Context: IContext; args: TExprList): IExpression;
 var
   a, r, e: IValueList;
-  mi, mx, count, width: Number;
+  mi, mx, width: Number;
+  count: MTInteger;
   Counter: array of Int64;
   nn: Number;
   i: integer;
 begin
   if not args[0].Evaluate(Context).Represents(IValueList, a) then
     raise EMathSysError.Create('Bucket requires a list.');
-  mi:= EvaluateToNumber(Context, args[1]);
-  mx:= EvaluateToNumber(Context, args[2]);
-  count:= EvaluateToNumber(Context, args[3]);
-  SetLength(Counter, trunc(count));
+  mi:= EvaluateToFloat(Context, args[1]);
+  mx:= EvaluateToFloat(Context, args[2]);
+  count:= EvaluateToInteger(Context, args[3]);
+  SetLength(Counter, count);
   for i:= 0 to high(Counter) do
     Counter[i]:= 0;
   width:= (mx - mi) / count;
   Context.Output.Hint('Bucket Width: %n', [width]);
   for i:= 0 to a.Length - 1 do begin
-    nn:= CastToNumber(a.Item[i]);
+    nn:= CastToFloat(a.Item[i]);
     if IsNan(nn) or (nn < mi) or (nn > mx) then
       continue;
     Inc(Counter[trunc((nn - mi) / width)]);
@@ -1186,7 +1187,7 @@ begin
     e:= TValueList.Create;
     e.Length:= 2;
     e.Item[0]:= TValueFactory.Float(mi + width * (i + 0.5));
-    e.Item[1]:= TValueFactory.Float(Counter[i]);
+    e.Item[1]:= TValueFactory.Integer(Counter[i]);
 
     r.Item[i]:= e as IExpression;
   end;
@@ -1203,7 +1204,7 @@ begin
     raise EMathSysError.Create('Max requires a list.');
   m:= MinExtended;
   for i:= 0 to a.Length - 1 do begin
-    n:= CastToNumber(a.Item[i]);
+    n:= CastToFloat(a.Item[i]);
     if n > m then
       m:= n;
   end;
@@ -1220,7 +1221,7 @@ begin
     raise EMathSysError.Create('Min requires a list.');
   m:= MaxExtended;
   for i:= 0 to a.Length - 1 do begin
-    n:= CastToNumber(a.Item[i]);
+    n:= CastToFloat(a.Item[i]);
     if n < m then
       m:= n;
   end;
@@ -1251,8 +1252,8 @@ begin
   if c.StringCompare then begin
     Result:= AnsiCompareText(CastToString(L.Key), CastToString(R.Key));
   end else begin
-    X:= CastToNumber(L.Key);
-    Y:= CastToNumber(R.Key);
+    X:= CastToFloat(L.Key);
+    Y:= CastToFloat(R.Key);
     if X<Y then Result:= -1
     else if X>Y then Result:= +1
     else Result:= 0;
@@ -1346,12 +1347,12 @@ begin
 
   res.Length:= l.Length-1;
   tup:= l.Item[0] as IValueList;
-  a:= CastToNumber(tup.Item[0]);
-  b:= CastToNumber(tup.Item[1]);
+  a:= CastToFloat(tup.Item[0]);
+  b:= CastToFloat(tup.Item[1]);
   for i:= 1 to l.Length-1 do begin
     tup:= l.Item[i] as IValueList;
-    x:= CastToNumber(tup.Item[0]);
-    y:= CastToNumber(tup.Item[1]);
+    x:= CastToFloat(tup.Item[0]);
+    y:= CastToFloat(tup.Item[1]);
     tup:= TValueList.Create;
     tup.Length:= 2;
     tup.Item[0]:= TValueFactory.Float((x+a) / 2);

@@ -1,17 +1,5 @@
 <package name="Trig">
 	<description>Das Package stellt trigonometrische und hyperbolische Funktionen zur Verfügung.</description>
-	<function name="Deg2Rad">
-		<syntax>Deg2Rad(<v>Number</v>)</syntax>
-		<description>
-			Grad in Radiant
-		</description>
-	</function>
-	<function name="Rad2Deg">
-		<syntax>Rad2Deg(<v>number</v>)</syntax>
-		<description>
-			Radiant in Grad
-		</description>
-	</function>
 	<function name="Sin">
 		<syntax>Sin(<v>number</v>)</syntax>
 		<description>

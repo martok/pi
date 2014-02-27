@@ -161,11 +161,6 @@ type
     * Bad RHS type
     * Unsupported in current state
     * etc.
-  Kernel Note:
-    Functions SHOULD always try other orders if appropriate, ie.
-     A + B can be evaluated as A.OpAdd(B) as well as B.OpAdd(A)
-    Usually, special behaviour is only handled in one direction, the other SHOULD
-    return nil to cause evaluation of the other direction
 }
   IOperationAddition = interface['{4BBFAF74-4630-4B05-8732-888C1D9C5A24}']
     // Result = This + B

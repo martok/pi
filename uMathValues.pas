@@ -31,6 +31,7 @@ type
   TValueFactory = class
     class function Zero: IValueNumber;
     class function ZeroF: IValueNumber;
+    class function NaN: IValueNumber;
 
     class function FromString(const Str: String; const FS: TFormatSettings): IValueNumber;
 
@@ -177,6 +178,11 @@ function CheckForTuples(Param: IValueList; count: integer): boolean;
 function EvaluateToString(Context: IContext; ex: IExpression; out s: string): Boolean; overload;
 function EvaluateToString(Context: IContext; ex: IExpression): String; overload;
 
+function CastToFloat(ex: IExpression): MTFloat; overload;
+function CastToInteger(ex: IExpression): MTInteger; overload;
+function EvaluateToFloat(Context: IContext; ex: IExpression): MTFloat; overload;
+function EvaluateToInteger(Context: IContext; ex: IExpression): MTInteger; overload;
+
 implementation
 
 function CastToString(const Exp: IExpression): String;
@@ -222,6 +228,46 @@ end;
 function EvaluateToString(Context: IContext; ex: IExpression): String;
 begin
   Result:= CastToString(ex.Evaluate(Context));
+end;
+
+function CastToFloat(ex: IExpression): MTFloat; overload;
+var
+  v: IValueNumber;
+  s: IStringConvertible;
+begin
+  if ex.Represents(IValueNumber, v) then
+    Result:= v.ValueFloat
+  else begin
+    if ex.Represents(IStringConvertible, s) then
+      raise EMathTypeError.CreateFmt('Cannot convert expression to Float: %s',[s.AsString(STR_FORMAT_INPUT)])
+    else
+      raise EMathTypeError.CreateFmt('Cannot convert expression to Float: <%s>',[ex.NativeObject.ClassName]);
+  end;
+end;
+
+function CastToInteger(ex: IExpression): MTInteger; overload;
+var
+  v: IValueNumber;
+  s: IStringConvertible;
+begin
+  if ex.Represents(IValueNumber, v) then
+    Result:= v.ValueInt
+  else begin
+    if ex.Represents(IStringConvertible, s) then
+      raise EMathTypeError.CreateFmt('Cannot convert expression to Integer: %s',[s.AsString(STR_FORMAT_INPUT)])
+    else
+      raise EMathTypeError.CreateFmt('Cannot convert expression to Integer: <%s>',[ex.NativeObject.ClassName]);
+  end;
+end;
+
+function EvaluateToFloat(Context: IContext; ex: IExpression): MTFloat; overload;
+begin
+  Result:= CastToFloat(ex.Evaluate(Context));
+end;
+
+function EvaluateToInteger(Context: IContext; ex: IExpression): MTInteger; overload;
+begin
+  Result:= CastToInteger(ex.Evaluate(Context));
 end;
 
 { TE_Atom }
@@ -576,6 +622,11 @@ begin
   Result:= TValueFloatDimension.Create(Value, Units);
 end;
 
+class function TValueFactory.NaN: IValueNumber;
+begin
+  Result:= TValueFloat.Create(Math.NaN);
+end;
+
 { TValueNumberBase }
 
 function TValueNumberBase.BaseType: TValueNumeralType;
@@ -727,8 +778,12 @@ var
   v: IValueNumber;
 begin
   Result:= nil;
-  if B.Represents(IValueNumber, v) then
-    Result:= TValueFactory.Float(Power(FVal, 1 / v.ValueFloat));
+  if B.Represents(IValueNumber, v) then begin
+    if fzero(v.ValueFloat) then
+      Result:= TValueFactory.NAN
+    else
+      Result:= TValueFactory.Float(Power(FVal, 1 / v.ValueFloat));
+  end;
 end;
 
 { TValueFloat }
@@ -843,8 +898,12 @@ var
   v: IValueNumber;
 begin
   Result:= nil;
-  if B.Represents(IValueNumber, v) then
-    Result:= TValueFactory.Float(Power(FVal, 1 / v.ValueFloat));
+  if B.Represents(IValueNumber, v) then begin
+    if fzero(v.ValueFloat) then
+      Result:= TValueFactory.NAN
+    else
+      Result:= TValueFactory.Float(Power(FVal, 1 / v.ValueFloat));
+  end;
 end;
 
 { TValueFloatDimension }
@@ -957,7 +1016,10 @@ begin
   if B.Represents(IValueNumber, v) and not B.Represents(IDimensions) and
     fzero(frac(v.ValueFloat)) then begin
     x:= trunc(v.ValueFloat);
-    Result:= TValueFactory.DimFloat(Math.Power(FVal, 1 / x), RootDimensions(Dim.Units, x));
+    if fzero(x) then
+      Result:= TValueFactory.NAN
+    else
+      Result:= TValueFactory.DimFloat(Math.Power(FVal, 1 / x), RootDimensions(Dim.Units, x));
   end else
     raise EMathDimensionError.Create('Exponent has to be a whole number');
 end;
