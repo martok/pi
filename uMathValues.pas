@@ -103,11 +103,12 @@ type
   TValueFloatDimension = class(TValueFloat, IDimensions, IStringConvertible,
     IOperationAddition, IOperationMultiplication, IOperationPower)
   private
-    FDim: IDimensions;
+    FDim: TValueDimension;
   public
     // 1km: aValueSIBase=1000, aScale=1000, aUnits=[1 0..] aCreatedAs='km'
     constructor Create(const aValueSIBase: MTFloat; const aUnits: TMathUnits; const aScale: MTFloat = 1.0; const aCreatedAs: String = '');
-    property Dim: IDimensions read FDim implements IDimensions;
+    destructor Destroy; override;
+    property Dim: TValueDimension read FDim implements IDimensions;
     // IStringConvertible
     function AsString(const Format: TStringFormat): String;
     // IOperationAddition
@@ -912,6 +913,12 @@ constructor TValueFloatDimension.Create(const aValueSIBase: MTFloat; const aUnit
 begin
   inherited Create(aValueSIBase);
   FDim:= TValueDimension.Create(Self, aScale, aUnits, aCreatedAs);
+end;
+
+destructor TValueFloatDimension.Destroy;
+begin
+  FreeAndNil(FDim);
+  inherited;
 end;
 
 function TValueFloatDimension.AsString(const Format: TStringFormat): String;

@@ -117,8 +117,8 @@ begin
 
   plot:= TPlot.Create(ex, va);
   try
-    plot.FMin:= CastToNumber(l.Item[0]);
-    plot.FMax:= CastToNumber(l.Item[1]);
+    plot.FMin:= CastToFloat(l.Item[0]);
+    plot.FMax:= CastToFloat(l.Item[1]);
     plot.FContext:= TContext(Context.NativeObject).Bake;
     plot.PlotOptions(Options);
     plot.PreCalculate;
@@ -218,13 +218,13 @@ begin
   gr.YMax:= NAN;
 
   if Options.IsSet('XRange') and Supports(Options.Value['XRange'], IValueList, pl) then begin
-    gr.XMin:= CastToNumber(pl.Item[0]);
-    gr.XMax:= CastToNumber(pl.Item[1]);
+    gr.XMin:= CastToFloat(pl.Item[0]);
+    gr.XMax:= CastToFloat(pl.Item[1]);
   end;
 
   if Options.IsSet('YRange') and Supports(Options.Value['YRange'], IValueList, pl) then begin
-    gr.YMin:= CastToNumber(pl.Item[0]);
-    gr.YMax:= CastToNumber(pl.Item[1]);
+    gr.YMin:= CastToFloat(pl.Item[0]);
+    gr.YMax:= CastToFloat(pl.Item[1]);
   end;
 
   if IsNan(gr.XMin) or IsNan(gr.XMax) or IsNan(gr.YMin) or IsNan(gr.YMax) then begin
@@ -296,7 +296,7 @@ begin
   if D.IsSet('Color') then
     FColor:= StringToColor(CastToString(D.Value['Color']));
   if D.IsSet('Size') then
-    FSize:= CastToNumber(D.Value['Size']);
+    FSize:= CastToFloat(D.Value['Size']);
   if D.IsSet('Caption') then
     FCaption:= CastToString(D.Value['Caption']);
 end;
@@ -364,9 +364,12 @@ begin
 end;
 
 function TPlot.ValueAt(Param: Number): Number;
+var
+  v: IValueNumber;
 begin
-  FContext.Define(Variable, TValueNumber.Create(Param));
-  Result:= EvaluateToNumber(FContext as IContext, FEx);
+  v:= TValueFactory.Float(Param);
+  FContext.Define(Variable, v);
+  Result:= EvaluateToFloat(FContext, FEx);
 end;
 
 
@@ -384,7 +387,7 @@ begin
   for i:= 0 to FList.Length-2 do begin
     v1:= (FList.Item[i] as IValueList).Item[0];
     v2:= (FList.Item[i+1] as IValueList).Item[0];
-    k:= CastToNumber(v2)-CastToNumber(v1);
+    k:= CastToFloat(v2)-CastToFloat(v1);
     if k < md then
       md:= k;
   end;
@@ -403,12 +406,12 @@ begin
   Result.YMax:= 0;
   for i:= 0 to FList.Length - 1 do begin
     v:= (FList.Item[i] as IValueList).Item[0];
-    n:= CastToNumber(v);
+    n:= CastToFloat(v);
     if Result.XMin>n then Result.XMin:= n;
     if Result.XMax<n then Result.XMax:= n;
 
     v:= (FList.Item[i] as IValueList).Item[1];
-    n:= CastToNumber(v);
+    n:= CastToFloat(v);
     if Result.YMin>n then Result.YMin:= n;
     if Result.YMax<n then Result.YMax:= n;
   end;
@@ -453,14 +456,14 @@ begin
   Result.YMax:= NegInfinity;
   for i:= 0 to FList.Length - 1 do begin
     v:= (FList.Item[i] as IValueList).Item[0];
-    n:= CastToNumber(v);
+    n:= CastToFloat(v);
     if IsNan(n) then
       continue;
     if Result.XMin>n then Result.XMin:= n;
     if Result.XMax<n then Result.XMax:= n;
 
     v:= (FList.Item[i] as IValueList).Item[1];
-    n:= CastToNumber(v);
+    n:= CastToFloat(v);
     if IsNan(n) then
       continue;
     if Result.YMin>n then Result.YMin:= n;

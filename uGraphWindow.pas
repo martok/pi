@@ -531,11 +531,11 @@ var
   begin
     for j:= 0 to ob.List.Length - 1 do begin
       tup:= ob.List.Item[j] as IValueList;
-      x:= CastToNumber(tup.Item[0]);
+      x:= CastToFloat(tup.Item[0]);
       if IsNan(x) then continue;
       if ((ax is TLogScale) and ((x <= 0) or fzero(x))) then
         continue;
-      y:= CastToNumber(tup.Item[1]);
+      y:= CastToFloat(tup.Item[1]);
       if IsNan(y) then continue;
       if ((ay is TLogScale) and ((y <= 0) or fzero(y))) then
         continue;
@@ -562,11 +562,11 @@ var
     begin
       Result:= false;
       tup:= ob.List.Item[indx] as IValueList;
-      x:= CastToNumber(tup.Item[0]);
+      x:= CastToFloat(tup.Item[0]);
       if IsNan(x) then exit;
       if ((ax is TLogScale) and ((x <= 0) or fzero(x))) then
         exit;
-      y:= CastToNumber(tup.Item[1]);
+      y:= CastToFloat(tup.Item[1]);
       if IsNan(y) then exit;
       if ((ay is TLogScale) and ((y <= 0) or fzero(y))) then
         exit;

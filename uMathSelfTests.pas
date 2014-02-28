@@ -223,11 +223,11 @@ begin
   BeginGroup('DataTypes');
   try
     BeginGroup('Num->Num');
-      n:= TValueNumber.Create(42);
-      Expect(fzero(n.Value - 42),'42!=42');
+      n:= TValueFactory.Integer(42);
+      Expect(fzero(n.ValueFloat - 42),'42!=42');
       EndGroup;
     BeginGroup('Num->Str');
-      n:= TValueNumber.Create(42);
+      n:= TValueFactory.Integer(42);
       ExpectEqual(ExprString(n), '42');
       EndGroup;
     BeginGroup('Str->Str');
@@ -237,16 +237,16 @@ begin
     BeginGroup('NumStr->Num'); 
       e:= Sys.Evaluate(Sys.Parse('123'));
       Expect(e.Represents(IValueNumber, n),'Cannot cast Result to IValueNumber');
-      Expect(fzero(n.Value - 123),'"123"!=123');
+      Expect(fzero(n.ValueFloat - 123),'"123"!=123');
       EndGroup;
     BeginGroup('HiP->Str');
-      n:= TValueNumber.Create(uMathConstants.cPi);
+      n:= TValueFactory.Float(uMathConstants.cPi);
       ExpectEqual(ExprString(n), '3.14159265358979324');
       EndGroup;
     BeginGroup('Str->HiP');
       e:= Sys.Evaluate(Sys.Parse('3.1415926535897932384626433832795'));
       Expect(e.Represents(IValueNumber, n),'Cannot cast Result to IValueNumber');
-      Expect(fzero(n.Value - uMathConstants.cPi),'"pi"!=pi');
+      Expect(fzero(n.ValueFloat - uMathConstants.cPi),'"pi"!=pi');
       EndGroup;
   finally
     EndGroup;
@@ -393,7 +393,7 @@ var
 begin
   e:= Sys.Evaluate(Sys.Parse(Expr));
   Expect(e.Represents(IValueNumber, n), 'Cannot cast Result to Number');
-  Result:= n.Value;
+  Result:= n.ValueFloat;
 end;
 
 end.
