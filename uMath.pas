@@ -1587,7 +1587,11 @@ var
 begin
   if Args[0].Evaluate(Context).Represents(IValueNumber, a) and
      Args[1].Evaluate(Context).Represents(IValueNumber, b) then begin
-    //TODO: native integer ops
+    // both integers?
+    if (a.BaseType = tiInt) and (b.BaseType = tiInt) then
+      Result:= TValueFactory.Integer(a.ValueInt mod b.ValueInt)
+    else
+    // trivial case?
     if b.ValueFloat > a.ValueFloat then
       Result:= a
     else

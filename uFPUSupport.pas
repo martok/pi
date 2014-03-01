@@ -128,9 +128,9 @@ begin
   else begin
     if finf(x) then begin
       if y > 0 then
-        Result:= Infinity           // inf^n  n > 0 -> IFN
+        Result:= Infinity           // inf^n  n > 0 -> INF
       else                          // inf^0 = 1 already captured
-        Result:= NegInfinity;       // inf^n  n < 0 -> 1/INF^n = 0
+        Result:= 0.0;               // inf^n  n < 0 -> 1/INF^n = 0
     end else
     if fzero(x) then begin
       if y > 0.0 then               // 0^n  n > 0 -> 0

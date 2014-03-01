@@ -751,10 +751,14 @@ begin
   else
   if B.Represents(IValueNumber, v) then begin
     case v.BaseType of
-      tiInt: Result:= TValueFactory.Float(FVal / v.ValueInt);
-      //TODO: if no remainder, return int (but only if we're sure!!!)
+      tiInt: begin
+        if FVal mod v.ValueInt = 0 then
+          Result:= TValueFactory.Integer(FVal div v.ValueInt)
+        else
+          Result:= TValueFactory.Float(fdiv(FVal, v.ValueInt));
+      end;
     else
-      Result:= TValueFactory.Float(FVal / v.ValueFloat);
+      Result:= TValueFactory.Float(fdiv(FVal, v.ValueFloat));
     end;
   end;
 end;
@@ -875,7 +879,7 @@ begin
     Result:= (TValueFactory.DimScalar(Self) as IOperationMultiplication).OpDivide(B)
   else
   if B.Represents(IValueNumber, v) then begin
-    Result:= TValueFactory.Float(FVal / v.ValueFloat);
+    Result:= TValueFactory.Float(fdiv(FVal, v.ValueFloat));
   end;
 end;
 
@@ -890,7 +894,7 @@ var
 begin
   Result:= nil;
   if B.Represents(IValueNumber, v) then
-    Result:= TValueFactory.Float(Power(FVal, v.ValueFloat));
+    Result:= TValueFactory.Float(fpower(FVal, v.ValueFloat));
 end;
 
 function TValueFloat.OpRoot(const B: IExpression): IExpression;
@@ -1025,7 +1029,7 @@ begin
     if fzero(x) then
       Result:= TValueFactory.NAN
     else
-      Result:= TValueFactory.DimFloat(Math.Power(FVal, 1 / x), RootDimensions(Dim.Units, x));
+      Result:= TValueFactory.DimFloat(fpower(FVal, 1 / x), RootDimensions(Dim.Units, x));
   end else
     raise EMathDimensionError.Create('Exponent has to be a whole number');
 end;
