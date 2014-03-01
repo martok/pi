@@ -83,7 +83,7 @@ end;
 
 procedure TMathSysTest.ExpectZero(A: Number);
 begin
-  Expect(fzero(a),'Expected 0, found   : '+NumberToStr(a,NeutralFormatSettings,false));
+  Expect(fzero(a),'Expected 0, found   : '+NumberToStr(a,false));
 end;
 
 procedure TMathSysTest.Run;

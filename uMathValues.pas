@@ -539,15 +539,15 @@ begin
   case Format of
     STR_FORMAT_INPUT,
     STR_FORMAT_INPUT_EXPANDED: Result:= SysUtils.Format('range(%s->%s, %s)',[
-      NumberToStr(FStart,NeutralFormatSettings, false),
-      NumberToStr(FEnd,NeutralFormatSettings, false),
-      NumberToStr(FEnd,NeutralFormatSettings, false)
+      NumberToStr(FStart, false),
+      NumberToStr(FEnd, false),
+      NumberToStr(FEnd, false)
     ]);
   else
     Result:= SysUtils.Format('{%s->%s, %s}',[
-      NumberToStr(FStart,NeutralFormatSettings, false),
-      NumberToStr(FEnd,NeutralFormatSettings, false),
-      NumberToStr(FEnd,NeutralFormatSettings, false)
+      NumberToStr(FStart, false),
+      NumberToStr(FEnd, false),
+      NumberToStr(FEnd, false)
     ]);
   end;
 end;
@@ -682,11 +682,10 @@ end;
 
 function TValueInteger.AsString(const Format: TStringFormat): String;
 begin
-  //TODO IntToStr?
   case Format of
-    STR_FORMAT_OUTPUT: Result:= NumberToStr(FVal,NeutralFormatSettings, true);
+    STR_FORMAT_OUTPUT: Result:= IntegerToStr(FVal, true);
   else
-     Result:= NumberToStr(FVal,NeutralFormatSettings, false);
+     Result:= NumberToStr(FVal, false);
   end;
 end;
 
@@ -811,7 +810,7 @@ begin
     Result:= Floor64(FVal)
   else
     raise EMathTypeError.CreateFmt('Cannot cast Float to Integer: %f',[FVal]);
-  //TODO Systemweite Formatierung nutzen
+  //TODO: Systemweite Formatierung nutzen
 end;
 
 function TValueFloat.Clone(Deep: Boolean): IExpression;
@@ -822,9 +821,9 @@ end;
 function TValueFloat.AsString(const Format: TStringFormat): String;
 begin
   case Format of
-    STR_FORMAT_OUTPUT: Result:= NumberToStr(FVal,NeutralFormatSettings, true);
+    STR_FORMAT_OUTPUT: Result:= NumberToStr(FVal, true);
   else
-     Result:= NumberToStr(FVal,NeutralFormatSettings, false);
+     Result:= NumberToStr(FVal, false);
   end;
 end;
 
@@ -926,9 +925,9 @@ var
   ds: string;
 begin
   case Format of
-    STR_FORMAT_OUTPUT: Result:= NumberToStr(FVal / FDim.UnitFactor,NeutralFormatSettings, true);
+    STR_FORMAT_OUTPUT: Result:= NumberToStr(FVal / FDim.UnitFactor, true);
   else
-     Result:= NumberToStr(FVal / FDim.UnitFactor,NeutralFormatSettings, false);
+     Result:= NumberToStr(FVal / FDim.UnitFactor, false);
   end;
   ds:= FDim.UnitString;
   if ds > '' then

@@ -278,7 +278,8 @@ const
 var
   NeutralFormatSettings: TFormatSettings;
 
-function NumberToStr(const Value: Number; FS: TFormatSettings; ShowThousands: boolean): string;
+function NumberToStr(const Value: Number; ShowThousands: boolean): string;
+function IntegerToStr(const Value: MTInteger; ShowThousands: boolean): string;
 
 function MakeArgs(const Args: array of IExpression): TExprList;
 
@@ -304,7 +305,31 @@ type
   end;
   PInfixDefinition = ^TInfixDefinition;
 
-function NumberToStr(const Value: Number; FS: TFormatSettings; ShowThousands: boolean): string;
+function InsertThousandSep(const Value: string; aFrom, aTo, aDecimalPoint: integer): string;
+var
+  p: integer;
+begin
+  Result:= Value;
+
+  p:= aDecimalPoint;
+  inc(p, 3);
+
+  while p < aTo do begin
+    Insert(NeutralFormatSettings.ThousandSeparator, Result, p + 1);
+    inc(p, 4);
+    inc(aTo);
+  end;
+
+  p:= aDecimalPoint;
+  dec(p, 3);
+
+  while p > aFrom do begin
+    Insert(NeutralFormatSettings.ThousandSeparator, Result, p);
+    dec(p, 3);
+  end;
+end;
+
+function NumberToStr(const Value: MTFloat; ShowThousands: boolean): string;
 var
   p, e: integer;
 begin
@@ -317,23 +342,19 @@ begin
     p:= Pos(NeutralFormatSettings.DecimalSeparator, Result);
     if p = 0 then
       p:= e + 1;
-    dec(p, 3);
-    while p > 0 do begin
-      Insert(NeutralFormatSettings.ThousandSeparator, Result, p);
-      dec(p, 3);
-      inc(e);
-    end;
-    p:= Pos(NeutralFormatSettings.DecimalSeparator, Result);
-    if p > 0 then begin
-      inc(p, 3);
-      while p < e do begin
-        Insert(NeutralFormatSettings.ThousandSeparator, Result, p + 1);
-        inc(p, 4);
-        inc(e);
-      end;
-    end;
+
+    Result:= InsertThousandSep(Result, 1, e, p);
   end;
 end;
+
+function IntegerToStr(const Value: MTInteger; ShowThousands: boolean): string;
+begin
+  Result:= IntToStr(Value);
+  if Showthousands then begin
+    Result:= InsertThousandSep(Result, 1, length(Result), length(Result)+1);
+  end;
+end;
+
 
 function MakeArgs(const Args: array of IExpression): TExprList;
 var
@@ -1537,7 +1558,7 @@ begin
 
     for i:= 1 to high(Args) do begin
       v:= Args[i].Evaluate(Context);
-      Result:= mul(Result, v);    
+      Result:= mul(Result, v);
       if not Assigned(Result) then
         raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Multiply']);
     end;
@@ -2007,7 +2028,7 @@ function FormatConstInfo(def: TConstantDef): string;
 var
   val: IValueString;
 begin
-  val:= TValueString.Create(NumberToStr(def.Value, NeutralFormatSettings, False));
+  val:= TValueString.Create(NumberToStr(def.Value, False));
   Result:= Format('%s = %s', [def.LongName, val.Value]);
   if def.Uni > '' then
     Result:= Format('%s [%s]', [Result, def.Uni]);
