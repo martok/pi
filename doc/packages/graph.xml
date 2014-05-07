@@ -59,6 +59,15 @@
 				<value value="'Circle'">Kreis</value>
 				<value value="'Square'">Quadrat</value>
 			</option>
+			<option name="Lines" default="'None'">
+				<description>Art der Verbindungslinien</description>
+				<value value="'None'">Keine Punkte</value>
+				<value value="'Straight'">Direkt</value>
+				<value value="'HoldX'">Konstantes X bis Sprung auf Y (verbunden)</value>
+				<value value="'HoldY'">Konstantes Y bis Sprung auf X (verbunden)</value>
+				<value value="'StepX'">Konstantes X bis Sprung auf Y (offen)</value>
+				<value value="'StepY'">Konstantes Y bis Sprung auf X (offen)</value>
+			</option>
 		</options>
 	</function>
 	<function name="Show">
