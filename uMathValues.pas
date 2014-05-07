@@ -541,13 +541,13 @@ begin
     STR_FORMAT_INPUT_EXPANDED: Result:= SysUtils.Format('range(%s->%s, %s)',[
       NumberToStr(FStart, false),
       NumberToStr(FEnd, false),
-      NumberToStr(FEnd, false)
+      NumberToStr(FStep, false)
     ]);
   else
     Result:= SysUtils.Format('{%s->%s, %s}',[
       NumberToStr(FStart, false),
       NumberToStr(FEnd, false),
-      NumberToStr(FEnd, false)
+      NumberToStr(FStep, false)
     ]);
   end;
 end;
