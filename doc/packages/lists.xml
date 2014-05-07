@@ -19,6 +19,12 @@
 		<description>Verkettet zwei Listen zu einer neuen</description>
 	</function>
 
+	<function name="splice">
+		<syntax>Splice(<v>left</v>, <v>right</v>)</syntax>
+		<description>Kombiniert zwei gleichlange Listen elementweise zu einer neuen zweidimensionalen Liste. Für je ein
+		Elementpaar wird ein Tupel <v>{l,r}</v> ausgegeben.</description>
+	</function>
+
 	<function name="each">
 		<syntax>Each(<v>list</v>, <v>var</v>, <v>expr</v>)</syntax>
 		<description>Führt <v>expr</v> in einem neuen Kontext auf jedem Element von <v>list</v>

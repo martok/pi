@@ -87,6 +87,7 @@ type
     function Flatten_1(Context: IContext; args: TExprList): IExpression;
     function Aggregate_5(Context: IContext; args: TExprList): IExpression;
     function Merge_2(Context: IContext; args: TExprList): IExpression;
+    function Splice_2(Context: IContext; args: TExprList): IExpression;
     function Part_3(Context: IContext; args: TExprList): IExpression;
     function LGet_2(Context: IContext; args: TExprList): IExpression;
     function Count_1(Context: IContext; args: TExprList): IExpression;
@@ -907,6 +908,26 @@ begin
     res.Item[i]:= a.Item[i];
   for i:= 0 to b.Length - 1 do
     res.Item[a.Length + i]:= b.Item[i];
+  Result:= res as IExpression;
+end;
+
+function TPackageLists.Splice_2(Context: IContext; args: TExprList): IExpression;
+var
+  i: integer;
+  a, b: IValueList;
+  res: IValueList;
+begin
+  if not args[0].Evaluate(Context).Represents(IValueList, a) or
+    not args[1].Evaluate(Context).Represents(IValueList, b) then
+    raise EMathSysError.Create('Splice requires 2 lists.');
+
+  if a.Length <> b.Length then
+    raise EMathSysError.Create('Splice requires 2 lists of equal length');
+  res:= TValueList.Create;
+  res.Length:= a.Length;
+  for i:= 0 to a.Length - 1 do begin
+    res.Item[i]:= TValueList.CreateAs([a.Item[i], b.Item[i]]);
+  end;
   Result:= res as IExpression;
 end;
 
