@@ -97,6 +97,7 @@ type
   published
     function PWD_0(Context: IContext; args: TExprList): IExpression;
     function CWD_1(Context: IContext; args: TExprList): IExpression;
+    function Glob_1(Context: IContext; args: TExprList): IExpression;
     function CSVLoad_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
     function Source_1(Context: IContext; args: TExprList): IExpression;
     function Table_1(Context: IContext; args: TExprList): IExpression;
@@ -1002,6 +1003,33 @@ end;
 function TPackageData.PWD_0(Context: IContext; args: TExprList): IExpression;
 begin
   Result:= TValueString.Create(GetCurrentDir);
+end;  
+
+function TPackageData.Glob_1(Context: IContext; args: TExprList): IExpression;
+var
+  filter: string;
+  sr: TSearchRec;
+  ls: TStringList;
+  lst: IValueList;
+  i: integer;
+begin
+  filter:= EvaluateToString(Context, args[0]);
+  ls:= TStringList.Create;
+  try
+    if FindFirst(filter, faAnyFile, sr) = 0 then begin
+      repeat
+        ls.Add(sr.Name);
+      until FindNext(sr) <> 0;
+      FindClose(sr);
+    end;
+    lst:= TValueList.Create;
+    lst.Length:= ls.Count;
+    for i:= 0 to ls.Count-1 do
+      lst.Item[i]:= TValueString.Create(ls[i]);
+    Result:= lst;
+  finally
+    FreeAndNil(ls);
+  end;
 end;
 
 function TPackageData.CSVLoad_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;

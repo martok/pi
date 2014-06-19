@@ -8,6 +8,10 @@
 		<syntax>Cwd(<v>path</v>)</syntax><description>
 		Wechselt in <v>path</v> (kann auch eine relative Angabe sein)
 	</description></function>
+	<function name="glob">
+		<syntax>Glob(<v>filter</v>)</syntax><description>
+		Erstellt eine Liste aller auf die Maske <v>filter</v> passenden Dateien im aktuellen Verzeichnis. <v>filter</v> kann auch ein Unterverzeichnis oder eine Absolutangabe beschreiben.
+	</description></function>
 	<function name="csvload">
 		<syntax>CsvLoad(<v>file[,options]</v>)</syntax><description>
 		Lädt eine CSV-Datei in eine Liste von Listen
