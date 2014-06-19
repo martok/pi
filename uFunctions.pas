@@ -1008,11 +1008,12 @@ function TPackageData.CSVLoad_1_opt(Context: IContext; args: TExprList; Options:
 var
   list, line: TCSVStringList;
   d: string;
-  i, j, first, last: integer;
+  i, j, k, first, last: integer;
   res, row: IValueList;
   cn: IExpression;
   o_fs: TFormatSettings;
   skip, count: integer;
+  ignempt: boolean;
 begin
   list:= TCSVStringList.Create;
   line:= TCSVStringList.Create;
@@ -1043,6 +1044,8 @@ begin
     else
       skip:= 0;
 
+    ignempt:= Options.IsSet('IgnoreEmpty');
+
     first:= skip;
     if Options.IsSet('Count') then begin
       count:= CastToInteger(Options['Count']);
@@ -1057,10 +1060,14 @@ begin
     for i:= first to last do begin
       line.StrictDelimitedText:= list[i];
       row:= TValueList.Create;
-      row.Length:= line.Count;
-      for j:= 0 to row.Length - 1 do begin
-        cn:= TValueFactory.Float(StrToFloat(Line[j], NeutralFormatSettings));
-        row.Item[j]:= cn;
+      k:= 0;
+      for j:= 0 to line.Count - 1 do begin
+        if (Line[j] = '') and ignempt then
+          continue;
+        cn:= TValueFactory.FromString(Line[j], NeutralFormatSettings);
+        row.Length:= k + 1;
+        row.Item[k]:= cn;
+        inc(k);
       end;
       res.Item[i - first]:= row as IExpression;
     end;
