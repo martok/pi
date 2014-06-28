@@ -1,9 +1,10 @@
 object fmPiMain: TfmPiMain
-  Left = 178
-  Top = 85
+  Left = 216
+  Top = 182
   Width = 870
   Height = 640
-  Caption = 'pi - Tiny Math Tool'
+  Action = acExit
+  Caption = 'X'
   Color = clBtnFace
   Font.Charset = ANSI_CHARSET
   Font.Color = clWindowText
@@ -13,6 +14,7 @@ object fmPiMain: TfmPiMain
   OldCreateOrder = False
   Position = poScreenCenter
   ShowHint = True
+  OnClick = acExitExecute
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnShow = FormShow
@@ -21,7 +23,7 @@ object fmPiMain: TfmPiMain
   object Splitter1: TSplitter
     Left = 645
     Top = 0
-    Height = 583
+    Height = 613
     Align = alRight
     Beveled = True
     ResizeStyle = rsUpdate
@@ -30,13 +32,13 @@ object fmPiMain: TfmPiMain
     Left = 648
     Top = 0
     Width = 214
-    Height = 583
+    Height = 613
     Align = alRight
     BevelOuter = bvNone
     TabOrder = 0
     object ToolBar1: TToolBar
       Left = 0
-      Top = 555
+      Top = 585
       Width = 214
       Height = 28
       Align = alBottom
@@ -78,7 +80,7 @@ object fmPiMain: TfmPiMain
       Left = 0
       Top = 0
       Width = 214
-      Height = 555
+      Height = 585
       Align = alClient
       Indent = 19
       RightClickSelect = True
@@ -91,42 +93,52 @@ object fmPiMain: TfmPiMain
       OnEditing = trContextEditing
     end
   end
-  object Panel2: TPanel
-    Left = 0
-    Top = 583
-    Width = 862
-    Height = 30
-    Align = alBottom
-    BevelOuter = bvNone
-    TabOrder = 1
-    DesignSize = (
-      862
-      30)
-    object cbInput: TComboBox
-      Left = 3
-      Top = 3
-      Width = 856
-      Height = 24
-      AutoComplete = False
-      AutoDropDown = True
-      Anchors = [akLeft, akTop, akRight, akBottom]
-      ItemHeight = 16
-      TabOrder = 0
-      Text = 'cbInput'
-      OnKeyPress = cbInputKeyPress
-    end
-  end
-  object reOutput: TRichEdit
+  object Panel3: TPanel
     Left = 0
     Top = 0
     Width = 645
-    Height = 583
+    Height = 613
     Align = alClient
-    Lines.Strings = (
-      'reOutput')
-    ReadOnly = True
-    ScrollBars = ssVertical
-    TabOrder = 2
+    BevelOuter = bvNone
+    TabOrder = 1
+    object spltInput: TSplitter
+      Left = 0
+      Top = 504
+      Width = 645
+      Height = 3
+      Cursor = crVSplit
+      Align = alBottom
+      AutoSnap = False
+      Beveled = True
+      MinSize = 20
+      ResizeStyle = rsUpdate
+    end
+    object reOutput: TRichEdit
+      Left = 0
+      Top = 0
+      Width = 645
+      Height = 504
+      Align = alClient
+      Lines.Strings = (
+        'reOutput')
+      ReadOnly = True
+      ScrollBars = ssVertical
+      TabOrder = 0
+    end
+    inline frmInput: TfrmInput
+      Left = 0
+      Top = 507
+      Width = 645
+      Height = 106
+      Align = alBottom
+      TabOrder = 1
+      inherited meInput: TMemo
+        Width = 627
+      end
+      inherited Panel1: TPanel
+        Left = 627
+      end
+    end
   end
   object ActionList1: TActionList
     Images = ilButtons

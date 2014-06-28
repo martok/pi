@@ -9,14 +9,13 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, uMath, uMathOutputRichedit, ImgList, ActnList, StdCtrls, ComCtrls, ToolWin, ExtCtrls;
+  Dialogs, uMath, uMathOutputRichedit, ImgList, ActnList, StdCtrls, ComCtrls, ToolWin, ExtCtrls,
+  uFrmInput;
 
 type
   TfmPiMain = class(TForm)
     Panel1: TPanel;
-    Panel2: TPanel;
     Splitter1: TSplitter;
-    cbInput: TComboBox;
     ToolBar1: TToolBar;
     ActionList1: TActionList;
     acRunCmd: TAction;
@@ -27,14 +26,16 @@ type
     ToolButton3: TToolButton;
     ToolButton4: TToolButton;
     ilButtons: TImageList;
-    reOutput: TRichEdit;
     ToolButton5: TToolButton;
     acHelp: TAction;
     trContext: TTreeView;
+    Panel3: TPanel;
+    reOutput: TRichEdit;
+    frmInput: TfrmInput;
+    spltInput: TSplitter;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
-    procedure cbInputKeyPress(Sender: TObject; var Key: Char);
     procedure acRunCmdExecute(Sender: TObject);
     procedure acExitExecute(Sender: TObject);
     procedure trContextCollapsing(Sender: TObject; Node: TTreeNode;
@@ -47,6 +48,7 @@ type
     { Private-Deklarationen }
     fOutput: TOutputRichEdit;
     procedure UpdateContext;
+    procedure InputResized(Sender: TObject); 
   public
     { Public-Deklarationen }
     MathS: TMathSystem;
@@ -88,7 +90,9 @@ begin
     RegisterPackage(TPackageDimensions.Create);   
   end;
   reOutput.Clear;
-  cbInput.Clear;
+  frmInput.Clear;
+  frmInput.OnRunCommand:= acRunCmdExecute;          
+  frmInput.OnSizeForced:= InputResized;
 end;
 
 procedure TfmPiMain.FormDestroy(Sender: TObject);
@@ -136,37 +140,20 @@ end;
 procedure TfmPiMain.FormShow(Sender: TObject);
 begin
   UpdateContext;
-  cbInput.SetFocus;
-end;
-
-procedure TfmPiMain.cbInputKeyPress(Sender: TObject; var Key: Char);
-begin
-  case Key of
-    Chr(VK_RETURN): begin
-      Key:= #0;
-      acRunCmd.Execute;
-    end;
-    ',': begin
-      // has the numpad comma been the reason?
-      // better place would be KeyDown, but we can't change anything from there.
-      if GetKeyState(VK_DECIMAL) < 0 then
-        Key:= NeutralFormatSettings.DecimalSeparator;
-    end;
-  end;
+  frmInput.SetFocus;
+  InputResized(Self);
 end;
 
 procedure TfmPiMain.acRunCmdExecute(Sender: TObject);
 var f: string;
 begin
   try
-    f:= cbInput.Text;
+    f:= frmInput.Text;
+    frmInput.AddHistory(f);
     MathS.Output.Input(f);
     MathS.Run(f);
-    cbInput.Text:= 'ans';
-    cbInput.SelectAll;
-    if cbInput.Items.IndexOf(f)>=0 then
-      cbInput.Items.Delete(cbInput.Items.IndexOf(f));
-    cbInput.Items.Insert(0,f);
+    frmInput.Text:= 'ans';
+    frmInput.SelectAll;
   except
     on e: Exception do
       MathS.Output.Error('%s: %s',[e.ClassName, e.Message]);
@@ -219,6 +206,11 @@ begin
   finally
     FreeAndNil(Tester);
   end;
+end;
+
+procedure TfmPiMain.InputResized(Sender: TObject);
+begin
+  spltInput.MinSize:= frmInput.Height;
 end;
 
 end.

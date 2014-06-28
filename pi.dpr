@@ -21,7 +21,8 @@ uses
   uMathDimensions in 'uMathDimensions.pas',
   uCIntegerBucketList in 'uCIntegerBucketList.pas',
   uMathSelfTests in 'uMathSelfTests.pas',
-  uFPUSupport in 'uFPUSupport.pas';
+  uFPUSupport in 'uFPUSupport.pas',
+  uFrmInput in 'uFrmInput.pas' {frmInput: TFrame};
 
 {$R *.res}
 
