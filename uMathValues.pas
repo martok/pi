@@ -123,18 +123,21 @@ type
     function OpRoot(const B: IExpression): IExpression;
   end;
 
-  TValueString = class(TE_Atom, IValueString, IStringConvertible)
+  TValueString = class(TE_Atom, IValueString, IStringConvertible, IOperationAddition)
   private
     FValue: String;
   public
     constructor Create(const aVal: String);
     // IExpression
-    function Clone(Deep: Boolean): IExpression; override;    
+    function Clone(Deep: Boolean): IExpression; override;
     function CompareTo(const B: IExpressionAtom): TAtomCompareResult; override;
     // IValueString
     function Value: String;
     // IStringConvertible
     function AsString(const Format: TStringFormat): String;
+    // IOperationAddition
+    function OpAdd(const B: IExpression): IExpression;
+    function OpSubtract(const B: IExpression): IExpression;
   end;
 
   TValueList = class(TE_Atom, IValueList, IStringConvertible)
@@ -367,6 +370,25 @@ constructor TValueString.Create(const aVal: String);
 begin
   inherited Create;
   FValue:= aVal;
+end;
+
+function TValueString.OpAdd(const B: IExpression): IExpression;
+var
+  bs: IValueString;
+  bsc: IStringConvertible;
+begin
+  if B.Represents(IValueString, bs) then
+    Result:= TValueString.Create(FValue + bs.Value)
+  else
+  if B.Represents(IStringConvertible, bsc) then
+    Result:= TValueString.Create(FValue + bsc.AsString(STR_FORMAT_DEFAULT))
+  else
+    raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Subtract']);
+end;
+
+function TValueString.OpSubtract(const B: IExpression): IExpression;
+begin
+  raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Subtract']);
 end;
 
 function TValueString.Value: String;
