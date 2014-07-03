@@ -115,7 +115,8 @@ end;
 
 procedure TfrmInput.SelectAll;
 begin
-  SetFocus;
+  if CanFocus then
+    SetFocus;
   meInput.SelectAll;
 end;
 
