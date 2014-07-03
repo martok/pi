@@ -259,7 +259,7 @@ begin
     end;
   end;
 
-  gr.Show;
+  gr.ShowDockable;
   Context.Output.Result('['+gr.Caption+']');
 end;
 

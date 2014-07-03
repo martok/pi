@@ -10,13 +10,13 @@ interface
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
   Dialogs, uFunctionsGraphing, uMath, uMathIntf, uMathValues, Menus, ExtDlgs,
-  uFPUSupport;
+  uFPUSupport, uDockableForms;
 
 type
   TScaleMode = (smLin, smLog);
   TInteractMode = (imNone, imRead, imZoom, imDrag);
 
-  TGraphWindow = class(TForm)
+  TGraphWindow = class(TDockableForm)
     pmGraph: TPopupMenu;
     miLegend: TMenuItem;
     miLegendNone: TMenuItem;

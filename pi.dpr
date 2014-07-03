@@ -22,7 +22,8 @@ uses
   uCIntegerBucketList in 'uCIntegerBucketList.pas',
   uMathSelfTests in 'uMathSelfTests.pas',
   uFPUSupport in 'uFPUSupport.pas',
-  uFrmInput in 'uFrmInput.pas' {frmInput: TFrame};
+  uFrmInput in 'uFrmInput.pas' {frmInput: TFrame},
+  uDockableForms in 'uDockableForms.pas';
 
 {$R *.res}
 

@@ -10,29 +10,30 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, uMath, uMathOutputRichedit, ImgList, ActnList, StdCtrls, ComCtrls, ToolWin, ExtCtrls,
-  uFrmInput;
+  uFrmInput, ButtonTabControl, uDockableForms;
 
 type
   TfmPiMain = class(TForm)
-    Panel1: TPanel;
-    Splitter1: TSplitter;
-    ToolBar1: TToolBar;
     ActionList1: TActionList;
     acRunCmd: TAction;
     acExit: TAction;
     acRunTest: TAction;
+    ilButtons: TImageList;
+    acHelp: TAction;
+    pnWorkspace: TPanel;
+    Splitter1: TSplitter;
+    Panel3: TPanel;
+    spltInput: TSplitter;
+    reOutput: TRichEdit;
+    frmInput: TfrmInput;
+    Panel1: TPanel;
+    ToolBar1: TToolBar;
     ToolButton1: TToolButton;
+    ToolButton5: TToolButton;
     ToolButton2: TToolButton;
     ToolButton3: TToolButton;
     ToolButton4: TToolButton;
-    ilButtons: TImageList;
-    ToolButton5: TToolButton;
-    acHelp: TAction;
     trContext: TTreeView;
-    Panel3: TPanel;
-    reOutput: TRichEdit;
-    frmInput: TfrmInput;
-    spltInput: TSplitter;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -46,12 +47,17 @@ type
     procedure acRunTestExecute(Sender: TObject);
   private
     { Private-Deklarationen }
+    fPageControl: TDrawPageControl;
     fOutput: TOutputRichEdit;
     procedure UpdateContext;
-    procedure InputResized(Sender: TObject); 
+    procedure UpdateTabView;
+    function NewTab(const Title: String): TButtonTabSheet;
+    procedure InputResized(Sender: TObject);
+    procedure TabButtonClick(Sender: TObject; Button: TTabButton);
   public
     { Public-Deklarationen }
     MathS: TMathSystem;
+    procedure InsertIntoTab(const dockable: IDockableForm);
   end;
 
 var
@@ -61,13 +67,16 @@ implementation
 
 uses
   ShellAPI,
+  VCLFixes,
   uMathIntf,
   uMathSelfTests,
-  uFunctions, uFunctionsStatistics, uFunctionsGraphing, uFunctionsSymbolics, uMathDimensions;
+  uFunctions, uFunctionsStatistics, uFunctionsGraphing, uFunctionsSymbolics, uMathDimensions,
+  RTLConsts;
 
 const
   sProgramTitle = 'Pi Advanced Calculator';
   sProgramVersionStr = 'V7';
+  sTabInput = 'Input';
 
 {$R *.dfm}
 
@@ -75,6 +84,7 @@ procedure TfmPiMain.FormCreate(Sender: TObject);
 begin
   Application.Title:= sProgramTitle;
   Caption:= Format('%s   (%s)',[sProgramTitle, sProgramVersionStr]);
+  UpdateTabView;
   fOutput:= TOutputRichEdit.Create;
   fOutput.Render:= reOutput;
   MathS:= TMathSystem.Create(fOutput);
@@ -99,6 +109,7 @@ procedure TfmPiMain.FormDestroy(Sender: TObject);
 begin
   FreeAndNil(MathS);
   FreeAndNil(fOutput);
+  FreeAndNil(fPageControl);
 end;
 
 procedure TfmPiMain.UpdateContext;
@@ -211,6 +222,87 @@ end;
 procedure TfmPiMain.InputResized(Sender: TObject);
 begin
   spltInput.MinSize:= frmInput.Height;
+end;
+
+procedure TfmPiMain.UpdateTabView;
+begin
+  if Assigned(fPageControl) then begin
+    if fPageControl.PageCount = 1 then begin
+      pnWorkspace.Visible:= false;
+      try
+        pnWorkspace.Parent:= Self;
+        FreeAndNil(fPageControl);
+      finally
+        pnWorkspace.Visible:= true;
+      end;
+    end;
+  end;
+end;
+
+function TfmPiMain.NewTab(const Title: String): TButtonTabSheet;
+var
+  ts: TTabSheet;
+begin
+  if not Assigned(fPageControl) then begin    
+    pnWorkspace.Visible:= false;
+    try
+      fPageControl:= TDrawPageControl.Create(Self);
+      fPageControl.Align:= alClient;
+      fPageControl.Parent:= Self;
+      ts:= TTabSheet.Create(fPageControl);
+      ts.PageControl:= fPageControl;
+      ts.Caption:= sTabInput;
+      pnWorkspace.Parent:= ts;
+    finally
+      pnWorkspace.Visible:= true;
+    end;
+  end;
+
+  Result:= TButtonTabSheet.Create(fPageControl);  
+  Result.PageControl:= fPageControl;
+  Result.Caption:= Title;           
+  Result.Buttons:= [tbRestore, tbClose];
+  Result.OnTabButtonClick:= TabButtonClick;
+  fPageControl.ActivePage:= Result;
+end;
+
+procedure TfmPiMain.TabButtonClick(Sender: TObject; Button: TTabButton);
+var
+  ts: TButtonTabSheet;
+  f: TForm;
+  d: IDockableForm;
+begin
+  ts:= Sender as TButtonTabSheet;
+  case Button of   
+    tbRestore: begin
+      if (ts.ControlCount > 0) and (ts.Controls[0] is TForm) then begin
+        if Supports(ts.Controls[0], IDockableForm, d) then
+          d.Undock;  
+        ts.PageControl:= nil;
+        FreeAndNil(ts);
+      end;
+    end;
+    tbClose: begin
+      if (ts.ControlCount > 0) and (ts.Controls[0] is TForm) then begin
+        f:= TForm(ts.Controls[0]);
+        f.Hide;
+        if Supports(f, IDockableForm, d) then
+          d.Undock;
+        f.Close;
+      end;
+      ts.PageControl:= nil;
+      FreeAndNil(ts);
+    end;
+  end;
+  UpdateTabView;
+end;
+
+procedure TfmPiMain.InsertIntoTab(const dockable: IDockableForm);
+var
+  ts: TButtonTabSheet;
+begin
+  ts:= NewTab(dockable.GetCaption);
+  dockable.Dock(ts);
 end;
 
 end.

@@ -1,142 +1,159 @@
 object fmPiMain: TfmPiMain
-  Left = 216
-  Top = 182
+  Left = 601
+  Top = 149
   Width = 870
   Height = 640
-  Action = acExit
   Caption = 'X'
   Color = clBtnFace
   Font.Charset = ANSI_CHARSET
   Font.Color = clWindowText
-  Font.Height = -13
+  Font.Height = -16
   Font.Name = 'Courier New'
   Font.Style = []
   OldCreateOrder = False
   Position = poScreenCenter
   ShowHint = True
-  OnClick = acExitExecute
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnShow = FormShow
-  PixelsPerInch = 96
-  TextHeight = 16
-  object Splitter1: TSplitter
-    Left = 645
-    Top = 0
-    Height = 613
-    Align = alRight
-    Beveled = True
-    ResizeStyle = rsUpdate
-  end
-  object Panel1: TPanel
-    Left = 648
-    Top = 0
-    Width = 214
-    Height = 613
-    Align = alRight
-    BevelOuter = bvNone
-    TabOrder = 0
-    object ToolBar1: TToolBar
-      Left = 0
-      Top = 585
-      Width = 214
-      Height = 28
-      Align = alBottom
-      ButtonHeight = 24
-      ButtonWidth = 28
-      Caption = 'ToolBar1'
-      Images = ilButtons
-      TabOrder = 1
-      object ToolButton1: TToolButton
-        Left = 0
-        Top = 2
-        Action = acRunCmd
-      end
-      object ToolButton5: TToolButton
-        Left = 28
-        Top = 2
-        Action = acHelp
-      end
-      object ToolButton2: TToolButton
-        Left = 56
-        Top = 2
-        Action = acRunTest
-      end
-      object ToolButton3: TToolButton
-        Left = 84
-        Top = 2
-        Width = 8
-        Caption = 'ToolButton3'
-        ImageIndex = 0
-        Style = tbsSeparator
-      end
-      object ToolButton4: TToolButton
-        Left = 92
-        Top = 2
-        Action = acExit
-      end
-    end
-    object trContext: TTreeView
-      Left = 0
-      Top = 0
-      Width = 214
-      Height = 585
-      Align = alClient
-      Indent = 19
-      RightClickSelect = True
-      RowSelect = True
-      ShowRoot = False
-      TabOrder = 0
-      ToolTips = False
-      OnCollapsing = trContextCollapsing
-      OnEdited = trContextEdited
-      OnEditing = trContextEditing
-    end
-  end
-  object Panel3: TPanel
+  PixelsPerInch = 120
+  TextHeight = 18
+  object pnWorkspace: TPanel
     Left = 0
     Top = 0
-    Width = 645
-    Height = 613
+    Width = 856
+    Height = 597
     Align = alClient
     BevelOuter = bvNone
-    TabOrder = 1
-    object spltInput: TSplitter
-      Left = 0
-      Top = 504
-      Width = 645
-      Height = 3
-      Cursor = crVSplit
-      Align = alBottom
-      AutoSnap = False
+    TabOrder = 0
+    object Splitter1: TSplitter
+      Left = 612
+      Top = 0
+      Height = 597
+      Align = alRight
       Beveled = True
-      MinSize = 20
       ResizeStyle = rsUpdate
     end
-    object reOutput: TRichEdit
+    object Panel3: TPanel
       Left = 0
       Top = 0
-      Width = 645
-      Height = 504
+      Width = 612
+      Height = 597
       Align = alClient
-      Lines.Strings = (
-        'reOutput')
-      ReadOnly = True
-      ScrollBars = ssVertical
+      BevelOuter = bvNone
       TabOrder = 0
-    end
-    inline frmInput: TfrmInput
-      Left = 0
-      Top = 507
-      Width = 645
-      Height = 106
-      Align = alBottom
-      TabOrder = 1
-      inherited meInput: TMemo
-        Width = 627
+      object spltInput: TSplitter
+        Left = 0
+        Top = 474
+        Width = 612
+        Height = 3
+        Cursor = crVSplit
+        Align = alBottom
+        AutoSnap = False
+        Beveled = True
+        MinSize = 20
+        ResizeStyle = rsUpdate
       end
-      inherited Panel1: TPanel
-        Left = 627
+      object reOutput: TRichEdit
+        Left = 0
+        Top = 0
+        Width = 612
+        Height = 474
+        Align = alClient
+        Lines.Strings = (
+          'reOutput')
+        ReadOnly = True
+        ScrollBars = ssVertical
+        TabOrder = 0
+      end
+      inline frmInput: TfrmInput
+        Left = 0
+        Top = 477
+        Width = 612
+        Height = 120
+        Align = alBottom
+        TabOrder = 1
+        inherited meInput: TMemo
+          Width = 591
+          Height = 120
+        end
+        inherited Panel1: TPanel
+          Left = 591
+          Width = 21
+          Height = 120
+          Font.Height = -13
+          inherited sbHistory: TSpeedButton
+            Top = 102
+            Width = 22
+            Height = 19
+            Font.Height = -15
+          end
+        end
+      end
+    end
+    object Panel1: TPanel
+      Left = 615
+      Top = 0
+      Width = 241
+      Height = 597
+      Align = alRight
+      BevelOuter = bvNone
+      TabOrder = 1
+      object ToolBar1: TToolBar
+        Left = 0
+        Top = 569
+        Width = 241
+        Height = 28
+        Align = alBottom
+        ButtonHeight = 24
+        ButtonWidth = 28
+        Caption = 'ToolBar1'
+        Images = ilButtons
+        TabOrder = 1
+        object ToolButton1: TToolButton
+          Left = 0
+          Top = 2
+          Action = acRunCmd
+        end
+        object ToolButton5: TToolButton
+          Left = 28
+          Top = 2
+          Action = acHelp
+        end
+        object ToolButton2: TToolButton
+          Left = 56
+          Top = 2
+          Action = acRunTest
+        end
+        object ToolButton3: TToolButton
+          Left = 84
+          Top = 2
+          Width = 8
+          Caption = 'ToolButton3'
+          ImageIndex = 0
+          Style = tbsSeparator
+        end
+        object ToolButton4: TToolButton
+          Left = 92
+          Top = 2
+          Action = acExit
+        end
+      end
+      object trContext: TTreeView
+        Left = 0
+        Top = 0
+        Width = 241
+        Height = 569
+        Align = alClient
+        Indent = 20
+        RightClickSelect = True
+        RowSelect = True
+        ShowRoot = False
+        TabOrder = 0
+        ToolTips = False
+        OnCollapsing = trContextCollapsing
+        OnEdited = trContextEdited
+        OnEditing = trContextEditing
       end
     end
   end
