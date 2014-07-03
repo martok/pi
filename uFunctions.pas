@@ -1065,7 +1065,12 @@ begin
         NeutralFormatSettings.DecimalSeparator:= d[1];
     end;
 
-    list.LoadFromFile(EvaluateToString(Context, args[0]));
+    try
+      list.LoadFromFile(EvaluateToString(Context, args[0]));
+    except
+      on E: Exception do
+        Context.Output.Error('CSVLoad: %s: %s', [E.ClassName, E.Message]);
+    end;
 
     if Options.IsSet('Skip') then
       skip:= CastToInteger(Options['Skip'])
@@ -1082,6 +1087,9 @@ begin
         last:= List.Count-1;
     end else
       last:= List.Count - 1;
+
+    if last < 0 then
+      last:= 0;
 
     res:= TValueList.Create;
     res.Length:= last - first + 1;
