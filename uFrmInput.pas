@@ -135,19 +135,23 @@ procedure TfrmInput.meInputChange(Sender: TObject);
 var
   ss,sl,ln: integer;
 begin
-  ln:= 1 + (Length(meInput.Text) - Length(StringReplace(meInput.Text, sLineBreak, '', [rfReplaceAll]))) div Length(sLineBreak);
+  ln:= meInput.Perform(EM_GETLINECOUNT, 0, 0);
+
   ss:= meInput.SelStart;
   sl:= meInput.SelLength;
-  if ln < 1 then ln:= 1;
-  if ln > 5 then begin
-    ln:= 5;
-    meInput.ScrollBars:= ssVertical;
-  end else    
-    meInput.ScrollBars:= ssNone;
+  try
+    if ln < 1 then ln:= 1;
+    if ln > 5 then begin
+      ln:= 5;
+      meInput.ScrollBars:= ssVertical;
+    end else
+      meInput.ScrollBars:= ssNone;
 
-  AdjustHeight(ln);
-  meInput.SelStart:= ss;
-  meInput.SelLength:=sl;
+    AdjustHeight(ln);
+  finally
+    meInput.SelStart:= ss;
+    meInput.SelLength:=sl;
+  end;
 end;
 
 procedure TfrmInput.meInputKeyPress(Sender: TObject; var Key: Char);
@@ -212,21 +216,23 @@ end;
 procedure TfrmInput.sbHistoryClick(Sender: TObject);
 var
   p: TPoint;
+  marg: Cardinal;
 begin
-  p:= meInput.ClientToScreen(Point(0, meInput.Height));
+  marg:= GetSystemMetrics(SM_CXEDGE);
+  p:= meInput.ClientToScreen(Point(-marg, meInput.ClientHeight));
   pmHistory.Popup(p.x,p.y);
 end;
 
 procedure TfrmInput.miClearHistoryClick(Sender: TObject);
 begin
   FHistory.Clear;
-end;
-
+end;   
 
 procedure TfrmInput.miHistMeasureItem(Sender: TObject; ACanvas: TCanvas; var Width, Height: Integer);
 var
   mi: TMenuItem;
   r: TRect;
+  marg: Integer;
   s: string;
 begin
   mi:= sender as TMenuItem;
@@ -234,7 +240,8 @@ begin
   ACanvas.Font:= meInput.Font;
   DrawTextEx(ACanvas.Handle, PChar(s), Length(s), r, DT_CALCRECT, nil);
   InflateRect(r, 4, 4);
-  Width:= Max(r.Right - r.Left, meInput.Width);
+  marg:= GetSystemMetrics(SM_CXMENUCHECK) + 2*GetSystemMetrics(SM_CXDLGFRAME);
+  Width:= Max(r.Right - r.Left, meInput.Width - marg);
   Height:= r.Bottom - r.Top;
 end;
 

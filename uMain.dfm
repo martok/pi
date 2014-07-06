@@ -7,7 +7,7 @@ object fmPiMain: TfmPiMain
   Color = clBtnFace
   Font.Charset = ANSI_CHARSET
   Font.Color = clWindowText
-  Font.Height = -16
+  Font.Height = -13
   Font.Name = 'Courier New'
   Font.Style = []
   OldCreateOrder = False
@@ -16,20 +16,20 @@ object fmPiMain: TfmPiMain
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnShow = FormShow
-  PixelsPerInch = 120
-  TextHeight = 18
+  PixelsPerInch = 96
+  TextHeight = 16
   object pnWorkspace: TPanel
     Left = 0
     Top = 0
-    Width = 856
-    Height = 597
+    Width = 862
+    Height = 613
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 0
     object Splitter1: TSplitter
-      Left = 612
+      Left = 645
       Top = 0
-      Height = 597
+      Height = 613
       Align = alRight
       Beveled = True
       ResizeStyle = rsUpdate
@@ -37,15 +37,15 @@ object fmPiMain: TfmPiMain
     object Panel3: TPanel
       Left = 0
       Top = 0
-      Width = 612
-      Height = 597
+      Width = 645
+      Height = 613
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 0
       object spltInput: TSplitter
         Left = 0
-        Top = 474
-        Width = 612
+        Top = 503
+        Width = 645
         Height = 3
         Cursor = crVSplit
         Align = alBottom
@@ -57,52 +57,56 @@ object fmPiMain: TfmPiMain
       object reOutput: TRichEdit
         Left = 0
         Top = 0
-        Width = 612
-        Height = 474
+        Width = 645
+        Height = 503
         Align = alClient
+        Font.Charset = ANSI_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
         Lines.Strings = (
           'reOutput')
+        ParentFont = False
         ReadOnly = True
         ScrollBars = ssVertical
         TabOrder = 0
       end
       inline frmInput: TfrmInput
         Left = 0
-        Top = 477
-        Width = 612
-        Height = 120
+        Top = 506
+        Width = 645
+        Height = 107
         Align = alBottom
         TabOrder = 1
         inherited meInput: TMemo
-          Width = 591
-          Height = 120
+          Width = 626
+          Height = 107
         end
         inherited Panel1: TPanel
-          Left = 591
-          Width = 21
-          Height = 120
-          Font.Height = -13
+          Left = 626
+          Width = 19
+          Height = 107
+          Font.Height = -12
           inherited sbHistory: TSpeedButton
-            Top = 102
-            Width = 22
-            Height = 19
-            Font.Height = -15
+            Top = 91
+            Width = 20
           end
         end
       end
     end
     object Panel1: TPanel
-      Left = 615
+      Left = 648
       Top = 0
-      Width = 241
-      Height = 597
+      Width = 214
+      Height = 613
       Align = alRight
       BevelOuter = bvNone
       TabOrder = 1
       object ToolBar1: TToolBar
         Left = 0
-        Top = 569
-        Width = 241
+        Top = 585
+        Width = 214
         Height = 28
         Align = alBottom
         ButtonHeight = 24
@@ -142,8 +146,8 @@ object fmPiMain: TfmPiMain
       object trContext: TTreeView
         Left = 0
         Top = 0
-        Width = 241
-        Height = 569
+        Width = 214
+        Height = 585
         Align = alClient
         Indent = 20
         RightClickSelect = True
