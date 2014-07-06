@@ -828,6 +828,7 @@ initialization
   DefineUnit('AU'     , 'astronomical unit'     , 149.597870691e9 , [  1,  0,  0,  0,  0,  0,  0]);
   DefineUnit('ly'     , 'light-year'            , 94607304725808e2, [  1,  0,  0,  0,  0,  0,  0]);
   DefineUnit('pc'     , 'parsec'                , 30.857e15       , [  1,  0,  0,  0,  0,  0,  0]);
+  DefineUnit('ang'    , 'Angström'              , 1E-10           , [  1,  0,  0,  0,  0,  0,  0]);
   // Arc
   DefineUnit('rad'    , 'radiant'               , 1               , [  0,  0,  0,  0,  0,  0,  0,  1]);
   DefineUnit('°'      , 'degree'                , cTau / 360      , [  0,  0,  0,  0,  0,  0,  0,  1]);
