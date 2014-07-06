@@ -645,6 +645,11 @@
                   	
                </p>
             </li>
+            <li class="function" id="function-data-glob"><a class="function-link" href="#function-data-glob">#</a><code>Glob(<i>filter</i>)</code><br><p>
+                  		Erstellt eine Liste aller auf die Maske <i>filter</i> passenden Dateien im aktuellen Verzeichnis. <i>filter</i> kann auch ein Unterverzeichnis oder eine Absolutangabe beschreiben.
+                  	
+               </p>
+            </li>
             <li class="function" id="function-data-csvload"><a class="function-link" href="#function-data-csvload">#</a><code>CsvLoad(<i>file[,options]</i>)</code><br><p>
                   		Lädt eine CSV-Datei in eine Liste von Listen
                   		
@@ -668,6 +673,10 @@
                   <dt>Count = Max</dt>
                   <dd>
                      <p>Maximale Anzahl zu ladender Zeilen</p>
+                  </dd>
+                  <dt>IgnoreEmpty = *undefined*</dt>
+                  <dd>
+                     <p>Leere Felder ignorieren (führt zum gruppieren von Trennzeichen)?</p>
                   </dd>
                </dl>
             </li>

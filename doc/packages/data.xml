@@ -14,7 +14,8 @@
 	</description></function>
 	<function name="csvload">
 		<syntax>CsvLoad(<v>file[,options]</v>)</syntax><description>
-		Lädt eine CSV-Datei in eine Liste von Listen
+		Lädt eine CSV-Datei in eine Liste von Listen.<br>
+		Kann die Datei nicht geöffnet werden, wird eine leere Liste zurückgegeben.
 		</description>
 		
 		<options>
@@ -23,7 +24,7 @@
 			<option name="Decimal" default="'.'"><description>Dezimaltrenner</description></option>
 			<option name="Skip" default="0"><description>Anzahl zu überspringender Zeilen (z.b. Überschrift)</description></option>
 			<option name="Count" default="Max"><description>Maximale Anzahl zu ladender Zeilen</description></option>
-			<option name="IgnoreEmpty" default="*undefined*"><description>Leere Felder ignorieren (führt zum gruppieren von Trennzeichen)?</description></option>
+			<option name="IgnoreEmpty" default="*undefined*"><description>Leere Felder ignorieren (führt zum Gruppieren von Trennzeichen)</description></option>
 		</options>
 	</function>
 	<function name="source">
