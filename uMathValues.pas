@@ -774,10 +774,19 @@ begin
   if B.Represents(IValueNumber, v) then begin
     case v.BaseType of
       tiInt: begin
-        if FVal mod v.ValueInt = 0 then
-          Result:= TValueFactory.Integer(FVal div v.ValueInt)
-        else
-          Result:= TValueFactory.Float(fdiv(FVal, v.ValueInt));
+        if v.ValueInt = 0 then begin
+          if FVal > 0 then
+            Result:= TValueFactory.Float(Infinity)
+          else if FVal < 0 then
+            Result:= TValueFactory.Float(NegInfinity)
+          else
+            Result:= TValueFactory.Float(NaN);
+        end else begin
+          if FVal mod v.ValueInt = 0 then
+            Result:= TValueFactory.Integer(FVal div v.ValueInt)
+          else
+            Result:= TValueFactory.Float(fdiv(FVal, v.ValueInt));
+        end;
       end;
     else
       Result:= TValueFactory.Float(fdiv(FVal, v.ValueFloat));
