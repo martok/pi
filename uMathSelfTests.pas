@@ -27,6 +27,7 @@ type
     procedure TestFunctions;
     function ExprString(e: IExpression): String;
     function EvalNum(Expr: String): Number;
+    function EvalStr(Expr: String): string;
   public
     constructor Create(Host: TMathSystem);
     destructor Destroy; override;
@@ -322,10 +323,10 @@ begin
       EndGroup;
     BeginGroup('Geometric');
       BeginGroup('deg2rad');
-        ExpectEqual(EvalNum('deg2rad(90)'),cPi/2);
+        ExpectEqual(EvalNum('90_''°''_''rad'''),cPi/2);
         EndGroup;
       BeginGroup('rad2deg');
-        ExpectEqual(EvalNum('rad2deg(pi/2)'),90);
+        ExpectEqual(EvalStr('(pi/2)_''rad''_''°'''),'90 °');
         EndGroup;
       BeginGroup('Sin');
         ExpectEqual(EvalNum('sin(pi/2)'),1);
@@ -336,19 +337,19 @@ begin
         ExpectEqual(EvalNum('cos(0)'),1);
         EndGroup;
       BeginGroup('Tan');
-        ExpectEqual(EvalNum('tan(deg2rad(80))'), 5.671281819617709530994418439864);
+        ExpectEqual(EvalNum('tan(80_''°''_''rad'')'), 5.671281819617709530994418439864);
         ExpectEqual(EvalNum('tan(pi/4)'),1.0);
         ExpectEqual(EvalNum('tan(0)'),0);
         EndGroup;
       BeginGroup('arcSin');
-        ExpectEqual(EvalNum('rad2deg(arcsin(1))'),90);
+        ExpectEqual(EvalStr('arcsin(1) _''rad''_''°'''),'90 °');
         EndGroup;
       BeginGroup('arcCos');
-        ExpectEqual(EvalNum('rad2deg(arccos(0))'),90);
+        ExpectEqual(EvalStr('arccos(0) _''rad''_''°'''),'90 °');
         EndGroup;
       BeginGroup('arcTan');
-        ExpectEqual(EvalNum('rad2deg(arctan(1))'),45);
-        ExpectEqual(EvalNum('rad2deg(arctan(10,100))'),5.71059313749964251269588);
+        ExpectEqual(EvalStr('arctan(1) _''rad''_''°'''),'45 °');
+        ExpectEqual(EvalNum('arctan(10,100)'),0.0996686524911620273784461198780205);
         EndGroup;
       BeginGroup('Sinh');
         ExpectEqual(EvalNum('sinh(12)'),81377.39570642985422733849);
@@ -394,6 +395,16 @@ begin
   e:= Sys.Evaluate(Sys.Parse(Expr));
   Expect(e.Represents(IValueNumber, n), 'Cannot cast Result to Number');
   Result:= n.ValueFloat;
+end;
+
+function TMathSysTest.EvalStr(Expr: String): string;
+var
+  e: IExpression;
+  s: IStringConvertible;
+begin
+  e:= Sys.Evaluate(Sys.Parse(Expr));
+  Expect(e.Represents(IStringConvertible, s), 'Cannot cast Result to String');
+  Result:= s.AsString(STR_FORMAT_DEFAULT);
 end;
 
 end.
