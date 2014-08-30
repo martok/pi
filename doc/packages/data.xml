@@ -14,7 +14,7 @@
 	</description></function>
 	<function name="csvload">
 		<syntax>CsvLoad(<v>file[,options]</v>)</syntax><description>
-		Lädt eine CSV-Datei in eine Liste von Listen.<br>
+		Lädt eine CSV-Datei in eine Liste von Listen.<br />
 		Kann die Datei nicht geöffnet werden, wird eine leere Liste zurückgegeben.
 		</description>
 		
@@ -64,7 +64,7 @@
 	</function>
 	<function name="numderive">
 		<syntax>NumDerive(<v>list</v>)</syntax><description>
-		Numerische Ableitung einer Liste von {X,Y}-Punkten. In der Mitte zwischen zwei X-Werten wird die differenz
+		Numerische Ableitung einer Liste von {X,Y}-Punkten. In der Mitte zwischen zwei X-Werten wird die Differenz
 		nach dY/dY abgelegt. Die erzeugte Liste ist ein Element kürzer.
 	</description></function>
 </package>
