@@ -651,7 +651,8 @@
                </p>
             </li>
             <li class="function" id="function-data-csvload"><a class="function-link" href="#function-data-csvload">#</a><code>CsvLoad(<i>file[,options]</i>)</code><br><p>
-                  		Lädt eine CSV-Datei in eine Liste von Listen
+                  		Lädt eine CSV-Datei in eine Liste von Listen.<br>
+                  		Kann die Datei nicht geöffnet werden, wird eine leere Liste zurückgegeben.
                   		
                </p><span class="function-options">Optionen:</span><dl class="function-options">
                   <dt>Delimiter = ';'</dt>
@@ -676,7 +677,7 @@
                   </dd>
                   <dt>IgnoreEmpty = *undefined*</dt>
                   <dd>
-                     <p>Leere Felder ignorieren (führt zum gruppieren von Trennzeichen)?</p>
+                     <p>Leere Felder ignorieren (führt zum Gruppieren von Trennzeichen)</p>
                   </dd>
                </dl>
             </li>
@@ -724,9 +725,14 @@
             </li>
             <li class="function" id="function-data-numderive"><a class="function-link" href="#function-data-numderive">#</a><code>NumDerive(<i>list</i>)</code><br><p>
                   		Numerische Ableitung einer Liste von {X,Y}-Punkten. In der Mitte zwischen zwei X-Werten
-                  wird die differenz
+                  wird die Differenz
                   		nach dY/dY abgelegt. Die erzeugte Liste ist ein Element kürzer.
                   	
+               </p>
+            </li>
+            <li class="function" id="function-data-smooth"><a class="function-link" href="#function-data-smooth">#</a><code>Smooth(<i>list</i>)</code><br><p>
+                  		Glätten einer Liste von {X,Y}-Punkten.
+                  		
                </p>
             </li>
          </ul>

@@ -106,6 +106,7 @@ type
     function Max_1(Context: IContext; args: TExprList): IExpression;
     function SortBy_3_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
     function NumDerive_1(Context: IContext; args: TExprList): IExpression;
+    function Smooth_1(Context: IContext; args: TExprList): IExpression;
   end;
 
 implementation
@@ -1424,6 +1425,55 @@ begin
     Res.Item[i-1]:= tup as IExpression;
     a:= x;
     b:= y;
+  end;
+  Result:= res as IExpression;
+end;
+
+function TPackageData.Smooth_1(Context: IContext; args: TExprList): IExpression;
+var
+  l: IValueList;
+  res,left, right, this, tup: IValueList;
+
+  i: integer;
+  vals: array[0..1, 0..2] of MTFloat;
+  v: MTFloat;
+
+  function Method_SimpleAvg:MTFloat;
+  begin
+    Result:= 1/3 * (vals[1][0] + vals[1][1] + vals[1][2]);
+  end;
+
+begin
+  if not args[0].Evaluate(Context).Represents(IValueList, l) or
+     not CheckForTuples(l, 2) then
+    raise EMathSysError.Create('Function Smooth requires a list of 2-tuples');
+
+  res:= TValueList.Create;
+
+  res.Length:= l.Length;
+  // first and last stay the same
+  res.Item[0]:= l.Item[0];
+  res.Item[res.Length-1]:= l.Item[res.Length-1];
+  // others become $func of left and right, but x stays the same
+  for i:= 1 to l.Length-2 do begin
+    left:= l.Item[i-1] as IValueList;
+    this:= l.Item[i] as IValueList;
+    right:= l.Item[i+1] as IValueList;
+
+    vals[0][0]:= CastToFloat(left.Item[0]);
+    vals[1][0]:= CastToFloat(left.Item[1]); 
+    vals[0][1]:= CastToFloat(this.Item[0]);
+    vals[1][1]:= CastToFloat(this.Item[1]);
+    vals[0][2]:= CastToFloat(right.Item[0]);
+    vals[1][2]:= CastToFloat(right.Item[1]);
+
+    v:= Method_SimpleAvg;
+
+    tup:= TValueList.Create;
+    tup.Length:= 2;
+    tup.Item[0]:= this.Item[0];
+    tup.Item[1]:= TValueFactory.Float(v);
+    Res.Item[i]:= tup as IExpression;
   end;
   Result:= res as IExpression;
 end;

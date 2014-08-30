@@ -67,4 +67,9 @@
 		Numerische Ableitung einer Liste von {X,Y}-Punkten. In der Mitte zwischen zwei X-Werten wird die Differenz
 		nach dY/dY abgelegt. Die erzeugte Liste ist ein Element kürzer.
 	</description></function>
+	<function name="smooth">
+		<syntax>Smooth(<v>list</v>)</syntax><description>
+		Glätten einer Liste von {X,Y}-Punkten.
+		</description>
+	</function>
 </package>
