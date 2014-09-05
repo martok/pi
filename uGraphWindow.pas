@@ -60,9 +60,13 @@ type
     FSXMin, FSXMax, FSYMin, FSYMax: Number;
     FXScale, FYScale: TScaleMode;
     Buffer: TBitmap;
+    FBufferBox: TRect;
     FInteract: TInteractMode;
     FNextInteract: TInteractMode;
     FZoomRect: TRect;
+    FYLabel: string;
+    FXLabel: string;
+    FTitle: string;
     procedure PaintGraph(Canvas: TCanvas; DrawRect: TRect);
   public
     { Public-Deklarationen }
@@ -74,6 +78,9 @@ type
     property YMax: Number read FYMax write FYMax;
     property XScale: TScaleMode read FXScale write FXScale;
     property YScale: TScaleMode read FYScale write FYScale;
+    property Title: string read FTitle write FTitle;
+    property XLabel: string read FXLabel write FXLabel;
+    property YLabel: string read FYLabel write FYLabel;
   end;
 
   TScale = class
@@ -230,6 +237,7 @@ procedure TGraphWindow.FormCreate(Sender: TObject);
 begin
   DoubleBuffered:= true;
   Buffer:= TBitmap.Create;
+  FBufferBox:= Rect(0,0,1,1);
   miGrid.Checked:= True;
   FSXMin:= NAN;
   FSXMax:= NAN;
@@ -257,7 +265,7 @@ end;
 
 procedure TGraphWindow.FormPaint(Sender: TObject);
 var
-  box,tr: TRect;
+  tr: TRect;
   ax,ay: TScale;
   vx,vy: Number;
   s: string;
@@ -266,18 +274,16 @@ begin
   Canvas.Draw(0,0,Buffer);
   case FInteract of
     imRead: begin
-      box:= ClientRect;
-      InflateRect(box, -10, -10);
-      ax:= TScale.FromMode(FXScale, FXMin, FXMax, box.Left + 10, box.Right - 10);
-      ay:= TScale.FromMode(FYScale, FYMin, FYMax, box.Bottom - 10, box.Top + 10);
+      ax:= TScale.FromMode(FXScale, FXMin, FXMax, FBufferBox.Left + 10, FBufferBox.Right - 10);
+      ay:= TScale.FromMode(FYScale, FYMin, FYMax, FBufferBox.Bottom - 10, FBufferBox.Top + 10);
       try
         //draw crosshairs
         Canvas.Pen.Style:= psDashDot;
         Canvas.Pen.Width:= 1;
         Canvas.Pen.Color:= clHighlight;
         Canvas.Brush.Style:= bsClear;
-        Canvas.MoveTo(FZoomRect.Right, box.Top);   Canvas.LineTo(FZoomRect.Right, box.Bottom);
-        Canvas.MoveTo(box.Left, FZoomRect.Bottom); Canvas.LineTo(box.Right, FZoomRect.Bottom);
+        Canvas.MoveTo(FZoomRect.Right, FBufferBox.Top);   Canvas.LineTo(FZoomRect.Right, FBufferBox.Bottom);
+        Canvas.MoveTo(FBufferBox.Left, FZoomRect.Bottom); Canvas.LineTo(FBufferBox.Right, FZoomRect.Bottom);
         //format label
         vx:= ax.Inverse(FZoomRect.Right);
         vy:= ay.Inverse(FZoomRect.Bottom);
@@ -285,9 +291,9 @@ begin
         ts:= Canvas.TextExtent(s);
         tr:= Bounds(FZoomRect.Right, FZoomRect.Bottom, ts.cx+6, ts.cy+4);
         //needs wrapping around?
-        if tr.Right>box.Right then
+        if tr.Right>FBufferBox.Right then
           OffsetRect(tr, -(tr.Right-tr.Left), 0);
-        if tr.Bottom>box.Bottom then
+        if tr.Bottom>FBufferBox.Bottom then
           OffsetRect(tr, 0, -(tr.Bottom-tr.Top));
         //draw framed text
         Canvas.Brush.Color:= clWhite;
@@ -337,6 +343,55 @@ var
   xaxis, yaxis, aprev, n, nprev: Number;
   gap: boolean;
   clipr: HRGN;
+
+  procedure SetFontRotate(degr: integer);
+  var
+    lf: TLogFont;
+  begin
+    GetObject(Canvas.Font.Handle, sizeof(lf), @lf);
+    lf.lfEscapement:= degr;
+    lf.lfOrientation:= degr;
+    DeleteObject(Canvas.Font.Handle);
+    Canvas.Font.Handle:= CreateFontIndirect(lf);
+  end;
+
+  procedure AxisLabels;
+  var
+    oldbox: TRect;
+    te: TSize;
+  begin
+    Canvas.Brush.Style:= bsClear;
+    Canvas.Font.Name:= 'Arial';
+    if FTitle > '' then begin   
+      oldBox:= box;
+      Canvas.Font.Size:= 12;
+      te:= Canvas.TextExtent(FTitle);      
+      inc(box.Top, te.cy + 10);
+      Canvas.TextRect(Rect(box.Left, oldbox.Top, box.Right, box.Top), (box.Right+box.Left - te.cx) div 2, oldbox.Top, FTitle);
+    end;
+    if (FXLabel > '') or (FYLabel > '') then begin 
+      oldBox:= box;
+      // calc new client box
+      Canvas.Font.Size:= 10;
+      te:= Canvas.TextExtent('jJ');
+      if FXLabel > '' then
+        dec(box.Bottom, te.cy + 5);
+      if FYLabel > '' then
+        inc(box.Left, te.cy + 5);
+        
+      // center labels outside box
+      if FXLabel > '' then begin
+        te:= Canvas.TextExtent(FXLabel);
+        Canvas.TextRect(Rect(box.Left, box.Bottom, box.Right, oldbox.Bottom), (box.Right+box.Left - te.cx) div 2, box.Bottom + 5, FXLabel);
+      end;     
+      if FYLabel > '' then begin
+        te:= Canvas.TextExtent(FYLabel);
+        SetFontRotate(900);
+        Canvas.TextRect(Rect(oldbox.Left, box.Top, box.Left, box.Bottom), oldbox.Left, (box.Bottom+box.Top-te.cx) div 2, FYLabel);
+        SetFontRotate(0);
+      end;
+    end;
+  end;
 
   procedure Axes;
 
@@ -481,7 +536,8 @@ var
     Canvas.Pen.Width:= 1;
     Canvas.Pen.Color:= COL_AXIS;
     Canvas.Brush.Style:= bsClear;
-    Canvas.Font.Name:= 'Arial';
+    Canvas.Font.Name:= 'Arial';      
+    Canvas.Font.Size:= 10;
 
     Canvas.MoveTo(ax.Scale(yaxis), box.Top);
     Canvas.LineTo(ax.Scale(yaxis), box.Bottom);
@@ -733,11 +789,13 @@ var
 begin
   Canvas.Brush.Color:= clWhite;
   box:= DrawRect;
-  Canvas.FillRect(box);
+  Canvas.FillRect(box);  
   InflateRect(box, -10, -10);
+  AxisLabels;
   Canvas.Pen.Color:= clBlack;
   Canvas.Pen.Width:= 1;
   Canvas.Rectangle(box);
+  FBufferBox:= box;
   ax:= TScale.FromMode(FXScale, FXMin, FXMax, box.Left + 10, box.Right - 10);
   ay:= TScale.FromMode(FYScale, FYMin, FYMax, box.Bottom - 10, box.Top + 10);
   try
@@ -834,7 +892,6 @@ end;
 
 procedure TGraphWindow.FormMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
-  box: TRect;
   ax,ay: TScale;
 
   procedure ZoomIn;
@@ -871,10 +928,8 @@ var
   end;
 
 begin
-  box:= ClientRect;
-  InflateRect(box, -10, -10);
-  ax:= TScale.FromMode(FXScale, FXMin, FXMax, box.Left + 10, box.Right - 10);
-  ay:= TScale.FromMode(FYScale, FYMin, FYMax, box.Bottom - 10, box.Top + 10);
+  ax:= TScale.FromMode(FXScale, FXMin, FXMax, FBufferBox.Left + 10, FBufferBox.Right - 10);
+  ay:= TScale.FromMode(FYScale, FYMin, FYMax, FBufferBox.Bottom - 10, FBufferBox.Top + 10);
   try
     case FInteract of
       imRead: ;

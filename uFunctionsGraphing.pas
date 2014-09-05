@@ -171,6 +171,7 @@ function TPackageGraph.Show_1_opt(Context: IContext; args: TExprList; Options: T
 var
   par: IExpression;
   pl: IValueList;
+  ps: IValueString;
   plots: array of IPlotObject;
   gr: TGraphWindow;
   pr,PaintRange: TPlotRange;
@@ -225,6 +226,15 @@ begin
   if Options.IsSet('YRange') and Supports(Options.Value['YRange'], IValueList, pl) then begin
     gr.YMin:= CastToFloat(pl.Item[0]);
     gr.YMax:= CastToFloat(pl.Item[1]);
+  end;       
+  if Options.IsSet('Title') and Supports(Options.Value['Title'], IValueString, ps) then begin
+    gr.Title:= ps.Value;
+  end;
+  if Options.IsSet('XLabel') and Supports(Options.Value['XLabel'], IValueString, ps) then begin
+    gr.XLabel:= ps.Value;
+  end;
+  if Options.IsSet('YLabel') and Supports(Options.Value['YLabel'], IValueString, ps) then begin
+    gr.YLabel:= ps.Value;
   end;
 
   if IsNan(gr.XMin) or IsNan(gr.XMax) or IsNan(gr.YMin) or IsNan(gr.YMax) then begin

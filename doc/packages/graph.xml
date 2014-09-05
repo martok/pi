@@ -68,6 +68,9 @@
 				<value value="'StepX'">Konstantes X bis Sprung auf Y (offen)</value>
 				<value value="'StepY'">Konstantes Y bis Sprung auf X (offen)</value>
 			</option>
+			<option name="Caption" default="*auto*">
+				<description>Titel, sonst Anzahl der Elemente</description>
+			</option>
 		</options>
 	</function>
 	<function name="Show">
@@ -85,6 +88,15 @@
 			</option>
 			<option name="Axes" default="'linlin'">
 				<description>Modus der X und Y-Achsen. Paare von 'Lin' oder 'Log'</description>
+			</option>
+			<option name="Title" default="*kein*">
+				<description>Diagrammtitel</description>
+			</option>
+			<option name="XLabel" default="*kein*">
+				<description>Beschriftung der X-Achse</description>
+			</option>
+			<option name="YLabel" default="*kein*">
+				<description>Beschriftung der Y-Achse</description>
 			</option>
 		</options>
 	</function>
