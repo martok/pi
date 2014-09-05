@@ -344,15 +344,26 @@ var
   gap: boolean;
   clipr: HRGN;
 
-  procedure SetFontRotate(degr: integer);
+  procedure TextRectRotated(Rect: TRect; X, Y, degr: Integer; const Text: string);
   var
+    ofn, rf: HFONT;
     lf: TLogFont;
   begin
     GetObject(Canvas.Font.Handle, sizeof(lf), @lf);
-    lf.lfEscapement:= degr;
-    lf.lfOrientation:= degr;
-    DeleteObject(Canvas.Font.Handle);
-    Canvas.Font.Handle:= CreateFontIndirect(lf);
+    ofn:= Canvas.Font.Handle;
+    try
+      lf.lfEscapement:= degr;
+      lf.lfOrientation:= degr;
+      rf:= CreateFontIndirect(lf);
+      try
+        SelectObject(Canvas.Handle, rf);
+        Canvas.TextRect(Rect, X, Y, Text);
+      finally
+        DeleteObject(rf);
+      end;
+    finally
+      SelectObject(Canvas.Handle, ofn);
+    end;
   end;
 
   procedure AxisLabels;
@@ -362,14 +373,14 @@ var
   begin
     Canvas.Brush.Style:= bsClear;
     Canvas.Font.Name:= 'Arial';
-    if FTitle > '' then begin   
+    if FTitle > '' then begin
       oldBox:= box;
       Canvas.Font.Size:= 12;
-      te:= Canvas.TextExtent(FTitle);      
+      te:= Canvas.TextExtent(FTitle);
       inc(box.Top, te.cy + 10);
       Canvas.TextRect(Rect(box.Left, oldbox.Top, box.Right, box.Top), (box.Right+box.Left - te.cx) div 2, oldbox.Top, FTitle);
     end;
-    if (FXLabel > '') or (FYLabel > '') then begin 
+    if (FXLabel > '') or (FYLabel > '') then begin
       oldBox:= box;
       // calc new client box
       Canvas.Font.Size:= 10;
@@ -378,17 +389,15 @@ var
         dec(box.Bottom, te.cy + 5);
       if FYLabel > '' then
         inc(box.Left, te.cy + 5);
-        
+
       // center labels outside box
       if FXLabel > '' then begin
         te:= Canvas.TextExtent(FXLabel);
         Canvas.TextRect(Rect(box.Left, box.Bottom, box.Right, oldbox.Bottom), (box.Right+box.Left - te.cx) div 2, box.Bottom + 5, FXLabel);
-      end;     
+      end;
       if FYLabel > '' then begin
         te:= Canvas.TextExtent(FYLabel);
-        SetFontRotate(900);
-        Canvas.TextRect(Rect(oldbox.Left, box.Top, box.Left, box.Bottom), oldbox.Left, (box.Bottom+box.Top-te.cx) div 2, FYLabel);
-        SetFontRotate(0);
+        TextRectRotated(Rect(oldbox.Left, box.Top, box.Left, box.Bottom), oldbox.Left, (box.Bottom+box.Top-te.cx) div 2, 900, FYLabel);
       end;
     end;
   end;
