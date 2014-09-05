@@ -1381,7 +1381,7 @@ begin
           FreeAndNil(res);
         end;
       finally
-        FreeAndNil(ctx);
+        ctx:= nil;
       end;
     finally
       try
