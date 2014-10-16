@@ -16,7 +16,7 @@ type
   TFunctionPackageClass = class of TFunctionPackage;
   TContext = class;
 
-  TOperatorOptions = set of (ooUnary, ooUnparsed, ooFlat, ooUnpackInArguments, ooHoldPackedArguments);
+  TOperatorOptions = set of (ooUnary, ooUnparsed, ooFlat, ooFlatAssociative, ooUnpackInArguments, ooHoldPackedArguments);
   TMathSystem  = class(TIntfNoRefCount, IMathSystem)
   private
     fOutput: IOutputProvider;
@@ -909,16 +909,40 @@ var
         Flatten(TExpression(x.NativeObject).Arguments[k]);
       if x.Represents(IFunctionCall, xc) and ((xc.Name = inf.Func)) then begin
         SetLength(el,0);
-        for k:= 0 to x.ArgCount-1 do begin
-          if x.Arg[k].Represents(IFunctionCall, ac) and (ac.Name = inf.Func) then begin
-            c:= Length(el);
-            SetLength(el, c + ac.ArgCount);
-            for m:= 0 to ac.ArgCount-1 do
-              el[c + m]:= ac.Arg[m];
-          end else begin
-            c:= Length(el);
-            SetLength(el, c + 1);
-            el[c]:= x.Arg[k];
+        c:= 0;
+        if ooFlatAssociative in inf^.Options then begin
+          // ordering does not matter
+          for k:= 0 to x.ArgCount-1 do begin
+            if x.Arg[k].Represents(IFunctionCall, ac) and (ac.Name = inf.Func) then begin
+              SetLength(el, c + ac.ArgCount);
+              for m:= 0 to ac.ArgCount-1 do
+                el[c + m]:= ac.Arg[m];
+              inc(c, ac.ArgCount);
+            end else begin
+              SetLength(el, c + 1);
+              el[c]:= x.Arg[k];
+              inc(c);
+            end;
+          end;
+        end else begin
+          // order matters, only flatten first element
+          if x.ArgCount > 0 then begin
+            if x.Arg[0].Represents(IFunctionCall, ac) and (ac.Name = inf.Func) then begin
+              SetLength(el, c + ac.ArgCount);
+              for m:= 0 to ac.ArgCount-1 do
+                el[c + m]:= ac.Arg[m];
+              inc(c, ac.ArgCount);
+            end else begin
+              SetLength(el, c + 1);
+              el[c]:= x.Arg[0];
+              inc(c);
+            end;
+            // keep the rest
+            for k:= 1 to x.ArgCount-1 do begin
+              SetLength(el, c + 1);
+              el[c]:= x.Arg[k];
+              inc(c);
+            end;
           end;
         end;
 
@@ -1488,11 +1512,11 @@ begin
   MS.RegisterAsInfix('-', 15,[ooUnary, ooUnparsed],Self,'_negate'); // Done by Parse/Fold if it finds a Subtraction with no LHS
 
   MS.RegisterAsInfix('^', 19,[],Self,'_pow');
-  MS.RegisterAsInfix('*', 20,[ooFlat],Self,'_mult');
+  MS.RegisterAsInfix('*', 20,[ooFlat, ooFlatAssociative],Self,'_mult');
   MS.RegisterAsInfix('/', 20,[],Self,'_div');
   MS.RegisterAsInfix('%', 20,[],Self,'_mod');
 
-  MS.RegisterAsInfix('+', 30,[ooFlat],Self,'_plus');
+  MS.RegisterAsInfix('+', 30,[ooFlat, ooFlatAssociative],Self,'_plus');
   MS.RegisterAsInfix('-', 30,[ooFlat],Self,'_subtract');
 
   MS.RegisterAsInfix('=', 100,[],Self,'_assign');
