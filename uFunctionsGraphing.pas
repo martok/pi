@@ -251,8 +251,8 @@ begin
     end;
     if IsNan(gr.XMin) then gr.XMin:= PaintRange.XMin;
     if IsNan(gr.XMax) then gr.XMax:= PaintRange.XMax;
-    if IsNan(gr.YMin) then gr.YMin:= PaintRange.YMin;
-    if IsNan(gr.YMax) then gr.YMax:= PaintRange.YMax;
+    if IsNan(gr.YMin) then gr.YMin:= PaintRange.YMin * 1.05;
+    if IsNan(gr.YMax) then gr.YMax:= PaintRange.YMax * 1.05;
   end;
 
   if gr.XScale = smLog then begin

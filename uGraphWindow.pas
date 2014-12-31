@@ -397,7 +397,8 @@ var
       end;
       if FYLabel > '' then begin
         te:= Canvas.TextExtent(FYLabel);
-        TextRectRotated(Rect(oldbox.Left, box.Top, box.Left, box.Bottom), oldbox.Left, (box.Bottom+box.Top-te.cx) div 2, 900, FYLabel);
+        TextRectRotated(Rect(oldbox.Left, box.Top, box.Left, box.Bottom), oldbox.Left, (box.Bottom+box.Top+te.cx) div 2, 900, FYLabel);
+        dec(box.Bottom, te.cy);
       end;
     end;
   end;
@@ -419,7 +420,7 @@ var
     var
       l: string;
       ts: TSize;
-      w: integer;
+      w,a: integer;
     begin
       if not fzero(Value) then begin
         if Hor then
@@ -429,10 +430,13 @@ var
         ts:= Canvas.TextExtent(l);
 
         if Hor then begin
-          if miGrid.Checked then
-            Canvas.TextOut(ax.Scale(Value) + 4, ay.Scale(xaxis) + 1, l)
+          a:= ay.Scale(xaxis) + 1;
+          if miGrid.Checked and (a <> box.bottom) then
+            w:= ax.Scale(Value) + 4
           else
-            Canvas.TextOut(ax.Scale(Value) - ts.cx div 2, ay.Scale(xaxis) + 1, l);
+            w:= ax.Scale(Value) - ts.cx div 2;
+          w:= Min(Box.Right-ts.cx, Max(box.Left, w));
+          Canvas.TextOut(w, a, l)
         end else begin
           if ax.Scale(yaxis)-50 <= box.Left then
             w:= ax.Scale(yaxis) + 5
@@ -798,15 +802,15 @@ var
 begin
   Canvas.Brush.Color:= clWhite;
   box:= DrawRect;
-  Canvas.FillRect(box);  
+  Canvas.FillRect(box);
   InflateRect(box, -10, -10);
   AxisLabels;
   Canvas.Pen.Color:= clBlack;
   Canvas.Pen.Width:= 1;
   Canvas.Rectangle(box);
   FBufferBox:= box;
-  ax:= TScale.FromMode(FXScale, FXMin, FXMax, box.Left + 10, box.Right - 10);
-  ay:= TScale.FromMode(FYScale, FYMin, FYMax, box.Bottom - 10, box.Top + 10);
+  ax:= TScale.FromMode(FXScale, FXMin, FXMax, box.Left, box.Right - 1);
+  ay:= TScale.FromMode(FYScale, FYMin, FYMax, box.Bottom - 1, box.Top);
   try
     Graphs;
     Axes;
