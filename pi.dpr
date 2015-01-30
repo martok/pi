@@ -1,6 +1,6 @@
 program pi;
 
-{$DEFINE USEFASTMM}
+{.$DEFINE USEFASTMM}
 
 uses
   {$IFDEF USEFASTMM}FastMM4,{$ENDIF}
