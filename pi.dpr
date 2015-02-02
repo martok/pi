@@ -1,9 +1,6 @@
 program pi;
 
-{.$DEFINE USEFASTMM}
-
 uses
-  {$IFDEF USEFASTMM}FastMM4,{$ENDIF}
   Forms,
   uMain in 'uMain.pas' {fmPiMain},
   uMath in 'uMath.pas',
