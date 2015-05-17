@@ -44,9 +44,7 @@
     <DCCReference Include="uExprv essionMatcher.pas" />
     <DCCReference Include="uExprvessionMatcher.pas" />
     <DCCReference Include="uFu nctionsStatistics.pas" />
-    <DCCReference Include="uFun ctionsSymbolics.pas">
-      <ModuleName>uFunctionsSymbolics</ModuleName>
-    </DCCReference>
+    <DCCReference Include="uFun ctionsSymbolics.pas" />
     <DCCReference Include="uFunctions.pas" />
     <DCCReference Include="uFunctionsStatistics.pas" />
     <DCCReference Include="uFunctionsSymbolics.pas" />

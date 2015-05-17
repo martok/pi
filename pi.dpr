@@ -20,7 +20,9 @@ uses
   uMathSelfTests in 'uMathSelfTests.pas',
   uFPUSupport in 'uFPUSupport.pas',
   uFrmInput in 'uFrmInput.pas' {frmInput: TFrame},
-  uDockableForms in 'uDockableForms.pas';
+  uDockableForms in 'uDockableForms.pas',
+  uChartScale in 'uChartScale.pas',
+  uChartPainter in 'uChartPainter.pas';
 
 {$R *.res}
 

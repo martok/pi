@@ -15,6 +15,7 @@ type
 
   IPlotObject = interface(IExpressionAtom)['{C5255A30-8718-4A84-9569-3CF8FE47F5C3}']
   end;
+  TPlotsArray = array of IPlotObject;
 
   TPlotBase = class(TE_Atom, IPlotObject)
   private
@@ -96,7 +97,7 @@ type
 
 implementation
 
-uses Math, uGraphWindow, TypInfo;
+uses Math, uGraphWindow, TypInfo, uChartScale;
 
 { TPackageGraph }
 

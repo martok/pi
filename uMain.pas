@@ -101,7 +101,7 @@ begin
   end;
   reOutput.Clear;
   frmInput.Clear;
-  frmInput.OnRunCommand:= acRunCmdExecute;          
+  frmInput.OnRunCommand:= acRunCmdExecute;
   frmInput.OnSizeForced:= InputResized;
 end;
 

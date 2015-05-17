@@ -41,6 +41,8 @@
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
     <DCCReference Include="uCCSVList.pas" />
+    <DCCReference Include="uChartPainter.pas" />
+    <DCCReference Include="uChartScale.pas" />
     <DCCReference Include="uCIntegerBucketList.pas" />
     <DCCReference Include="uDockableForms.pas" />
     <DCCReference Include="uFPUSupport.pas" />

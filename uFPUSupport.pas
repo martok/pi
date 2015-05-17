@@ -32,6 +32,8 @@ function finf(x: Extended): boolean;
 function ftruncable(x: Extended): boolean;
 function Floor64(const X: Extended): int64;
 
+function fsame(const X,Y: Extended): boolean;
+
 function fpu_maskexception(const aMask: Word): Word;
 procedure fpu_clearexc;
 
@@ -221,6 +223,15 @@ begin
   Result:= Trunc(X);
   if Frac(X) < 0.0 then
     Dec(Result);
+end;
+
+{
+  Compare two values, treating NAN as equal to nothing
+  Return:       boolean if X <> Y
+}
+function fsame(const X,Y: Extended): boolean;
+begin
+  Result:= not IsNan(X) and not IsNan(Y) and fzero(X-Y);
 end;
 
 {

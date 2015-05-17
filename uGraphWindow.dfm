@@ -1,9 +1,9 @@
 object GraphWindow: TGraphWindow
   Left = 192
   Top = 107
-  Width = 266
-  Height = 264
   Caption = 'GraphWindow'
+  ClientHeight = 217
+  ClientWidth = 248
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
