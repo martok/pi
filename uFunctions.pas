@@ -1101,7 +1101,7 @@ begin
       for j:= 0 to line.Count - 1 do begin
         if (Line[j] = '') and ignempt then
           continue;
-        cn:= TValueFactory.FromString(Line[j], NeutralFormatSettings);
+        cn:= TValueFactory.GuessFromString(Line[j], NeutralFormatSettings,#0);
         row.Length:= k + 1;
         row.Item[k]:= cn;
         inc(k);

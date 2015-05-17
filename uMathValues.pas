@@ -33,7 +33,8 @@ type
     class function ZeroF: IValueNumber;
     class function NaN: IValueNumber;
 
-    class function FromString(const Str: String; const FS: TFormatSettings): IValueNumber;
+    class function NumberFromString(const Str: String; const FS: TFormatSettings): IValueNumber;
+    class function GuessFromString(const Str: String; const FS: TFormatSettings; const QuoteChr: Char): IExpressionAtom;
 
     class function Float(const Val: MTFloat): IValueNumber;
     class function Integer(const Val: MTInteger): IValueNumber;
@@ -612,7 +613,7 @@ begin
   Result:= TValueFloat.Create(0.0);
 end;
 
-class function TValueFactory.FromString(const Str: String; const FS: TFormatSettings): IValueNumber;
+class function TValueFactory.NumberFromString(const Str: String; const FS: TFormatSettings): IValueNumber;
 var
   t: Int64;
 begin
@@ -623,6 +624,27 @@ begin
     Result:= TValueFactory.Integer(t)
   else
     Result:= TValueFactory.Float(StrToFloat(Str, FS));
+end;
+
+class function TValueFactory.GuessFromString(const Str: String; const FS: TFormatSettings; const QuoteChr: Char): IExpressionAtom;
+var
+  t: Int64;
+  f: Extended;
+  b: PChar;
+begin
+  {$IF NOT( (SizeOf(Int64)=SizeOf(MTInteger)) and (High(MTInteger)=high(Int64)) )}
+    {$ERROR Int64 != MTInteger}
+  {$IFEND}
+  if TryStrToInt64(Str, t) then
+    Result:= TValueFactory.Integer(t)
+  else if TryStrToFloat(Str, f, FS) then
+    Result:= TValueFactory.Float(f)
+  else
+    if QuoteChr<>#0 then begin
+      b:= PChar(Str);
+      Result:= TValueString.Create(AnsiExtractQuotedStr(b, QuoteChr))
+    end else
+      Result:= TValueString.Create(Str);
 end;
 
 class function TValueFactory.Float(const Val: MTFloat): IValueNumber;

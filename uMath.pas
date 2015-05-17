@@ -776,7 +776,7 @@ var
       case Tokens[i].Kind of
         tokNumber: begin
             Tokens[i].Kind:= tokExpression;
-            Tokens[i].Expr:= TValueFactory.FromString(Tokens[i].Value, NeutralFormatSettings);
+            Tokens[i].Expr:= TValueFactory.NumberFromString(Tokens[i].Value, NeutralFormatSettings);
           end;
         tokString: begin
             Tokens[i].Kind:= tokExpression;
