@@ -18,6 +18,46 @@ type
 
   TOperatorOptions = set of (ooUnary, ooUnparsed, ooFlat, ooFlatAssociative, ooUnpackInArguments, ooHoldPackedArguments);
   TMathSystem  = class(TIntfNoRefCount, IMathSystem)
+  const
+    CharQuote = '''';
+
+    CharBraceOpen = '(';
+    CharBraceClose = ')';
+    CharContextOpen = '[';
+    CharContextClose = ']';
+    CharListOpen = '{';
+    CharListClose = '}';
+  private type     
+    TInfixDefinition = record
+      Operator: String[16];
+      Precedence: integer;
+      Options: TOperatorOptions;
+      Pack: TFunctionPackage;
+      Func: String[64];
+    end;
+    PInfixDefinition = ^TInfixDefinition;
+
+    TTokenKind = (tokVoid, tokExpression, tokEmpty,
+      tokNumber, tokString, tokFuncRef, tokExprRef, tokExprContext,
+      tokBraceOpen, tokBraceClose, tokContextOpen, tokContextClose, tokListOpen, tokListClose, tokList,
+      tokOperator);
+    TToken = record
+      Pos: integer;
+      Value: string;
+      Expr: IExpression;
+      case Kind: TTokenKind of
+        tokVoid: ();
+        tokExpression: ();
+        tokNumber: ();
+        tokString: ();
+        tokFuncRef: ();
+        tokExprRef: ();
+        tokExprContext: ();
+        //  tokBraceOpen, tokBraceClose, tokContextOpen, tokContextClose, tokListOpen, tokListClose
+        tokOperator: (OpDef: PInfixDefinition);
+    end;
+    TTokenList = array of TToken;
+
   private
     fOutput: IOutputProvider;
 
@@ -26,11 +66,15 @@ type
     fPackages: TObjectList;
     fContext,
     fConstants: IContext;
+    function ApplyFlatOperators(ex: IExpression): IExpression;
   protected
     FEvaluationStack: TStringList;
+    FNegateDefinition: PInfixDefinition;
     procedure EvaluationBegin(varname: string);
     procedure EvaluationEnd;
     procedure PredefineConstants(const Context: IContext);
+    function Tokenize(const Expr: string): TTokenList;       
+    procedure Fold(var Tokens: TTokenList; const L, R: integer);
   public
     constructor Create(const Output: IOutputProvider);
     destructor Destroy; override;
@@ -296,14 +340,7 @@ uses
   StrUtils, uMathValues, uMathConstants, uMathDimensions;
 
 type
-  TInfixDefinition = record
-    Operator: String[16];
-    Precedence: integer;
-    Options: TOperatorOptions;
-    Pack: TFunctionPackage;
-    Func: String[64];
-  end;
-  PInfixDefinition = ^TInfixDefinition;
+  PInfixDefinition = TMathSystem.PInfixDefinition;
 
 function InsertThousandSep(const Value: string; aFrom, aTo, aDecimalPoint: integer): string;
 var
@@ -429,7 +466,7 @@ end;
 
 function LSC_InfixByLength(Item1, Item2: Pointer): Integer;
 begin
-  Result:= Length(PInfixDefinition(Item2)^.Operator) - Length(PInfixDefinition(Item1)^.Operator); 
+  Result:= Length(PInfixDefinition(Item2)^.Operator) - Length(PInfixDefinition(Item1)^.Operator);
 end;
 
 function LSC_OperatorByPrecedence(Item1, Item2: Pointer): Integer;
@@ -490,396 +527,439 @@ begin
   FEvaluationStack.Delete(FEvaluationStack.Count - 1);
 end;
 
-function TMathSystem.Parse(const Expr: String): IExpression;
-const
-  CharQuote = '''';
-
-  CharBraceOpen = '(';
-  CharBraceClose = ')';
-  CharContextOpen = '[';
-  CharContextClose = ']';
-  CharListOpen = '{';
-  CharListClose = '}';
-type
-  TTokenKind = (tokVoid, tokExpression, tokEmpty,
-    tokNumber, tokString, tokFuncRef, tokExprRef, tokExprContext,
-    tokBraceOpen, tokBraceClose, tokContextOpen, tokContextClose, tokListOpen, tokListClose, tokList,
-    tokOperator);
-  TToken = record
-    Pos: integer;
-    Value: string;
-    Expr: IExpression;
-    case Kind: TTokenKind of
-      tokVoid: ();
-      tokExpression: ();
-      tokNumber: ();
-      tokString: ();
-      tokFuncRef: ();
-      tokExprRef: ();
-      tokExprContext: ();
-      //  tokBraceOpen, tokBraceClose, tokContextOpen, tokContextClose, tokListOpen, tokListClose
-      tokOperator: (OpDef: PInfixDefinition);
-  end;
-  TTokenList = array of TToken;
+function TMathSystem.Tokenize(const Expr: string): TTokenList;
 var
-  Tokens: TTokenList;
-  _negate: PInfixDefinition;
-  i: integer;
+  p, i: integer;
+  t: TToken;
+  inf: PInfixDefinition;
 
-  procedure Tokenize;
+  procedure ParseNumber(var Nr: TToken);
   var
-    p, i: integer;
-    t: TToken;
-    inf: PInfixDefinition;
-
-    procedure ParseNumber(var Nr: TToken);
-    var
-      mode: (tmNumberSign, tmNumber, tmNumberDecimals, tmNumberExponentSign, tmNumberExponent);
-      data: string;
-    begin
-      case Expr[p] of
-        '0'..'9': mode:= tmNumber;
-        '-': mode:= tmNumberSign;
-        '.': mode:= tmNumberDecimals;
-      else
-        exit;
-      end;
-      data:= Expr[p];
-      inc(p);
-
-      while p <= Length(Expr) do begin
-        case mode of
-          tmNumberSign:
-            if Expr[p] in ['0'..'9'] then begin
-              data:= data + Expr[p];
-              mode:= tmNumber;
-            end else
-              break;
-          tmNumber:
-            if Expr[p] in ['0'..'9'] then
-              data:= data + Expr[p]
-            else if Expr[p] = NeutralFormatSettings.DecimalSeparator then begin
-              data:= data + Expr[p];
-              mode:= tmNumberDecimals;
-            end else if Expr[p] in ['e', 'E'] then begin
-              data:= data + Expr[p];
-              mode:= tmNumberExponentSign;
-            end else
-              break;
-          tmNumberDecimals:
-            if Expr[p] in ['0'..'9'] then
-              data:= data + Expr[p]
-            else if Expr[p] in ['e', 'E'] then begin
-              data:= data + Expr[p];
-              mode:= tmNumberExponentSign;
-            end else
-              break;
-          tmNumberExponentSign: begin
-              if Expr[p] in ['0'..'9', '-'] then begin
-                data:= data + Expr[p];
-                mode:= tmNumberExponent;
-              end else
-                break;
-            end;
-          tmNumberExponent:
-            if Expr[p] in ['0'..'9'] then
-              data:= data + Expr[p]
-            else
-              break;
-        end;
-        inc(p);
-      end;
-      Nr.Kind:= tokNumber;
-      Nr.Value:= data;
+    mode: (tmNumberSign, tmNumber, tmNumberDecimals, tmNumberExponentSign, tmNumberExponent);
+    data: string;
+  begin
+    case Expr[p] of
+      '0'..'9': mode:= tmNumber;
+      '-': mode:= tmNumberSign;
+      '.': mode:= tmNumberDecimals;
+    else
+      exit;
     end;
+    data:= Expr[p];
+    inc(p);
 
-    procedure ParseString(var Str: TToken);
-    var
-      data: string;
-    begin
-      data:= Expr[p];
-      inc(p);
-      while p <= Length(Expr) do begin
-        if (Expr[p] <> CharQuote) then
-          data:= data + Expr[p]
-        else begin
-          data:= data + Expr[p];
-          inc(p);
-          if (p <= length(Expr)) and (Expr[p] = CharQuote) then
+    while p <= Length(Expr) do begin
+      case mode of
+        tmNumberSign:
+          if Expr[p] in ['0'..'9'] then begin
+            data:= data + Expr[p];
+            mode:= tmNumber;
+          end else
+            break;
+        tmNumber:
+          if Expr[p] in ['0'..'9'] then
+            data:= data + Expr[p]
+          else if Expr[p] = NeutralFormatSettings.DecimalSeparator then begin
+            data:= data + Expr[p];
+            mode:= tmNumberDecimals;
+          end else if Expr[p] in ['e', 'E'] then begin
+            data:= data + Expr[p];
+            mode:= tmNumberExponentSign;
+          end else
+            break;
+        tmNumberDecimals:
+          if Expr[p] in ['0'..'9'] then
+            data:= data + Expr[p]
+          else if Expr[p] in ['e', 'E'] then begin
+            data:= data + Expr[p];
+            mode:= tmNumberExponentSign;
+          end else
+            break;
+        tmNumberExponentSign: begin
+            if Expr[p] in ['0'..'9', '-'] then begin
+              data:= data + Expr[p];
+              mode:= tmNumberExponent;
+            end else
+              break;
+          end;
+        tmNumberExponent:
+          if Expr[p] in ['0'..'9'] then
             data:= data + Expr[p]
           else
             break;
-        end;
-        inc(p);
       end;
-      Str.Kind:= tokString;
-      Str.Value:= data;
-    end;
-
-    procedure ParseIdentifier(var Id: TToken);
-    var
-      data: string;
-    begin
-      data:= Expr[p];
       inc(p);
-      while p <= Length(Expr) do begin
-        if Expr[p] in ['a'..'z', 'A'..'Z', '_', '0'..'9'] then
-          data:= data + Expr[p]
-        else
-          Break;
-        inc(p);
-      end;
-      case Expr[p] of
-        CharBraceOpen: Id.Kind:= tokFuncRef;
-        CharContextOpen: Id.Kind:= tokExprContext;
-      else
-        Id.Kind:= tokExprRef;
-      end;
-      Id.Value:= data;
     end;
-
-  begin
-    p:= 1;
-    while p <= length(expr) do begin
-      t.Value:= '';
-      FillChar(t, sizeof(t), 0);
-      t.Pos:= p;
-      case Expr[p] of
-        ' ',#9,#13,#10: begin
-            inc(p);
-            continue;
-          end;
-        '0'..'9',
-          //        '-',
-        '.': ParseNumber(t);
-        CharQuote: ParseString(t);
-        CharBraceOpen: begin
-            t.Kind:= tokBraceOpen;
-            inc(p);
-          end;
-        CharBraceClose: begin
-            t.Kind:= tokBraceClose;
-            inc(p);
-          end;
-        CharContextOpen: begin
-            t.Kind:= tokContextOpen;
-            inc(p);
-          end;
-        CharContextClose: begin
-            t.Kind:= tokContextClose;
-            inc(p);
-          end;
-        CharListOpen: begin
-            t.Kind:= tokListOpen;
-            inc(p);
-          end;
-        CharListClose: begin
-            t.Kind:= tokListClose;
-            inc(p);
-          end;
-        'a'..'z', 'A'..'Z'{, '_'}: ParseIdentifier(t);
-      else
-        for i:= 0 to fInfixTable.Count-1 do begin
-          inf:= PInfixDefinition(fInfixTable[i]);
-          if not (ooUnparsed in inf.Options) and
-            (inf.Operator > '') and
-            SameText(inf.Operator, Copy(Expr, p, length(inf.Operator))) then begin
-            t.Kind:= tokOperator;
-            t.Value:= inf.Operator;
-            t.OpDef:= inf;
-            inc(p, length(t.Value));
-            break;
-          end;
-        end;
-        if t.Kind = tokVoid then
-          raise ESyntaxError.CreateFmt('Position %d: Unexpected Character %s', [p, Expr[p]]);
-      end;
-
-      SetLength(Tokens, Length(Tokens) + 1);
-      Tokens[high(Tokens)]:= t;
-    end;
+    Nr.Kind:= tokNumber;
+    Nr.Value:= data;
   end;
 
-  procedure Fold(L, R: integer);
+  procedure ParseString(var Str: TToken);
   var
-    i, A, ll, rr: integer;
-    tmp: IExpression;
-    inf,exi: PInfixDefinition;
-    b: pchar;
-
-    function NextR(k: integer): integer;
-    var
-      j: integer;
-    begin
-      Result:= -1;
-      for j:= k + 1 to R do
-        if Tokens[j].Kind <> tokVoid then begin
-          Result:= j;
-          exit;
-        end;
-    end;
-    function NextL(k: integer): integer;
-    var
-      j: integer;
-    begin
-      Result:= -1;
-      for j:= k - 1 downto L do
-        if Tokens[j].Kind <> tokVoid then begin
-          Result:= j;
-          exit;
-        end;
-    end;
-
-    procedure ProcessBraces(const Open, Close: TTokenKind; const Str: string;
-                    SetTo: TTokenKind = tokVoid; IfEmpty: TTokenKind = tokEmpty);
-    var
-      i: integer;
-    begin
-      repeat
-        A:= -1;
-        for i:= L to R do begin
-          if Tokens[i].Kind = Open then
-            A:= i
-          else if Tokens[i].Kind = Close then begin
-            if A >= 0 then begin
-              if A = I - 1 then begin
-                Tokens[A].Kind:= IfEmpty;
-              end else begin
-                Fold(A + 1, I - 1);
-                Tokens[A].Kind:= SetTo;
-              end;
-              Tokens[I].Kind:= tokVoid;
-            end else
-              raise ESyntaxError.CreateFmt('Position %d: Closing %s never opened', [Tokens[i].Pos, Str]);
-            A:= -2;
-            break;
-          end;
-        end;
-        if A >= 0 then
-          raise ESyntaxError.CreateFmt('%s opened at position %d is never closed', [Str, Tokens[A].Pos]);
-      until A = -1;
-    end;
+    data: string;
   begin
-    //given stupid values?
-    if R < L then
-      exit;
-
-    //then subcontexts
-    ProcessBraces(tokListOpen, tokListClose, '{}', tokList, tokList);
-    //collapse braces first
-    ProcessBraces(tokBraceOpen, tokBraceClose, '()');
-    //then subcontexts
-    ProcessBraces(tokContextOpen, tokContextClose, '[]');
-
-    // simple expressions
-    for i:= L to R do
-      case Tokens[i].Kind of
-        tokNumber: begin
-            Tokens[i].Kind:= tokExpression;
-            Tokens[i].Expr:= TValueFactory.NumberFromString(Tokens[i].Value, NeutralFormatSettings);
-          end;
-        tokString: begin
-            Tokens[i].Kind:= tokExpression;
-            b:= PChar(Tokens[i].Value);
-            Tokens[i].Expr:= TValueString.Create(AnsiExtractQuotedStr(b, CharQuote));
-          end;
-        tokExprRef: begin
-            Tokens[i].Kind:= tokExpression;
-            Tokens[i].Expr:= TE_SymbolRef.Create(Tokens[i].Value);
-          end;
-        tokExprContext: begin
-            Tokens[i].Kind:= tokExpression;
-            tmp:= TE_Subcontext.Create(Tokens[i].Value);
-            A:= NextR(i);
-            if (A>=0) then begin
-              if Tokens[A].Kind <> tokEmpty then begin
-                tmp.SetArgs([Tokens[A].Expr]);
-              end;
-              Tokens[A].Expr:= nil;
-              Tokens[a].Kind:= tokVoid;
-            end;
-            Tokens[i].Expr:= tmp;
-          end;
-        tokFuncRef: begin
-            Tokens[i].Kind:= tokExpression;
-            tmp:= TE_Call.Create(Tokens[i].Value);
-            A:= NextR(i);
-            if (A>=0) then begin
-              if Tokens[A].Kind <> tokEmpty then begin
-                tmp.SetArgs([Tokens[A].Expr]);
-              end;
-              Tokens[A].Expr:= nil;
-              Tokens[a].Kind:= tokVoid;
-            end;
-            Tokens[i].Expr:= tmp;
-          end;
-        tokList: begin
-            Tokens[i].Kind:= tokExpression;
-            tmp:= TValueList.Create;
-            A:= NextR(i);
-            if (A=I+1) then begin
-              if Tokens[A].Kind <> tokEmpty then begin
-                tmp.SetArgs([Tokens[A].Expr]);
-              end;
-              Tokens[A].Expr:= nil;
-              Tokens[a].Kind:= tokVoid;
-            end;
-            Tokens[i].Expr:= tmp;
-          end;
+    data:= Expr[p];
+    inc(p);
+    while p <= Length(Expr) do begin
+      if (Expr[p] <> CharQuote) then
+        data:= data + Expr[p]
+      else begin
+        data:= data + Expr[p];
+        inc(p);
+        if (p <= length(Expr)) and (Expr[p] = CharQuote) then
+          data:= data + Expr[p]
+        else
+          break;
       end;
+      inc(p);
+    end;
+    Str.Kind:= tokString;
+    Str.Value:= data;
+  end;
 
-    //finally, operators
-    // Note: this wastes some extra iterations per Prio-Class, just ignore that, okay?
-    for A:= 0 to fOperatorTable.Count-1 do begin
-      inf:= PInfixDefinition(fOperatorTable[A]);
-      if ooUnparsed in  inf^.Options then
-        continue;
-      for i:= L to R do
-        if (Tokens[i].Kind = tokOperator) and
-          (Tokens[i].OpDef^.Precedence = inf^.Precedence) then begin
-          exi:= Tokens[i].OpDef;
-          rr:= NextR(i);
-          ll:= NextL(i);
+  procedure ParseIdentifier(var Id: TToken);
+  var
+    data: string;
+  begin
+    data:= Expr[p];
+    inc(p);
+    while p <= Length(Expr) do begin
+      if Expr[p] in ['a'..'z', 'A'..'Z', '_', '0'..'9'] then
+        data:= data + Expr[p]
+      else
+        Break;
+      inc(p);
+    end;
+    case Expr[p] of
+      CharBraceOpen: Id.Kind:= tokFuncRef;
+      CharContextOpen: Id.Kind:= tokExprContext;
+    else
+      Id.Kind:= tokExprRef;
+    end;
+    Id.Value:= data;
+  end;
 
-          if rr < 0 then
-            raise ESyntaxError.CreateFmt('Position %d: Operator has no RHS', [Tokens[i].Pos]);
+begin        
+  SetLength(Result, 0);
+  p:= 1;
+  while p <= length(expr) do begin
+    t.Value:= '';
+    FillChar(t, sizeof(t), 0);
+    t.Pos:= p;
+    case Expr[p] of
+      ' ',#9,#13,#10: begin
+          inc(p);
+          continue;
+        end;
+      '0'..'9',
+        //        '-',
+      '.': ParseNumber(t);
+      CharQuote: ParseString(t);
+      CharBraceOpen: begin
+          t.Kind:= tokBraceOpen;
+          inc(p);
+        end;
+      CharBraceClose: begin
+          t.Kind:= tokBraceClose;
+          inc(p);
+        end;
+      CharContextOpen: begin
+          t.Kind:= tokContextOpen;
+          inc(p);
+        end;
+      CharContextClose: begin
+          t.Kind:= tokContextClose;
+          inc(p);
+        end;
+      CharListOpen: begin
+          t.Kind:= tokListOpen;
+          inc(p);
+        end;
+      CharListClose: begin
+          t.Kind:= tokListClose;
+          inc(p);
+        end;
+      'a'..'z', 'A'..'Z'{, '_'}: ParseIdentifier(t);
+    else
+      for i:= 0 to fInfixTable.Count-1 do begin
+        inf:= PInfixDefinition(fInfixTable[i]);
+        if not (ooUnparsed in inf.Options) and
+          (inf.Operator > '') and
+          SameText(inf.Operator, Copy(Expr, p, length(inf.Operator))) then begin
+          t.Kind:= tokOperator;
+          t.Value:= inf.Operator;
+          t.OpDef:= inf;
+          inc(p, length(t.Value));
+          break;
+        end;
+      end;
+      if t.Kind = tokVoid then
+        raise ESyntaxError.CreateFmt('Position %d: Unexpected Character %s', [p, Expr[p]]);
+    end;
 
-          if Tokens[rr].Kind <> tokExpression then
-            raise ESyntaxError.CreateFmt('Position %d: expected expression, found %s', [Tokens[rr].Pos, Tokens[rr].Value]);
+    SetLength(Result, Length(Result) + 1);
+    Result[high(Result)]:= t;
+  end;
+end;
 
-          if (exi^.Func = '_subtract') and
-            ((ll < 0) or (Tokens[ll].Kind <> tokExpression)) then begin
-            tmp:= TE_Call.Create('_negate');
-            TE_Call(tmp.NativeObject).FCreatedFrom:= _negate;
-            tmp.SetArgs([Tokens[rr].Expr]);
-          end else begin
-            tmp:= TE_Call.Create(exi^.Func);
-            TE_Call(tmp.NativeObject).FCreatedFrom:= exi;
+procedure TMathSystem.Fold(var Tokens: TTokenList; const L, R: integer);
+var
+  i, A, ll, rr: integer;
+  tmp: IExpression;
+  inf,exi: PInfixDefinition;
+  b: pchar;
 
-            if ooUnary in exi^.Options then
-              tmp.SetArgs([Tokens[rr].Expr])
-            else begin
-              if ll < 0 then
-                raise ESyntaxError.CreateFmt('Position %d: Operator has no LHS', [Tokens[i].Pos]);
-              if Tokens[ll].Kind <> tokExpression then
-                raise ESyntaxError.CreateFmt('Position %d: expected expression, found %s', [Tokens[ll].Pos, Tokens[ll].Value]);
-              tmp.SetArgs([Tokens[ll].Expr, Tokens[rr].Expr]);
-              Tokens[ll].Kind:= tokVoid;
+  function NextR(k: integer): integer;
+  var
+    j: integer;
+  begin
+    Result:= -1;
+    for j:= k + 1 to R do
+      if Tokens[j].Kind <> tokVoid then begin
+        Result:= j;
+        exit;
+      end;
+  end;
+  function NextL(k: integer): integer;
+  var
+    j: integer;
+  begin
+    Result:= -1;
+    for j:= k - 1 downto L do
+      if Tokens[j].Kind <> tokVoid then begin
+        Result:= j;
+        exit;
+      end;
+  end;
+
+  procedure ProcessBraces(const Open, Close: TTokenKind; const Str: string;
+                  SetTo: TTokenKind = tokVoid; IfEmpty: TTokenKind = tokEmpty);
+  var
+    i: integer;
+  begin
+    repeat
+      A:= -1;
+      for i:= L to R do begin
+        if Tokens[i].Kind = Open then
+          A:= i
+        else if Tokens[i].Kind = Close then begin
+          if A >= 0 then begin
+            if A = I - 1 then begin
+              Tokens[A].Kind:= IfEmpty;
+            end else begin
+              Fold(Tokens, A + 1, I - 1);
+              Tokens[A].Kind:= SetTo;
             end;
-          end;
-          Tokens[rr].Kind:= tokVoid;
+            Tokens[I].Kind:= tokVoid;
+          end else
+            raise ESyntaxError.CreateFmt('Position %d: Closing %s never opened', [Tokens[i].Pos, Str]);
+          A:= -2;
+          break;
+        end;
+      end;
+      if A >= 0 then
+        raise ESyntaxError.CreateFmt('%s opened at position %d is never closed', [Str, Tokens[A].Pos]);
+    until A = -1;
+  end;
+begin
+  //given stupid values?
+  if R < L then
+    exit;
+
+  //then subcontexts
+  ProcessBraces(tokListOpen, tokListClose, '{}', tokList, tokList);
+  //collapse braces first
+  ProcessBraces(tokBraceOpen, tokBraceClose, '()');
+  //then subcontexts
+  ProcessBraces(tokContextOpen, tokContextClose, '[]');
+
+  // simple expressions
+  for i:= L to R do
+    case Tokens[i].Kind of
+      tokNumber: begin
           Tokens[i].Kind:= tokExpression;
+          Tokens[i].Expr:= TValueFactory.NumberFromString(Tokens[i].Value, NeutralFormatSettings);
+        end;
+      tokString: begin
+          Tokens[i].Kind:= tokExpression;
+          b:= PChar(Tokens[i].Value);
+          Tokens[i].Expr:= TValueString.Create(AnsiExtractQuotedStr(b, CharQuote));
+        end;
+      tokExprRef: begin
+          Tokens[i].Kind:= tokExpression;
+          Tokens[i].Expr:= TE_SymbolRef.Create(Tokens[i].Value);
+        end;
+      tokExprContext: begin
+          Tokens[i].Kind:= tokExpression;
+          tmp:= TE_Subcontext.Create(Tokens[i].Value);
+          A:= NextR(i);
+          if (A>=0) then begin
+            if Tokens[A].Kind <> tokEmpty then begin
+              tmp.SetArgs([Tokens[A].Expr]);
+            end;
+            Tokens[A].Expr:= nil;
+            Tokens[a].Kind:= tokVoid;
+          end;
+          Tokens[i].Expr:= tmp;
+        end;
+      tokFuncRef: begin
+          Tokens[i].Kind:= tokExpression;
+          tmp:= TE_Call.Create(Tokens[i].Value);
+          A:= NextR(i);
+          if (A>=0) then begin
+            if Tokens[A].Kind <> tokEmpty then begin
+              tmp.SetArgs([Tokens[A].Expr]);
+            end;
+            Tokens[A].Expr:= nil;
+            Tokens[a].Kind:= tokVoid;
+          end;
+          Tokens[i].Expr:= tmp;
+        end;
+      tokList: begin
+          Tokens[i].Kind:= tokExpression;
+          tmp:= TValueList.Create;
+          A:= NextR(i);
+          if (A=I+1) then begin
+            if Tokens[A].Kind <> tokEmpty then begin
+              tmp.SetArgs([Tokens[A].Expr]);
+            end;
+            Tokens[A].Expr:= nil;
+            Tokens[a].Kind:= tokVoid;
+          end;
           Tokens[i].Expr:= tmp;
         end;
     end;
 
-    //shift to L position if neccessary
-    i:= NextR(L - 1);
-    if i <> L then begin
-      Tokens[L]:= Tokens[i];
-      Tokens[i].Kind:= tokVoid;
+  //finally, operators
+  // Note: this wastes some extra iterations per Prio-Class, just ignore that, okay?
+  for A:= 0 to fOperatorTable.Count-1 do begin
+    inf:= PInfixDefinition(fOperatorTable[A]);
+    if ooUnparsed in  inf^.Options then
+      continue;
+    for i:= L to R do
+      if (Tokens[i].Kind = tokOperator) and
+        (Tokens[i].OpDef^.Precedence = inf^.Precedence) then begin
+        exi:= Tokens[i].OpDef;
+        rr:= NextR(i);
+        ll:= NextL(i);
+
+        if rr < 0 then
+          raise ESyntaxError.CreateFmt('Position %d: Operator has no RHS', [Tokens[i].Pos]);
+
+        if Tokens[rr].Kind <> tokExpression then
+          raise ESyntaxError.CreateFmt('Position %d: expected expression, found %s', [Tokens[rr].Pos, Tokens[rr].Value]);
+
+        if (exi^.Func = '_subtract') and
+          ((ll < 0) or (Tokens[ll].Kind <> tokExpression)) then begin
+          tmp:= TE_Call.Create('_negate');
+          TE_Call(tmp.NativeObject).FCreatedFrom:= FNegateDefinition;
+          tmp.SetArgs([Tokens[rr].Expr]);
+        end else begin
+          tmp:= TE_Call.Create(exi^.Func);
+          TE_Call(tmp.NativeObject).FCreatedFrom:= exi;
+
+          if ooUnary in exi^.Options then
+            tmp.SetArgs([Tokens[rr].Expr])
+          else begin
+            if ll < 0 then
+              raise ESyntaxError.CreateFmt('Position %d: Operator has no LHS', [Tokens[i].Pos]);
+            if Tokens[ll].Kind <> tokExpression then
+              raise ESyntaxError.CreateFmt('Position %d: expected expression, found %s', [Tokens[ll].Pos, Tokens[ll].Value]);
+            tmp.SetArgs([Tokens[ll].Expr, Tokens[rr].Expr]);
+            Tokens[ll].Kind:= tokVoid;
+          end;
+        end;
+        Tokens[rr].Kind:= tokVoid;
+        Tokens[i].Kind:= tokExpression;
+        Tokens[i].Expr:= tmp;
+      end;
+  end;
+
+  //shift to L position if neccessary
+  i:= NextR(L - 1);
+  if i <> L then begin
+    Tokens[L]:= Tokens[i];
+    Tokens[i].Kind:= tokVoid;
+  end;
+end;
+
+function TMathSystem.ApplyFlatOperators(ex: IExpression): IExpression;
+var
+  i: integer;
+  inf: PInfixDefinition;
+  procedure Flatten(var x: IExpression);
+  var
+    k,m,c: integer;
+    el: TExprList;
+    xc,ac: IFunctionCall;
+  begin
+    // find any node that consists entirely of "inf" by first flattening out children, then see if anything happened
+    for k:= 0 to x.ArgCount-1 do
+      Flatten(TExpression(x.NativeObject).Arguments[k]);
+    if x.Represents(IFunctionCall, xc) and ((xc.Name = inf.Func)) then begin
+      SetLength(el,0);
+      c:= 0;
+      if ooFlatAssociative in inf^.Options then begin
+        // ordering does not matter
+        for k:= 0 to x.ArgCount-1 do begin
+          if x.Arg[k].Represents(IFunctionCall, ac) and (ac.Name = inf.Func) then begin
+            SetLength(el, c + ac.ArgCount);
+            for m:= 0 to ac.ArgCount-1 do
+              el[c + m]:= ac.Arg[m];
+            inc(c, ac.ArgCount);
+          end else begin
+            SetLength(el, c + 1);
+            el[c]:= x.Arg[k];
+            inc(c);
+          end;
+        end;
+      end else begin
+        // order matters, only flatten first element
+        if x.ArgCount > 0 then begin
+          if x.Arg[0].Represents(IFunctionCall, ac) and (ac.Name = inf.Func) then begin
+            SetLength(el, c + ac.ArgCount);
+            for m:= 0 to ac.ArgCount-1 do
+              el[c + m]:= ac.Arg[m];
+            inc(c, ac.ArgCount);
+          end else begin
+            SetLength(el, c + 1);
+            el[c]:= x.Arg[0];
+            inc(c);
+          end;
+          // keep the rest
+          for k:= 1 to x.ArgCount-1 do begin
+            SetLength(el, c + 1);
+            el[c]:= x.Arg[k];
+            inc(c);
+          end;
+        end;
+      end;
+
+      x.SetArgs(el);
+    end;
+
+    // should we unpack, or is x one that will never be unpacked?
+    if (ooUnpackInArguments in inf.Options) and
+       (x.ArgCount = 1) and
+       (x.Arg[0].Represents(IFunctionCall, ac) and (ac.Name = inf.Func)) and
+       not (x.IsClass(TE_Call) and Assigned(TE_Call(x.NativeObject).FCreatedFrom) and (ooHoldPackedArguments in PInfixDefinition(TE_Call(x.NativeObject).FCreatedFrom).Options)) then begin
+      x.SetArgs(TE_Call(ac.NativeObject).Arguments);
     end;
   end;
+begin
+  for i:= 0 to fOperatorTable.Count-1 do begin
+    inf:= PInfixDefinition(fOperatorTable[i]);
+    if ooFlat in inf^.Options then begin
+      Flatten(ex);
+    end;
+  end;
+  Result:= ex;
+end;
+
+function TMathSystem.Parse(const Expr: String): IExpression;
+var
+  Tokens: TTokenList;
+  i: integer;
 
   function CheckResults: boolean;
   var
@@ -894,91 +974,19 @@ var
     Result:= true;
   end;
 
-  function ApplyFlatOperators(ex: IExpression): IExpression;
-  var
-    i: integer;
-    inf: PInfixDefinition;                
-    procedure Flatten(var x: IExpression);
-    var
-      k,m,c: integer;
-      el: TExprList;
-      xc,ac: IFunctionCall;
-    begin
-      // find any node that consists entirely of "inf" by first flattening out children, then see if anything happened
-      for k:= 0 to x.ArgCount-1 do
-        Flatten(TExpression(x.NativeObject).Arguments[k]);
-      if x.Represents(IFunctionCall, xc) and ((xc.Name = inf.Func)) then begin
-        SetLength(el,0);
-        c:= 0;
-        if ooFlatAssociative in inf^.Options then begin
-          // ordering does not matter
-          for k:= 0 to x.ArgCount-1 do begin
-            if x.Arg[k].Represents(IFunctionCall, ac) and (ac.Name = inf.Func) then begin
-              SetLength(el, c + ac.ArgCount);
-              for m:= 0 to ac.ArgCount-1 do
-                el[c + m]:= ac.Arg[m];
-              inc(c, ac.ArgCount);
-            end else begin
-              SetLength(el, c + 1);
-              el[c]:= x.Arg[k];
-              inc(c);
-            end;
-          end;
-        end else begin
-          // order matters, only flatten first element
-          if x.ArgCount > 0 then begin
-            if x.Arg[0].Represents(IFunctionCall, ac) and (ac.Name = inf.Func) then begin
-              SetLength(el, c + ac.ArgCount);
-              for m:= 0 to ac.ArgCount-1 do
-                el[c + m]:= ac.Arg[m];
-              inc(c, ac.ArgCount);
-            end else begin
-              SetLength(el, c + 1);
-              el[c]:= x.Arg[0];
-              inc(c);
-            end;
-            // keep the rest
-            for k:= 1 to x.ArgCount-1 do begin
-              SetLength(el, c + 1);
-              el[c]:= x.Arg[k];
-              inc(c);
-            end;
-          end;
-        end;
-
-        x.SetArgs(el);
-      end;
-
-      // should we unpack, or is x one that will never be unpacked?
-      if (ooUnpackInArguments in inf.Options) and
-         (x.ArgCount = 1) and
-         (x.Arg[0].Represents(IFunctionCall, ac) and (ac.Name = inf.Func)) and
-         not (x.IsClass(TE_Call) and Assigned(TE_Call(x.NativeObject).FCreatedFrom) and (ooHoldPackedArguments in PInfixDefinition(TE_Call(x.NativeObject).FCreatedFrom).Options)) then begin
-        x.SetArgs(TE_Call(ac.NativeObject).Arguments);
-      end;
-    end;
-  begin
-    for i:= 0 to fOperatorTable.Count-1 do begin
-      inf:= PInfixDefinition(fOperatorTable[i]);
-      if ooFlat in inf^.Options then begin
-        Flatten(ex);
-      end;
-    end;
-    Result:= ex;
-  end;
-
 begin
   Result:= nil;
-  SetLength(Tokens, 0);
-  Tokenize;
+  FNegateDefinition:= nil;
   for i:= 0 to fInfixTable.Count-1 do
     if PInfixDefinition(fInfixTable[i]).Func='_negate' then begin
-      _negate:= PInfixDefinition(fInfixTable[i]);
+      FNegateDefinition:= PInfixDefinition(fInfixTable[i]);
       break;
     end;
-  if not Assigned(_negate) then
+  if not Assigned(FNegateDefinition) then
     raise EParserError.Create('Could not find definition of negate operator!');
-  Fold(0, high(Tokens));
+
+  Tokens:= Tokenize(Expr);
+  Fold(Tokens, 0, high(Tokens));
   if CheckResults then begin
     Result:= Tokens[0].Expr;
     Result:= ApplyFlatOperators(Result);
