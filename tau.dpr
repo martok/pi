@@ -7,16 +7,12 @@ program tau;
 
 uses
   SysUtils,
-  uMath in 'uMath.pas',
-  uMathIntf in 'uMathIntf.pas',
-  uMathOutputStdout in 'uMathOutputStdout.pas',
-  uMathValues in 'uMathValues.pas',
-  uMathDimensions in 'uMathDimensions.pas',  
-  uMathConstants in 'uMathConstants.pas',
-  uFunctions in 'uFunctions.pas',
-  uFunctionsSymbolics in 'uFunctionsSymbolics.pas',
-  uFunctionsStatistics in 'uFunctionsStatistics.pas',
-  uExpressionMatcher in 'uExpressionMatcher.pas';
+  uMath,
+  uMathOutputStdout,
+  uMathDimensions,
+  uFunctions,
+  uFunctionsSymbolics,
+  uFunctionsStatistics;
 
 function GetInput: string;
 var

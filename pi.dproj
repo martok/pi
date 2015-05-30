@@ -28,6 +28,10 @@
     <DCC_ObjOutput>./bin/obj</DCC_ObjOutput>
     <DCC_HppOutput>./bin/obj</DCC_HppOutput>
     <DCC_TYPEINFO_IMPLICITLY_ADDED>False</DCC_TYPEINFO_IMPLICITLY_ADDED>
+    <DCC_UnitSearchPath>./src;./src/kernel;./src/packages</DCC_UnitSearchPath>
+    <DCC_ResourcePath>./src;./src/kernel;./src/packages</DCC_ResourcePath>
+    <DCC_ObjPath>./src;./src/kernel;./src/packages</DCC_ObjPath>
+    <DCC_IncludePath>./src;./src/kernel;./src/packages</DCC_IncludePath>
   </PropertyGroup>
   <ProjectExtensions>
     <Borland.Personality>Delphi.Personality</Borland.Personality>
@@ -40,33 +44,16 @@
     <DelphiCompile Include="pi.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
-    <DCCReference Include="uCCSVList.pas" />
-    <DCCReference Include="uChartPainter.pas" />
-    <DCCReference Include="uChartScale.pas" />
-    <DCCReference Include="uCIntegerBucketList.pas" />
     <DCCReference Include="uDockableForms.pas" />
-    <DCCReference Include="uFPUSupport.pas" />
     <DCCReference Include="uFrmInput.pas">
       <Form>frmInput</Form>
       <DesignClass>TFrame</DesignClass>
     </DCCReference>
-    <DCCReference Include="uFunctions.pas" />
-    <DCCReference Include="uFunctionsGraphing.pas" />
-    <DCCReference Include="uFunctionsStatistics.pas" />
-    <DCCReference Include="uFunctionsSymbolics.pas" />
     <DCCReference Include="uGraphWindow.pas">
       <Form>GraphWindow</Form>
     </DCCReference>
     <DCCReference Include="uMain.pas">
       <Form>fmPiMain</Form>
     </DCCReference>
-    <DCCReference Include="uMath.pas" />
-    <DCCReference Include="uMathConstants.pas" />
-    <DCCReference Include="uMathDimensions.pas" />
-    <DCCReference Include="uMathIntf.pas" />
-    <DCCReference Include="uMathOutputRichEdit.pas" />
-    <DCCReference Include="uMathOutputStdout.pas" />
-    <DCCReference Include="uMathSelfTests.pas" />
-    <DCCReference Include="uMathValues.pas" />
   </ItemGroup>
 </Project>
