@@ -694,7 +694,7 @@ begin
         end;
       end;
       if t.Kind = tokVoid then
-        raise ESyntaxError.CreateFmt('Position %d: Unexpected Character %s', [p, Expr[p]]);
+        raise ESyntaxError.CreateFmt(p,'Unexpected Character %s', [Expr[p]]);
     end;
 
     SetLength(Result, Length(Result) + 1);
@@ -752,13 +752,13 @@ var
             end;
             Tokens[I].Kind:= tokVoid;
           end else
-            raise ESyntaxError.CreateFmt('Position %d: Closing %s never opened', [Tokens[i].Pos, Str]);
+            raise ESyntaxError.CreateFmt(Tokens[i].Pos, 'Closing %s never opened', [Str]);
           A:= -2;
           break;
         end;
       end;
       if A >= 0 then
-        raise ESyntaxError.CreateFmt('%s opened at position %d is never closed', [Str, Tokens[A].Pos]);
+        raise ESyntaxError.CreateFmt(Tokens[A].Pos, '%s is never closed', [Str]);
     until A = -1;
   end;
 begin
@@ -844,10 +844,10 @@ begin
         ll:= NextL(i);
 
         if rr < 0 then
-          raise ESyntaxError.CreateFmt('Position %d: Operator has no RHS', [Tokens[i].Pos]);
+          raise ESyntaxError.CreateFmt(Tokens[i].Pos, 'Operator has no RHS', []);
 
         if Tokens[rr].Kind <> tokExpression then
-          raise ESyntaxError.CreateFmt('Position %d: expected expression, found %s', [Tokens[rr].Pos, Tokens[rr].Value]);
+          raise ESyntaxError.CreateFmt(Tokens[rr].Pos, 'Expected expression, found %s', [Tokens[rr].Value]);
 
         if (exi^.Func = '_subtract') and
           ((ll < 0) or (Tokens[ll].Kind <> tokExpression)) then begin
@@ -862,9 +862,9 @@ begin
             tmp.SetArgs([Tokens[rr].Expr])
           else begin
             if ll < 0 then
-              raise ESyntaxError.CreateFmt('Position %d: Operator has no LHS', [Tokens[i].Pos]);
+              raise ESyntaxError.CreateFmt(Tokens[i].Pos, 'Operator has no LHS', []);
             if Tokens[ll].Kind <> tokExpression then
-              raise ESyntaxError.CreateFmt('Position %d: expected expression, found %s', [Tokens[ll].Pos, Tokens[ll].Value]);
+              raise ESyntaxError.CreateFmt(Tokens[ll].Pos, 'Expected expression, found %s', [Tokens[ll].Value]);
             tmp.SetArgs([Tokens[ll].Expr, Tokens[rr].Expr]);
             Tokens[ll].Kind:= tokVoid;
           end;
@@ -970,7 +970,7 @@ var
       exit;
     for i:= 1 to high(Tokens) do
       if Tokens[i].Kind <> tokVoid then
-        raise ESyntaxError.CreateFmt('Position %d: Leftover token', [Tokens[i].Pos]);
+        raise ESyntaxError.CreateFmt(Tokens[i].Pos, 'Leftover token', []);
     Result:= true;
   end;
 
@@ -1023,7 +1023,11 @@ begin
       end else
         Output.Error('Expression did not return anything',[]);
     end;   
-  except
+  except          
+    on e: ESyntaxError do begin
+      Output.Error('%s: %s',[e.ClassName, e.Message]);
+      Output.Error('At Position %d: %s',[e.Position, Copy(Expr, e.Position, 5)]);
+    end;
     on e: EMathSysError do
       Output.Error(E.Message, []);
   end;
@@ -1715,7 +1719,7 @@ begin
   end else if Args[0].Represents(IValueList, d) then begin
     for i:= 0 to d.Length-1 do
       if not d.Item[i].Represents(ISymbolReference, r) then
-        raise ESyntaxError.Create('LHS of assignment needs to be a list of symbol references');
+        raise EMathTypeError.Create('LHS of assignment needs to be a list of symbol references');
     v:= Args[1].Evaluate(Context);
     if v.Represents(IValueList, l) then begin
       for i:= 0 to min(l.Length, d.Length)-1 do begin
@@ -1727,7 +1731,7 @@ begin
         Context.Define(r.Name, v);
     Result:= v;
   end else
-    raise ESyntaxError.Create('LHS of assignment needs to be a symbol reference or a list of symbol references');
+    raise EMathTypeError.Create('LHS of assignment needs to be a symbol reference or a list of symbol references');
 end;
 
 function TPackageAlgebra._define_2(Context: IContext; Args: TExprList): IExpression;
@@ -1735,7 +1739,7 @@ var
   name: string;
 begin
   if not Args[0].IsClass(TE_SymbolRef) then
-    raise ESyntaxError.Create('LHS of assignment needs to be a symbol reference');
+    raise EMathTypeError.Create('LHS of assignment needs to be a symbol reference');
   name:= TE_SymbolRef(Args[0].NativeObject).Name;
   Context.Define(name, Args[1]);
   Result:= Args[1];

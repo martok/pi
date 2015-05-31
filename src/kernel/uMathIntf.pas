@@ -19,7 +19,14 @@ type
   MTFloat   = Number;
 
   EMathSysError = class(Exception);
-  ESyntaxError = class(EMathSysError);
+  ESyntaxError = class(EMathSysError)
+  private
+    fPosition: integer;
+  public
+    constructor Create(const aPosition: integer; const Msg: string);
+    constructor CreateFmt(const aPosition: integer; const Msg: string; const Args: array of const);
+    property Position: integer read fPosition;
+  end;
   EMathTypeError = class(EMathSysError);
 
   IExpression = interface;
@@ -226,6 +233,19 @@ begin
     Result := E_NOINTERFACE;
 end;
 
+{ ESyntaxError }
 
+constructor ESyntaxError.Create(const aPosition: integer; const Msg: string);
+begin
+  inherited Create(Msg);  
+  fPosition:= aPosition;
+end;
+
+constructor ESyntaxError.CreateFmt(const aPosition: integer; const Msg: string;
+  const Args: array of const);
+begin
+  inherited CreateFmt(Msg,Args);
+  fPosition:= aPosition;
+end;
 
 end.

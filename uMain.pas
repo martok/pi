@@ -166,8 +166,11 @@ begin
     frmInput.Text:= 'ans';
     frmInput.SelectAll;
   except
-    on e: Exception do
+    on e: Exception do begin
+      // kernel exceptions are already logged at .Run, this are all others.
+      MathS.Output.Error('Unhandled Error:',[]);
       MathS.Output.Error('%s: %s',[e.ClassName, e.Message]);
+    end;
   end;
   UpdateContext;
 end;
