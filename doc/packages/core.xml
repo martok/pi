@@ -59,4 +59,10 @@
 			Gibt die Ausführungszeit in Sekunden sowie das Ergebnis der Auswertung von <v>Expr</v> zurück
 		</description>
 	</function>
+	<function name="MemInfo">
+		<syntax>MemInfo()</syntax>
+		<description>
+			Gibt den aktuellen Status des Speichermanagers zurück, in der Form <code>{allocated,reserved}</code>
+		</description>
+	</function>
 </package>

@@ -296,6 +296,7 @@ type
     function Hold_1(Context: IContext; args: TExprList): IExpression;
     function Eval_1(Context: IContext; args: TExprList): IExpression;
     function AbsoluteTime_1(Context: IContext; args: TExprList): IExpression;
+    function MemInfo_0(Context: IContext; args: TExprList): IExpression;
   end;
 
   TPackageAlgebra = class(TFunctionPackage)
@@ -2137,6 +2138,27 @@ begin
   QueryPerformanceCounter(pc2);
 
   Result:= TValueList.CreateAs([TValueFactory.Float((pc2-pc1) / pf), st]);
+end;
+
+function TPackageCore.MemInfo_0(Context: IContext; args: TExprList): IExpression;
+var
+  ms: TMemoryManagerState;
+  reserved, allocated: Int64;
+  i: integer;
+begin
+  GetMemoryManagerState(ms);
+  reserved:= 0;
+  allocated:= 0;
+  for i := 0 to high(ms.SmallBlockTypeStates) - 1 do
+    with ms.SmallBlockTypeStates[i] do begin
+      inc(reserved, ReservedAddressSpace);
+      inc(allocated, AllocatedBlockCount * InternalBlockSize);
+    end;
+  inc(allocated, ms.TotalAllocatedMediumBlockSize);
+  inc(reserved, ms.ReservedMediumBlockAddressSpace);
+  inc(allocated, ms.TotalAllocatedLargeBlockSize);
+  inc(reserved, ms.ReservedLargeBlockAddressSpace);
+  Result:= TValueList.CreateAs([TValueFactory.Integer(allocated), TValueFactory.Integer(reserved)]);
 end;
 
 { TPackagedFunction }
