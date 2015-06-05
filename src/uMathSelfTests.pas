@@ -380,7 +380,7 @@ var
   sc: IStringConvertible;
 begin
   if e.Represents(IStringConvertible, sc) then
-    Result:= sc.AsString(STR_FORMAT_INPUT_EXPANDED)
+    Result:= sc.AsString(STR_FORM_FULL)
   else begin
     Result:= '';
     Sys.Output.Error('Cannot convert expression to string',[]);
@@ -404,7 +404,7 @@ var
 begin
   e:= Sys.Evaluate(Sys.Parse(Expr));
   Expect(e.Represents(IStringConvertible, s), 'Cannot cast Result to String');
-  Result:= s.AsString(STR_FORMAT_DEFAULT);
+  Result:= s.AsString(STR_FORM_STANDARD);
 end;
 
 end.

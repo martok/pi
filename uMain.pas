@@ -132,7 +132,7 @@ begin
       for j:= 0 to ct.Count-1 do begin
         x:= ct.Definition(ct.Name[j]); 
         if x.Represents(IStringConvertible, sc) then
-          s:= sc.AsString(STR_FORMAT_OUTPUT)
+          s:= sc.AsString(STR_FORM_STANDARD)
         else
           s:= '<'+x.NativeObject.ClassName+'>';
 

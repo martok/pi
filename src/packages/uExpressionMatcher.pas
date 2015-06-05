@@ -110,7 +110,7 @@ function TExpressionMatcher.Match(const Expr: IExpression): boolean;
       for j:= 0 to fVars[i].Count-1 do begin
         e:= TVariableAssignment(fVars[i].Objects[j]).Value;
         if e.Represents(IStringConvertible, sc) then
-          Writeln('  ', sc.AsString(STR_FORMAT_INPUT_EXPANDED))
+          Writeln('  ', sc.AsString(STR_FORM_FULL))
         else
           Writeln('  ', e.NativeObject.ClassName);
       end;
@@ -172,7 +172,7 @@ begin
 
   // yes, a faster hashCode would be nice, but this is just so cheap to code :)
   if aValue.Represents(IStringConvertible, sc) then
-    k:= sc.AsString(STR_FORMAT_INPUT)
+    k:= sc.AsString(STR_FORM_INPUT)
   else
     k:= '(addr)'+IntToHex(Cardinal(aValue),8);
   if fVars[v].IndexOf(k) < 0 then begin

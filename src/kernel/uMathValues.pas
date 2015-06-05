@@ -9,22 +9,23 @@ uses
   SysUtils, Math, uMath, uMathIntf, uFPUSupport, uMathDimensions;
 
 type
-  TE_Atom = class(TExpression, IExpressionAtom)
+  TE_Atom = class(TExpression, IExpressionAtom, IStringConvertible)
   public
     function Evaluate(const Context: IContext): IExpression; override;
     function CompareTo(const B: IExpressionAtom): TAtomCompareResult; virtual;
+    function AsString(const Format: TStringFormat): String; override;
   end;
 
   TValueUnassigned = class(TE_Atom, IValueUnassigned, IStringConvertible)
   public
     function Clone(Deep: Boolean): IExpression; override;
-    function AsString(const Format: TStringFormat): String;
+    function AsString(const Format: TStringFormat): String; override;
     function CompareTo(const B: IExpressionAtom): TAtomCompareResult; override;
   end;
 
   TValueNull = class(TE_Atom, IValueNull, IStringConvertible)
     function Clone(Deep: Boolean): IExpression; override;
-    function AsString(const Format: TStringFormat): String;
+    function AsString(const Format: TStringFormat): String; override;
     function CompareTo(const B: IExpressionAtom): TAtomCompareResult; override;
   end;
 
@@ -63,7 +64,7 @@ type
     function ValueInt: MTInteger;
     function Clone(Deep: Boolean): IExpression; override;
     // IStringConvertible
-    function AsString(const Format: TStringFormat): String;
+    function AsString(const Format: TStringFormat): String; override;
     // IOperationAddition
     function OpAdd(const B: IExpression): IExpression;
     function OpSubtract(const B: IExpression): IExpression;
@@ -88,7 +89,7 @@ type
     function ValueInt: MTInteger;
     function Clone(Deep: Boolean): IExpression; override;
     // IStringConvertible
-    function AsString(const Format: TStringFormat): String;
+    function AsString(const Format: TStringFormat): String; override;
     // IOperationAddition
     function OpAdd(const B: IExpression): IExpression;
     function OpSubtract(const B: IExpression): IExpression;
@@ -111,7 +112,7 @@ type
     destructor Destroy; override;
     property Dim: TValueDimension read FDim implements IDimensions;
     // IStringConvertible
-    function AsString(const Format: TStringFormat): String;
+    function AsString(const Format: TStringFormat): String; override;
     // IOperationAddition
     function OpAdd(const B: IExpression): IExpression;
     function OpSubtract(const B: IExpression): IExpression;
@@ -135,7 +136,7 @@ type
     // IValueString
     function Value: String;
     // IStringConvertible
-    function AsString(const Format: TStringFormat): String;
+    function AsString(const Format: TStringFormat): String; override;
     // IOperationAddition
     function OpAdd(const B: IExpression): IExpression;
     function OpSubtract(const B: IExpression): IExpression;
@@ -157,7 +158,7 @@ type
     procedure SetItem(Index: Integer; val: IExpression);
     function GetItem(Index: Integer): IExpression;
     // IStringConvertible
-    function AsString(const Format: TStringFormat): String;
+    function AsString(const Format: TStringFormat): String; override;
   end;
 
   TValueRange = class(TE_Atom, IValueList, IStringConvertible)
@@ -174,7 +175,7 @@ type
     procedure SetItem(Index: Integer; val: IExpression);
     function GetItem(Index: Integer): IExpression;
     // IStringConvertible
-    function AsString(const Format: TStringFormat): String;
+    function AsString(const Format: TStringFormat): String; override;
   end;
 
 function CastToString(const Exp: IExpression): String;
@@ -199,7 +200,7 @@ begin
     Result:= v.Value
   else begin
     if Exp.Represents(IStringConvertible, s) then
-      raise EMathTypeError.CreateFmt('Cannot convert expression to String: %s',[s.AsString(STR_FORMAT_INPUT)])
+      raise EMathTypeError.CreateFmt('Cannot convert expression to String: %s',[s.AsString(STR_FORM_STANDARD)])
     else
       raise EMathTypeError.CreateFmt('Cannot convert expression to String: <%s>',[exp.NativeObject.ClassName]);
   end;
@@ -244,7 +245,7 @@ begin
     Result:= v.ValueFloat
   else begin
     if ex.Represents(IStringConvertible, s) then
-      raise EMathTypeError.CreateFmt('Cannot convert expression to Float: %s',[s.AsString(STR_FORMAT_INPUT)])
+      raise EMathTypeError.CreateFmt('Cannot convert expression to Float: %s',[s.AsString(STR_FORM_STANDARD)])
     else
       raise EMathTypeError.CreateFmt('Cannot convert expression to Float: <%s>',[ex.NativeObject.ClassName]);
   end;
@@ -259,7 +260,7 @@ begin
     Result:= v.ValueInt
   else begin
     if ex.Represents(IStringConvertible, s) then
-      raise EMathTypeError.CreateFmt('Cannot convert expression to Integer: %s',[s.AsString(STR_FORMAT_INPUT)])
+      raise EMathTypeError.CreateFmt('Cannot convert expression to Integer: %s',[s.AsString(STR_FORM_STANDARD)])
     else
       raise EMathTypeError.CreateFmt('Cannot convert expression to Integer: <%s>',[ex.NativeObject.ClassName]);
   end;
@@ -282,6 +283,15 @@ begin
   Result:= Self;
 end;
 
+function TE_Atom.AsString(const Format: TStringFormat): String;
+begin
+  case Format of
+    STR_FORM_DUMP: Result:= AsString(STR_FORM_INPUT)
+  else
+    Result:= inherited AsString(Format);
+  end;
+end;
+
 function TE_Atom.CompareTo(const B: IExpressionAtom): TAtomCompareResult;
 begin
   Result:= crIncompatible;
@@ -292,9 +302,12 @@ end;
 function TValueUnassigned.AsString(const Format: TStringFormat): String;
 begin
   case Format of
-    STR_FORMAT_OUTPUT: Result:= '<?>';
+    STR_FORM_STANDARD: Result:= '<?>';
+    STR_FORM_INPUT,
+    STR_FORM_FULL: Result:= '';
+    STR_FORM_TYPEOF: Result:= 'ValueUnassigned';
   else
-    Result:= '';
+    Result:= inherited AsString(Format);
   end;
 end;
 
@@ -316,9 +329,12 @@ end;
 function TValueNull.AsString(const Format: TStringFormat): String;
 begin
   case Format of
-    STR_FORMAT_OUTPUT: Result:= '<NULL>';
+    STR_FORM_STANDARD: Result:= '<NULL>';
+    STR_FORM_INPUT,
+    STR_FORM_FULL: Result:= '';
+    STR_FORM_TYPEOF: Result:= 'ValueNull';
   else
-    Result:= '';
+    Result:= inherited AsString(Format);
   end;
 end;
 
@@ -340,10 +356,12 @@ end;
 function TValueString.AsString(const Format: TStringFormat): String;
 begin
   case Format of
-    STR_FORMAT_INPUT,
-    STR_FORMAT_INPUT_EXPANDED: Result:= QuotedStr(FValue);
+    STR_FORM_STANDARD: Result:= FValue;
+    STR_FORM_INPUT,
+    STR_FORM_FULL: Result:= QuotedStr(FValue);
+    STR_FORM_TYPEOF: Result:= 'ValueString';
   else
-     Result:= FValue;
+    Result:= inherited AsString(Format);
   end;
 end;
 
@@ -382,7 +400,7 @@ begin
     Result:= TValueString.Create(FValue + bs.Value)
   else
   if B.Represents(IStringConvertible, bsc) then
-    Result:= TValueString.Create(FValue + bsc.AsString(STR_FORMAT_DEFAULT))
+    Result:= TValueString.Create(FValue + bsc.AsString(STR_FORM_STANDARD))
   else
     raise EMathSysError.CreateFmt(sUnsupportedOperation, ['Subtract']);
 end;
@@ -441,9 +459,12 @@ end;
 function TValueList.AsString(const Format: TStringFormat): String;
 begin
   case Format of
-    STR_FORMAT_OUTPUT: Result:= GetStringMaxLen(200, Format);
+    STR_FORM_STANDARD: Result:= GetStringMaxLen(200, Format);
+    STR_FORM_INPUT,
+    STR_FORM_FULL: Result:= '{'+StringOfArgs(Format, ',')+'}';
+    STR_FORM_TYPEOF: Result:= 'ValueList';
   else
-    Result:= '{'+StringOfArgs(Format, ',')+'}';
+    Result:= inherited AsString(Format);
   end;
 end;
 
@@ -560,18 +581,20 @@ end;
 function TValueRange.AsString(const Format: TStringFormat): String;
 begin
   case Format of
-    STR_FORMAT_INPUT,
-    STR_FORMAT_INPUT_EXPANDED: Result:= SysUtils.Format('range(%s->%s, %s)',[
+    STR_FORM_STANDARD: Result:= SysUtils.Format('{%s->%s, %s}',[
       NumberToStr(FStart, false),
       NumberToStr(FEnd, false),
       NumberToStr(FStep, false)
     ]);
-  else
-    Result:= SysUtils.Format('{%s->%s, %s}',[
+    STR_FORM_INPUT,
+    STR_FORM_FULL: Result:= SysUtils.Format('range(%s->%s, %s)',[
       NumberToStr(FStart, false),
       NumberToStr(FEnd, false),
       NumberToStr(FStep, false)
     ]);
+    STR_FORM_TYPEOF: Result:= 'ValueRange';
+  else               
+    Result:= inherited AsString(Format);
   end;
 end;
 
@@ -727,9 +750,12 @@ end;
 function TValueInteger.AsString(const Format: TStringFormat): String;
 begin
   case Format of
-    STR_FORMAT_OUTPUT: Result:= IntegerToStr(FVal, true);
-  else
-     Result:= NumberToStr(FVal, false);
+    STR_FORM_STANDARD: Result:= IntegerToStr(FVal, true);
+    STR_FORM_INPUT,
+    STR_FORM_FULL: Result:= IntegerToStr(FVal, false);
+    STR_FORM_TYPEOF: Result:= 'ValueInteger';
+  else            
+    Result:= inherited AsString(Format);
   end;
 end;
 
@@ -878,9 +904,12 @@ end;
 function TValueFloat.AsString(const Format: TStringFormat): String;
 begin
   case Format of
-    STR_FORMAT_OUTPUT: Result:= NumberToStr(FVal, true);
-  else
-     Result:= NumberToStr(FVal, false);
+    STR_FORM_STANDARD: Result:= NumberToStr(FVal, true);
+    STR_FORM_INPUT,
+    STR_FORM_FULL: Result:= NumberToStr(FVal, false);
+    STR_FORM_TYPEOF: Result:= 'ValueFloat';
+  else            
+    Result:= inherited AsString(Format);
   end;
 end;
 
@@ -980,15 +1009,18 @@ end;
 function TValueFloatDimension.AsString(const Format: TStringFormat): String;
 var
   ds: string;
-begin
-  case Format of
-    STR_FORMAT_OUTPUT: Result:= NumberToStr(FVal / FDim.UnitFactor, true);
-  else
-     Result:= NumberToStr(FVal / FDim.UnitFactor, false);
-  end;
+begin         
   ds:= FDim.UnitString;
   if ds > '' then
-    Result:= Result + ' ' + ds;
+    ds:= ' ' + ds;
+  case Format of
+    STR_FORM_STANDARD: Result:= NumberToStr(FVal / FDim.UnitFactor, true) + ds;
+    STR_FORM_INPUT,
+    STR_FORM_FULL: Result:= NumberToStr(FVal / FDim.UnitFactor, false) + ds;
+    STR_FORM_TYPEOF: Result:= 'ValueFloatDimension';
+  else
+    Result:= inherited AsString(Format);
+  end;
 end;
 
 function TValueFloatDimension.OpAdd(const B: IExpression): IExpression;

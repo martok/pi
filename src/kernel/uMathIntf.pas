@@ -194,8 +194,12 @@ type
   
 
 
-const
-  STR_FORMAT_DEFAULT = TStringFormat(0);
+const                
+  STR_FORM_STANDARD     = TStringFormat(0);        // any sensible output format
+  STR_FORM_INPUT        = TStringFormat(1);        // a + 3
+  STR_FORM_FULL         = TStringFormat(2);        // _plus(a,3)
+  STR_FORM_DUMP         = TStringFormat(3);        // _plus()
+  STR_FORM_TYPEOF       = TStringFormat(4);        // Call, SymbolRef etc
 
 const
   MATH_UNIT_NAME : array[TMathBaseUnit] of string = ('m', 'kg', 's', 'K', 'mol', 'A', 'cd', 'rad', 'bit');

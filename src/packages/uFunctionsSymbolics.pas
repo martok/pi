@@ -60,7 +60,7 @@ type
     // IExpression
     function Clone(Deep: Boolean): IExpression; override;
     // IStringConvertible
-    function AsString(const Format: TStringFormat): String;
+    function AsString(const Format: TStringFormat): String; override;
     // ISymbolicPattern
     function GetPattern: IExpression;
     function Match(const Expr: IExpression; const Assignments: IContext): boolean;

@@ -1137,7 +1137,7 @@ var
         Result:= X;
         Context.Define('ans', x);
         if not Context.Silent and x.Represents(IStringConvertible, sc) then
-          Context.Output.Result(sc.AsString(STR_FORMAT_OUTPUT));
+          Context.Output.Result(sc.AsString(STR_FORM_STANDARD));
       end;
     end;
   end;
@@ -1204,14 +1204,14 @@ begin
         if l > '' then
           l:= l + #9;
         if b.Item[j].Represents(IStringConvertible, s) then
-          l:= l + s.AsString(STR_FORMAT_OUTPUT)
+          l:= l + s.AsString(STR_FORM_STANDARD)
         else
           l:= l + CastToString(b.Item[j]);
         inc(total);
       end;
     end else begin
       if a.Item[i].Represents(IStringConvertible, s) then
-        l:= s.AsString(STR_FORMAT_OUTPUT)
+        l:= s.AsString(STR_FORM_STANDARD)
       else
         l:= CastToString(a.Item[i]);
       inc(total);

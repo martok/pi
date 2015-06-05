@@ -150,7 +150,7 @@ type
     function Combine(const UseDefine: boolean): IExpression;
   end;
 
-  TExpression = class(TInterfacedObject, IExpression)
+  TExpression = class(TInterfacedObject, IExpression, IStringConvertible)
   private
     procedure SetArgument(Index: integer; const Value: IExpression);
   protected
@@ -171,6 +171,8 @@ type
     function ArgCount: Integer;
     function GetArgument(Index: Integer): IExpression;
     property Arg[Index: integer]: IExpression read GetArgument write SetArgument;
+    // IStringConvertible
+    function AsString(const Format: TStringFormat): string; virtual;
   end;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -235,7 +237,7 @@ type
     // ISymbolReference
     property Name: string read GetName;
     // IStringConvertible
-    function AsString(const Format: TStringFormat): String;
+    function AsString(const Format: TStringFormat): String; override;
   end;
 
   TE_Call = class(TExpression, IFunctionCall, IStringConvertible)
@@ -253,7 +255,7 @@ type
     // IFunctionCall
     property Name: string read GetName;
     // IStringConvertible
-    function AsString(const Format: TStringFormat): String;
+    function AsString(const Format: TStringFormat): String; override;
   end;
 
   TE_Subcontext = class(TExpression, IStringConvertible)
@@ -265,7 +267,7 @@ type
     function Evaluate(const Context: IContext): IExpression; override;
     function Clone(Deep: Boolean): IExpression; override;
     // IStringConvertible
-    function AsString(const Format: TStringFormat): String;
+    function AsString(const Format: TStringFormat): String; override;
   end;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -313,11 +315,6 @@ type
     function _define_2(Context: IContext; Args: TExprList): IExpression;
     function _comma_N(Context: IContext; Args: TExprList): IExpression;
   end;
-
-const
-  STR_FORMAT_INPUT = TStringFormat(1);
-  STR_FORMAT_OUTPUT = TStringFormat(2);
-  STR_FORMAT_INPUT_EXPANDED = TStringFormat(3);
 
 var
   NeutralFormatSettings: TFormatSettings;
@@ -999,7 +996,7 @@ var
 begin
   FEvaluationStack.Clear;
   if Expr.Represents(IStringConvertible, sc) and
-     not (TE_Call.CheckSysCalls(sc.AsString(STR_FORMAT_INPUT))) then
+     not (TE_Call.CheckSysCalls(sc.AsString(STR_FORM_FULL))) then
     exit;
 
   Result:= Expr.Evaluate(FContext);
@@ -1019,7 +1016,7 @@ begin
       if Assigned(r) then begin
         Context.Define('ans', r);
         if r.Represents(IStringConvertible, sc) then
-          Output.Result(sc.AsString(STR_FORMAT_OUTPUT));
+          Output.Result(sc.AsString(STR_FORM_STANDARD));
       end else
         Output.Error('Expression did not return anything',[]);
     end;   
@@ -1370,6 +1367,11 @@ end;
 procedure TExpression.SetArgument(Index: integer; const Value: IExpression);
 begin
   Arguments[Index]:= Value;
+end;
+
+function TExpression.AsString(const Format: TStringFormat): string;
+begin
+  Result:= SysUtils.Format('<<%s:%s>>',[Self.ClassName,IntToHex(Cardinal(Self),8)]);
 end;
 
 { TDynamicArguments }
@@ -1767,7 +1769,11 @@ end;
 
 function TE_SymbolRef.AsString(const Format: TStringFormat): String;
 begin
-  Result:= Name;
+  case Format of
+    STR_FORM_TYPEOF: Result:= 'SymbolRef';
+  else
+    Result:= Name;
+  end;
 end;
 
 function TE_SymbolRef.Evaluate(const Context: IContext): IExpression;
@@ -1837,17 +1843,23 @@ var
   inf: PInfixDefinition;
 begin
   case Format of
-    STR_FORMAT_INPUT_EXPANDED: Result:= Name + '('+StringOfArgs(Format, ',')+')'
-  else
-    if not Assigned(FCreatedFrom) then
-      Result:= Name + '('+StringOfArgs(Format, ',')+')'
-    else begin
-      inf:= FCreatedFrom;
-      if ooUnary in inf.Options then
-        Result:= inf.Oper + StringOfArgs(Format, inf.Oper)
-      else
-        Result:= StringOfArgs(Format, inf.Oper);
+    STR_FORM_FULL: Result:= Name + '('+StringOfArgs(Format, ',')+')';
+    STR_FORM_STANDARD,
+    STR_FORM_INPUT: begin
+      if not Assigned(FCreatedFrom) then
+        Result:= Name + '('+StringOfArgs(Format, ',')+')'
+      else begin
+        inf:= FCreatedFrom;
+        if ooUnary in inf.Options then
+          Result:= inf.Oper + StringOfArgs(Format, inf.Oper)
+        else
+          Result:= StringOfArgs(Format, inf.Oper);
+      end;
     end;
+    STR_FORM_DUMP: Result:= Name + '()';
+    STR_FORM_TYPEOF: Result:= 'Call';
+  else
+    Result:= inherited AsString(Format);
   end;
 end;
 
@@ -1878,9 +1890,13 @@ end;
 function TE_Subcontext.AsString(const Format: TStringFormat): String;
 begin
   case Format of
-    $FFFF: ;
+    STR_FORM_STANDARD,
+    STR_FORM_INPUT,
+    STR_FORM_FULL: Result:= Name + '['+StringOfArgs(Format, ',')+']';
+    STR_FORM_DUMP: Result:= Name + '[]';
+    STR_FORM_TYPEOF: Result:= 'Subcontext';
   else
-    Result:= Name + '['+StringOfArgs(Format, ',')+']';
+    Result:= inherited AsString(Format);
   end;
 end;
 
@@ -1944,17 +1960,8 @@ function TPackageCore._dump_1(Context: IContext; Args: TExprList): IExpression;
     i: integer;
   begin
     s:= '';
-    if ex.IsClass(TE_Atom) and ex.Represents(IStringConvertible, str) then
-      s:= str.AsString(STR_FORMAT_DEFAULT)
-    else
-    if ex.IsClass(TE_SymbolRef) then
-      s:= TE_SymbolRef(ex.NativeObject).Name
-    else
-    if ex.IsClass(TE_Subcontext) then
-      s:= TE_Subcontext(ex.NativeObject).Name + '[]'
-    else
-    if ex.IsClass(TE_Call) then
-      s:= TE_Call(ex.NativeObject).Name + '()'
+    if ex.Represents(IStringConvertible, str) then
+      s:= str.AsString(STR_FORM_DUMP)
     else
       s:= ex.NativeObject.ClassName;
     Context.Output.Hint('%*s%s',[Lv*2, '', s]);
@@ -1978,7 +1985,7 @@ begin
   end else
     e:= Args[0];
   if Assigned(e) and e.Represents(IStringConvertible, s) then
-    Result:= TValueString.Create(s.AsString(STR_FORMAT_INPUT))
+    Result:= TValueString.Create(s.AsString(STR_FORM_INPUT))
   else
     Result:= TValueString.Create('<Unknown>');
 end;
@@ -1986,33 +1993,14 @@ end;
 function TPackageCore.TypeOf_1(Context: IContext; Args: TExprList): IExpression;
 var
   x: IExpression;
+  sc: IStringConvertible;
   n: IValueNumber;
   d: string;
 begin
   x:= args[0].Evaluate(Context);
-  if x.Represents(IValueNull) then
-    Result:= TValueString.Create('Null')
+  if x.Represents(IStringConvertible, sc) then
+    Result:= TValueString.Create(sc.AsString(STR_FORM_TYPEOF))
   else
-  if x.Represents(IValueUnassigned) then
-    Result:= TValueString.Create('Unassigned')
-  else
-  if x.Represents(IValueString) then
-    Result:= TValueString.Create('String')
-  else
-  if x.Represents(IValueList) then
-    Result:= TValueString.Create('List')
-  else
-  if x.Represents(IValueNumber, n) then begin
-    if n.Represents(IDimensions) then
-      d:= 'Dimension'
-    else
-      d:= '';
-    case n.BaseType of
-      tiUnknown: Result:= TValueString.Create('Number'+d);
-      tiInt: Result:= TValueString.Create('Integer'+d);
-      tiFloat: Result:= TValueString.Create('Float'+d);
-    end;
-  end else
     Result:= TValueString.Create('Unknown');
 end;
 
