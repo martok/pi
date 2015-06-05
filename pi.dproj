@@ -44,6 +44,24 @@
     <DelphiCompile Include="pi.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="src\kernel\uFPUSupport.pas" />
+    <DCCReference Include="src\kernel\uMath.pas" />
+    <DCCReference Include="src\kernel\uMathConstants.pas" />
+    <DCCReference Include="src\kernel\uMathDimensions.pas" />
+    <DCCReference Include="src\kernel\uMathIntf.pas" />
+    <DCCReference Include="src\kernel\uMathOutputRichEdit.pas" />
+    <DCCReference Include="src\kernel\uMathOutputStdout.pas" />
+    <DCCReference Include="src\kernel\uMathValues.pas" />
+    <DCCReference Include="src\packages\uExpressionMatcher.pas" />
+    <DCCReference Include="src\packages\uFunctions.pas" />
+    <DCCReference Include="src\packages\uFunctionsGraphing.pas" />
+    <DCCReference Include="src\packages\uFunctionsStatistics.pas" />
+    <DCCReference Include="src\packages\uFunctionsSymbolics.pas" />
+    <DCCReference Include="src\uCCSVList.pas" />
+    <DCCReference Include="src\uChartPainter.pas" />
+    <DCCReference Include="src\uChartScale.pas" />
+    <DCCReference Include="src\uCIntegerBucketList.pas" />
+    <DCCReference Include="src\uMathSelfTests.pas" />
     <DCCReference Include="uDockableForms.pas" />
     <DCCReference Include="uFrmInput.pas">
       <Form>frmInput</Form>

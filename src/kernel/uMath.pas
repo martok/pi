@@ -29,7 +29,7 @@ type
     CharListClose = '}';
   private type     
     TInfixDefinition = record
-      Operator: String[16];
+      Oper: String[16];
       Precedence: integer;
       Options: TOperatorOptions;
       Pack: TFunctionPackage;
@@ -466,7 +466,7 @@ end;
 
 function LSC_InfixByLength(Item1, Item2: Pointer): Integer;
 begin
-  Result:= Length(PInfixDefinition(Item2)^.Operator) - Length(PInfixDefinition(Item1)^.Operator);
+  Result:= Length(PInfixDefinition(Item2)^.Oper) - Length(PInfixDefinition(Item1)^.Oper);
 end;
 
 function LSC_OperatorByPrecedence(Item1, Item2: Pointer): Integer;
@@ -482,11 +482,11 @@ begin
   Result:= false;
   for i:= 0 to fInfixTable.Count-1 do begin
     inf:= PInfixDefinition(fInfixTable[i]);
-    if (inf.Operator = Operator) and not (ooUnparsed in (inf.Options+Options)) then
+    if (inf.Oper = Operator) and not (ooUnparsed in (inf.Options+Options)) then
       exit;
   end;
   new(inf);
-  inf^.Operator:= Operator;
+  inf^.Oper:= Operator;
   inf^.Precedence:= Precedence;
   inf^.Options:= Options;
   inf^.Pack:= Pack;
@@ -684,10 +684,10 @@ begin
       for i:= 0 to fInfixTable.Count-1 do begin
         inf:= PInfixDefinition(fInfixTable[i]);
         if not (ooUnparsed in inf.Options) and
-          (inf.Operator > '') and
-          SameText(inf.Operator, Copy(Expr, p, length(inf.Operator))) then begin
+          (inf.Oper > '') and
+          SameText(inf.Oper, Copy(Expr, p, length(inf.Oper))) then begin
           t.Kind:= tokOperator;
-          t.Value:= inf.Operator;
+          t.Value:= inf.Oper;
           t.OpDef:= inf;
           inc(p, length(t.Value));
           break;
@@ -1844,9 +1844,9 @@ begin
     else begin
       inf:= FCreatedFrom;
       if ooUnary in inf.Options then
-        Result:= inf.Operator + StringOfArgs(Format, inf.Operator)
+        Result:= inf.Oper + StringOfArgs(Format, inf.Oper)
       else
-        Result:= StringOfArgs(Format, inf.Operator);
+        Result:= StringOfArgs(Format, inf.Oper);
     end;
   end;
 end;
