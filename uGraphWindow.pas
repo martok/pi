@@ -20,8 +20,6 @@ type
     miLegend: TMenuItem;
     miLegendNone: TMenuItem;
     N1: TMenuItem;
-    miLegendTop: TMenuItem;
-    miLegendBottom: TMenuItem;
     miCopyEMF: TMenuItem;
     N2: TMenuItem;
     miGrid: TMenuItem;
@@ -156,6 +154,15 @@ begin
 end;
 
 procedure TGraphWindow.FormCreate(Sender: TObject);
+
+  function NewRadioItem(const aCaption: string; const aTag, aGroup: integer; const aOnClick: TNotifyEvent): TMenuItem;
+  begin
+    Result:= Menus.NewItem(aCaption, 0, false, true, aOnClick, 0, '');
+    Result.Tag:= aTag;
+    Result.GroupIndex:= aGroup;
+    Result.RadioItem:= true
+  end;
+
 begin
   DoubleBuffered:= true;
   Buffer:= TBitmap.Create;
@@ -169,6 +176,10 @@ begin
   FInteract:= imNone;
   FNextInteract:= imZoom;
   miToolRead.Click;
+  miLegend.Add(NewRadioItem('Top Left', ord(leTopLeft), 1, miLegendChange));
+  miLegend.Add(NewRadioItem('Top Right', ord(leTopRight), 1, miLegendChange));
+  miLegend.Add(NewRadioItem('Bottom Left', ord(leBottomLeft), 1, miLegendChange));
+  miLegend.Add(NewRadioItem('Bottom Right', ord(leBottomRight), 1, miLegendChange));
 end;
 
 destructor TGraphWindow.Destroy;
@@ -400,6 +411,7 @@ end;
 procedure TGraphWindow.miLegendChange(Sender: TObject);
 begin
   TMenuItem(Sender).Checked:= true;
+  FPainter.LegendPosition:= TLegendPosition(TMenuItem(Sender).Tag);
   RepaintBuffer;
   Refresh;
 end;
@@ -460,13 +472,16 @@ procedure TGraphWindow.miGridClick(Sender: TObject);
 begin
   miFineGrid.Enabled:= miGrid.Checked;
   miFineGrid.Checked:= miFineGrid.Checked and miGrid.Checked;
+  FPainter.Grid:= miGrid.Checked;
+  FPainter.FineGrid:= miFineGrid.Checked;
   RepaintBuffer;
   Refresh;
 end;
 
 procedure TGraphWindow.miFineGridClick(Sender: TObject);
 begin
-  miGrid.Checked:= miGrid.Checked or miFineGrid.Checked;    
+  miGrid.Checked:= miGrid.Checked or miFineGrid.Checked;
+  FPainter.FineGrid:= miFineGrid.Checked;
   RepaintBuffer;
   Refresh;
 end;

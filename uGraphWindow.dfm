@@ -39,18 +39,6 @@ object GraphWindow: TGraphWindow
         Caption = '-'
         GroupIndex = 1
       end
-      object miLegendTop: TMenuItem
-        Caption = 'Top'
-        GroupIndex = 1
-        RadioItem = True
-        OnClick = miLegendChange
-      end
-      object miLegendBottom: TMenuItem
-        Caption = 'Bottom'
-        GroupIndex = 1
-        RadioItem = True
-        OnClick = miLegendChange
-      end
     end
     object miGrid: TMenuItem
       AutoCheck = True

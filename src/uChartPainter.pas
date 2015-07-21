@@ -7,6 +7,8 @@ uses
   uFunctionsGraphing;
 
 type
+  TLegendPosition = (leNone, leTopLeft, leTopRight, leBottomLeft, leBottomRight);
+
   TPaintTarget = record
     // In
     Canvas: TCanvas;
@@ -35,6 +37,7 @@ type
     FYLabel: string;
     FFineGrid: boolean;
     FGrid: boolean;
+    FLegend: TLegendPosition;
     procedure SetXScale(const Value: TScale);
     procedure SetYScale(const Value: TScale);
   protected
@@ -42,10 +45,11 @@ type
     procedure ChartTitle(C: TCanvas; var R: TRect);
     procedure AxisLabelY(C: TCanvas; var R: TRect);  
     procedure AxisLabelX(C: TCanvas; var R: TRect); 
-    procedure OutsideFrame(C: TCanvas; var R: TRect);    
-    procedure Axes(C: TCanvas; var R: TRect);     
+    procedure OutsideFrame(C: TCanvas; var R: TRect);
+    procedure Axes(C: TCanvas; var R: TRect);
     procedure LabelAxis(Info: PTickMarkInfo; Value: Number);
     procedure Graphs(C: TCanvas; var R: TRect);
+    procedure Legend(C: TCanvas; var R: TRect);
 
     function PrecomputeAxisDimensions(C: TCanvas): TSize;
     function PrecomputeXAxisMargin(C: TCanvas): Integer;
@@ -69,6 +73,8 @@ type
 
     property Grid: boolean read FGrid write FGrid;
     property FineGrid: boolean read FFineGrid write FFineGrid;
+
+    property LegendPosition: TLegendPosition read FLegend write FLegend;
 
     procedure PaintGraph(var Target: TPaintTarget);
   end;
@@ -100,11 +106,18 @@ const
   FRAME_WIDTH       = 2;    
   AXIS_WIDTH        = 1;
   GRID_WIDTH        = 1;
+                            
+  CFONT_LEGEND      = CFONT_TITLE;
+  CFONT_LEGEND_S    = 10;
+  LEGEND_MARGIN     = 10;
+  LEGEND_PADDING    = 5;
 
   COL_FRAME         = $000000;
   COL_AXIS          = $404040;
   COL_GRID_MAJOR    = $808080;
   COL_GRID_MINOR    = $C0C0C0;
+  COL_LEGEND_BG     = $FFFFFF;  
+  COL_LEGEND_SHADOW = COL_GRID_MINOR;
 
 procedure TextRectRotated(Canvas: TCanvas; Rect: TRect; X, Y, degr: Integer; const Text: string);
 var
@@ -337,6 +350,89 @@ begin
     end;
   finally
     RestoreDC(C.Handle, dcs);
+    DeleteObject(clipr);
+  end;
+end;
+
+procedure TChartPainter.Legend(C: TCanvas; var R: TRect);  
+var
+  i, y: integer;
+  needed: TSize;
+  leg,shadow: TRect;
+  s: string;
+  ts: TSize;
+  lineHeight: integer;
+  ob: TPlotBase; 
+  clipr: HRGN;
+begin
+  if FLegend = leNone then
+    exit;
+                     
+  C.Font.Name:= CFONT_LEGEND;
+  C.Font.Size:= CFONT_LEGEND_S;
+  // compute space needed
+  lineHeight:= C.TextHeight('Ij');
+  needed.cx:= 0;
+  for i:= 0 to high(Plots) do begin
+    ob:= TPlotBase(Plots[i].NativeObject);
+    s:= TPlot(ob).Caption;
+    ts:= C.TextExtent(s);
+    needed.cx:= Max(ts.cx, needed.cx);
+  end;         
+  needed.cy:= round((Length(Plots)-1) * (lineHeight * 1.5) + lineHeight);
+  // include padding and colored line
+  inc(needed.cx, 2*LEGEND_PADDING + 35 + LEGEND_PADDING);
+  inc(needed.cy, 2*LEGEND_PADDING);
+
+  // outside rectangle
+  leg:= R;
+  InflateRect(leg, -LEGEND_MARGIN, -LEGEND_MARGIN);
+  case FLegend of
+    leTopLeft: begin
+      leg.Right:= leg.Left + needed.cx;
+      leg.Bottom:= leg.Top + needed.cy;
+    end;
+    leTopRight: begin
+      leg.Left:= leg.Right - needed.cx;
+      leg.Bottom:= leg.Top + needed.cy;
+    end;  
+    leBottomLeft: begin
+      leg.Right:= leg.Left + needed.cx;
+      leg.Top:= leg.Bottom - needed.cy;
+    end;
+    leBottomRight: begin
+      leg.Left:= leg.Right - needed.cx;
+      leg.Top:= leg.Bottom - needed.cy;
+    end;
+  end;
+
+  // draw frame
+  C.Pen.Color:= COL_FRAME;
+  C.Pen.Width:= 1;
+  C.Brush.Style:= bsSolid;
+  C.Brush.Color:= COL_LEGEND_SHADOW;
+  shadow:= Rect(leg.Left+LEGEND_PADDING, leg.top+LEGEND_PADDING, leg.Right+LEGEND_PADDING, leg.Bottom+LEGEND_PADDING);
+  C.FillRect(shadow);
+  C.Brush.Color:= COL_LEGEND_BG;
+  C.Rectangle(leg);
+  
+  InflateRect(leg, -LEGEND_PADDING, -LEGEND_PADDING);
+  clipr:= CreateRectRgn(leg.Left, leg.Top, leg.Right, leg.Bottom);
+  SelectClipRgn(C.Handle, clipr);
+  try
+    y:= leg.Top + CFONT_LEGEND_S;
+    for i:= 0 to high(Plots) do begin
+      ob:= TPlotBase(Plots[i].NativeObject);
+      C.Pen.Color:= ob.Color;
+      C.Pen.Width:= 5;
+      C.MoveTo(leg.Left+5, y);
+      C.LineTo(leg.Left+20, y);
+      s:= TPlot(ob).Caption;
+      C.TextOut(leg.Left+35, y - lineHeight div 2, s);
+      inc(y, round(lineHeight * 1.5));
+    end;
+  finally
+    SelectClipRgn(C.Handle, 0);
     DeleteObject(clipr);
   end;
 end;
@@ -666,6 +762,7 @@ begin
 
   Graphs(Target.Canvas, Target.ChartArea);
   Axes(Target.Canvas, Target.ChartArea);
+  Legend(Target.Canvas, Target.ChartArea);
 end;
 
 {
