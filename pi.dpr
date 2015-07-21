@@ -23,7 +23,8 @@ uses
   uChartPainter in 'src\uChartPainter.pas',
   uChartScale in 'src\uChartScale.pas',
   uCIntegerBucketList in 'src\uCIntegerBucketList.pas',
-  uMathSelfTests in 'src\uMathSelfTests.pas';
+  uMathSelfTests in 'src\uMathSelfTests.pas',
+  uChartExport in 'src\uChartExport.pas';
 
 {$R *.res}
 

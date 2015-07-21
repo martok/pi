@@ -30,7 +30,9 @@ type
     miToolPan: TMenuItem;
     miToolRead: TMenuItem;
     sdGraph: TSavePictureDialog;
-    miSaveEMF: TMenuItem;
+    miSaveFile: TMenuItem;
+    CopyAs1: TMenuItem;
+    miCopyBitmap: TMenuItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormPaint(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -49,7 +51,8 @@ type
     procedure miToolZoomClick(Sender: TObject);
     procedure miToolPanClick(Sender: TObject);
     procedure miToolReadClick(Sender: TObject);
-    procedure miSaveEMFClick(Sender: TObject);
+    procedure miSaveFileClick(Sender: TObject);
+    procedure miCopyBitmapClick(Sender: TObject);
   private
     { Private-Deklarationen }
     FPlots: TPlotsArray;
@@ -97,7 +100,7 @@ const
 
 implementation
 
-uses Types, Math, Clipbrd;
+uses Types, Math, uChartExport;
 
 var
   Graphs_Counter :integer = 0;
@@ -416,54 +419,47 @@ begin
   Refresh;
 end;
 
-procedure TGraphWindow.miCopyEMFClick(Sender: TObject);
-var
-  emf: TMetafile;
-  emfc: TMetafileCanvas;
-  tg: TPaintTarget;
+procedure TGraphWindow.miCopyBitmapClick(Sender: TObject);
 begin
-  emf:= TMetafile.Create;
-  try
-    emf.Enhanced:= true;
-    emf.Width:= ClientWidth;
-    emf.Height:= ClientHeight;
-    emfc:= TMetafileCanvas.Create(emf, Canvas.Handle);
-    try
-      tg.Canvas:= emfc;
-      tg.DrawRect:= ClientRect;
-      FPainter.PaintGraph(tg);
-    finally
-      emfc.Free;
-    end;
-    Clipboard.Assign(emf);
+  with TChartExportBMP.Create(ClientRect, Canvas) do try
+    Paint(FPainter);
+    ToClipboard;
   finally
-    emf.Free;
+    Free;
   end;
 end;
 
-procedure TGraphWindow.miSaveEMFClick(Sender: TObject);
+procedure TGraphWindow.miCopyEMFClick(Sender: TObject);
+begin
+  with TChartExportEMF.Create(ClientRect, Canvas) do try
+    Paint(FPainter);
+    ToClipboard;
+  finally
+    Free;
+  end;
+end;
+
+procedure TGraphWindow.miSaveFileClick(Sender: TObject);
 var
-  emf: TMetafile;
-  emfc: TMetafileCanvas;   
-  tg: TPaintTarget;
+  exp: TChartExport;
+  lcx: string;
 begin
   if sdGraph.Execute then begin
-    emf:= TMetafile.Create;
+    lcx:= LowerCase(ExtractFileExt(sdGraph.FileName));
+    if lcx = '.emf' then
+      exp:= TChartExportEMF.Create(ClientRect, Canvas)
+    else if lcx = '.bmp' then
+      exp:= TChartExportBMP.Create(ClientRect, Canvas)
+    else begin
+      MessageDlg(Format('Unsupported file extension: %s', [lcx]), mtError, [mbOK],0);
+      exit;
+    end;
+
     try
-      emf.Enhanced:= true;
-      emf.Width:= ClientWidth;
-      emf.Height:= ClientHeight;
-      emfc:= TMetafileCanvas.Create(emf, Canvas.Handle);
-      try
-        tg.Canvas:= emfc;
-        tg.DrawRect:= ClientRect;
-        FPainter.PaintGraph(tg);
-      finally
-        emfc.Free;
-      end;
-      emf.SaveToFile(sdGraph.FileName);
+      exp.Paint(FPainter);
+      exp.ToFile(sdGraph.FileName);
     finally
-      emf.Free;
+      exp.Free;
     end;
   end;
 end;

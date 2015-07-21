@@ -81,20 +81,31 @@ object GraphWindow: TGraphWindow
       Caption = '-'
       GroupIndex = 2
     end
-    object miCopyEMF: TMenuItem
-      Caption = 'Copy EMF'
+    object CopyAs1: TMenuItem
+      Caption = 'Copy As...'
       GroupIndex = 2
-      OnClick = miCopyEMFClick
+      object miCopyEMF: TMenuItem
+        Caption = 'EMF'
+        GroupIndex = 2
+        OnClick = miCopyEMFClick
+      end
+      object miCopyBitmap: TMenuItem
+        Caption = 'BMP'
+        GroupIndex = 2
+        OnClick = miCopyBitmapClick
+      end
     end
-    object miSaveEMF: TMenuItem
-      Caption = 'Save EMF'
+    object miSaveFile: TMenuItem
+      Caption = 'Save As...'
       GroupIndex = 2
-      OnClick = miSaveEMFClick
+      OnClick = miSaveFileClick
     end
   end
   object sdGraph: TSavePictureDialog
     DefaultExt = 'emf'
-    Filter = 'Enhanced Metafile (*.emf)|*.emf|All Files (*.*)|*.*'
+    Filter = 
+      'Enhanced Metafile (*.emf)|*.emf|Bitmap (*.bmp)|*.bmp|All Files (' +
+      '*.*)|*.*'
     Left = 160
     Top = 60
   end

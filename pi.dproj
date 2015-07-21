@@ -58,6 +58,7 @@
     <DCCReference Include="src\packages\uFunctionsStatistics.pas" />
     <DCCReference Include="src\packages\uFunctionsSymbolics.pas" />
     <DCCReference Include="src\uCCSVList.pas" />
+    <DCCReference Include="src\uChartExport.pas" />
     <DCCReference Include="src\uChartPainter.pas" />
     <DCCReference Include="src\uChartScale.pas" />
     <DCCReference Include="src\uCIntegerBucketList.pas" />
