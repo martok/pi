@@ -1995,8 +1995,6 @@ function TPackageCore.TypeOf_1(Context: IContext; Args: TExprList): IExpression;
 var
   x: IExpression;
   sc: IStringConvertible;
-  n: IValueNumber;
-  d: string;
 begin
   x:= args[0].Evaluate(Context);
   if x.Represents(IStringConvertible, sc) then
