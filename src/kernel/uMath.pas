@@ -73,7 +73,7 @@ type
     procedure EvaluationBegin(varname: string);
     procedure EvaluationEnd;
     procedure PredefineConstants(const Context: IContext);
-    function Tokenize(const Expr: string): TTokenList;       
+    function Tokenize(const Expr: string): TTokenList;
     procedure Fold(var Tokens: TTokenList; const L, R: integer);
   public
     constructor Create(const Output: IOutputProvider);
@@ -87,6 +87,8 @@ type
     function RegisterPackage(const Package: TFunctionPackage): boolean;
     function RegisterAsInfix(Operator: String; Precedence: integer; Options: TOperatorOptions; Pack: TFunctionPackage; Func: String): boolean;
     function GetPackageInstance(const PackageClass: TFunctionPackageClass): TFunctionPackage;
+    function PragmaSet(Name: string; Value: IExpression): boolean;
+    function PragmaGet(Name: string; out Value: IExpression): boolean;
 
     function Evaluate(const Expr: IExpression): IExpression;
     procedure Run(const Expr: String);
@@ -214,7 +216,10 @@ type
 
   TFunctionPackage = class
   protected
+    // Executed once on import into a MS
     procedure OnImport(const MS: TMathSystem); virtual;
+    // If NewValue<>nil, store value. Return new value. Return nil if not found
+    function OnPragma(const MS: TMathSystem; const Name: string; const NewValue: IExpression): IExpression; virtual;
     procedure PublishedMethods(Names: TStringList);
   public
     function FunctionExists(FunctionName: string; ParamCount: integer): boolean;
@@ -279,7 +284,7 @@ type
     procedure OnImport(const MS: TMathSystem); override;
   published
     function _dump_1(Context: IContext; Args: TExprList): IExpression;
-    function _describe_1(Context: IContext; Args: TExprList): IExpression;   
+    function _describe_1(Context: IContext; Args: TExprList): IExpression;
     function TypeOf_1(Context: IContext; Args: TExprList): IExpression;
 
     function Undef_1(Context: IContext; args: TExprList): IExpression;
@@ -287,6 +292,9 @@ type
     function New_1(Context: IContext; args: TExprList): IExpression;
     function Drop_0(Context: IContext; args: TExprList): IExpression;
     function Clear_0(Context: IContext; args: TExprList): IExpression;
+    
+    function Pragma_1(Context: IContext; args: TExprList): IExpression;
+    function Pragma_2(Context: IContext; args: TExprList): IExpression;
 
     function const_1(Context: IContext; args: TExprList): IExpression;
     function constinfo_0(Context: IContext; args: TExprList): IExpression;
@@ -460,6 +468,37 @@ begin
     end;
   end;
   Result:= nil;
+end;
+
+function TMathSystem.PragmaGet(Name: string; out Value: IExpression): boolean;
+var
+  i: integer;
+  x: IExpression;
+begin
+  Result:= false;
+  for i:= 0 to fPackages.Count-1 do begin
+    x:= TFunctionPackage(fPackages[i]).OnPragma(Self, Name, nil);
+    if x <> nil then begin
+      Value:= x;
+      Result:= true;
+      Exit;
+    end;
+  end;
+end;
+
+function TMathSystem.PragmaSet(Name: string; Value: IExpression): boolean;
+var
+  i: integer;
+  x: IExpression;
+begin
+  Result:= false;
+  for i:= 0 to fPackages.Count-1 do begin
+    x:= TFunctionPackage(fPackages[i]).OnPragma(Self, Name, Value);
+    if x <> nil then begin
+      Result:= true;
+      Exit;
+    end;
+  end;
 end;
 
 function LSC_InfixByLength(Item1, Item2: Pointer): Integer;
@@ -1519,6 +1558,11 @@ procedure TFunctionPackage.OnImport(const MS: TMathSystem);
 begin
 end;
 
+function TFunctionPackage.OnPragma(const MS: TMathSystem; const Name: string; const NewValue: IExpression): IExpression;
+begin
+  Result:= nil;
+end;
+
 { TPackageAlgebra }
 
 procedure TPackageAlgebra.OnImport(const MS: TMathSystem);
@@ -2027,6 +2071,18 @@ function TPackageCore.Clear_0(Context: IContext; args: TExprList): IExpression;
 begin
   Context.Output.Clear;
   Result:= TValueUnassigned.Create;
+end;
+
+function TPackageCore.Pragma_1(Context: IContext; args: TExprList): IExpression;
+begin
+  if not TContext.SystemFrom(Context).PragmaGet(EvaluateToString(Context, args[0]),Result) then
+    Result:= TValueUnassigned.Create;
+end;
+
+function TPackageCore.Pragma_2(Context: IContext; args: TExprList): IExpression;
+begin
+  if not TContext.SystemFrom(Context).PragmaSet(EvaluateToString(Context, args[0]),Args[1]) then
+    Result:= TValueUnassigned.Create;
 end;
 
 function FindConstant(Name: string; out Definition: TConstantDef): boolean;

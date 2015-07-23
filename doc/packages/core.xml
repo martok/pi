@@ -25,6 +25,16 @@
 			Leert die Ausgabe-Konsole
 		</description>
 	</function>
+	<function name="Pragma">
+		<syntax>Pragma(<v>name</v>)</syntax>
+		<description>
+			Gibt eine Konfigurationsvariable zurück oder Unassigned, falls diese nicht bekannt ist.
+		</description>
+		<syntax>Pragma(<v>name</v>,<v>value</v>)</syntax>
+		<description>
+			Setzt eine Konfigurationsvariable und gibt den neuen Wert zurück oder Unassigned, falls diese nicht bekannt ist.
+		</description>
+	</function>
 	<function name="Const">
 		<syntax>Const(<v>name</v>)</syntax>
 		<description>
