@@ -16,6 +16,7 @@ type
   IPlotObject = interface(IExpressionAtom)['{C5255A30-8718-4A84-9569-3CF8FE47F5C3}']
   end;
   TPlotsArray = array of IPlotObject;
+  TColorArray = array of TColor;
 
   TPlotBase = class(TE_Atom, IPlotObject)
   private
@@ -23,7 +24,9 @@ type
     FColor: TColor;
     FCaption: String;
     FContext: IContext;
+    FAutoColor: TColor;
     function GetCaption: string;
+    function GetColor: TColor;
   protected
     procedure PlotOptions(D: TDynamicArguments); virtual;
   public
@@ -33,7 +36,8 @@ type
     function GetRange: TPlotRange; virtual; abstract;
     function GetLegend: string; virtual; abstract;
     property Context: IContext read FContext;
-    property Color: TColor read FColor;
+    property Color: TColor read GetColor;
+    property AutomaticColor: TColor read FAutoColor write FAutoColor;
     property Size: Single read FSize;
     property Caption: string read GetCaption;
   end;
@@ -88,6 +92,12 @@ type
   end;
 
   TPackageGraph = class(TFunctionPackage)
+  private
+    fColorScheme: string;
+    function GetColorTable: TColorArray;
+  protected
+    procedure OnImport(const MS: TMathSystem); override;
+    function OnPragma(const MS: TMathSystem; const Name: string; const NewValue: IExpression): IExpression; override;
   published
     function Plot_3_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
     function Histogram_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
@@ -100,6 +110,20 @@ implementation
 uses Math, uGraphWindow, TypInfo, uChartScale;
 
 { TPackageGraph }
+
+procedure TPackageGraph.OnImport(const MS: TMathSystem);
+begin
+  fColorScheme:= 'default';
+end;
+
+function TPackageGraph.OnPragma(const MS: TMathSystem; const Name: string; const NewValue: IExpression): IExpression;
+begin
+  if AnsiSameText(Name, 'ColorScheme') then begin
+    if NewValue <> nil then
+      fColorScheme:= (NewValue as IValueString).Value;
+    Result:= TValueString.Create(fColorScheme);
+  end;
+end;
 
 function TPackageGraph.Plot_3_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
 var
@@ -127,6 +151,41 @@ begin
   except
     FreeAndNil(Plot);
     raise;
+  end;
+end;
+
+function TPackageGraph.GetColorTable: TColorArray;
+const
+  COLORMAP_DEFAULT: array[0..17] of TColor = (
+     $0000ff,
+     $00ffff,
+     $00ff00,
+     $ffff00,
+     $ff0000,
+     $ff00ff,
+     $808a43,
+     $6f1083,
+     $69fdbb,
+     $027f19,
+     $427bed,
+     $d85489,
+     $c5d663,
+     $0dbf8c,
+     $916afa,
+     $a82209,
+     $fb9b36,
+     $2c358a);
+
+var
+  i: integer;
+begin
+  if AnsiSameText(fColorScheme, 'random')  then begin
+    SetLength(Result, 50);
+    for i := 0 to high(Result) do
+      Result[i]:= Random($FFFFFF);      
+  end else begin
+    SetLength(Result, Length(COLORMAP_DEFAULT));
+    Move(COLORMAP_DEFAULT[0],Result[0],Sizeof(COLORMAP_DEFAULT));
   end;
 end;
 
@@ -173,7 +232,7 @@ var
   par: IExpression;
   pl: IValueList;
   ps: IValueString;
-  plots: array of IPlotObject;
+  plots: TPlotsArray;
   gr: TGraphWindow;
   pr,PaintRange: TPlotRange;
   vo: IPlotObject;
@@ -195,7 +254,7 @@ begin
     end else
       raise EMathSysError.Create('Function Show requires a list of plot objects or a single plot object');
 
-  gr:= TGraphWindow.CreateGraph(plots);
+  gr:= TGraphWindow.CreateGraph(plots, GetColorTable);
 
   if Options.IsSet('Axes') then begin
     axes:= CastToString(Options.Value['Axes']);
@@ -285,7 +344,8 @@ constructor TPlotBase.Create;
 begin
   inherited;
   FSize:= 1;
-  FColor:= Random($FFFFFF);
+  FColor:= clNone;
+  FAutoColor:= Random($FFFFFF);
   FCaption:= '';
 end;
 
@@ -300,6 +360,14 @@ begin
     Result:= FCaption
   else
     Result:= GetLegend;
+end;
+
+function TPlotBase.GetColor: TColor;
+begin
+  if FColor<>clNone then
+    Result:= FColor
+  else
+    Result:= FAutoColor;
 end;
 
 procedure TPlotBase.PlotOptions(D: TDynamicArguments);

@@ -56,6 +56,7 @@ type
   private
     { Private-Deklarationen }
     FPlots: TPlotsArray;
+    FColorTbl: TColorArray;
     FPainter: TChartPainter;
     FXMin, FXMax, FYMin, FYMax: Number;
     FSXMin, FSXMax, FSYMin, FSYMax: Number;
@@ -77,7 +78,7 @@ type
     procedure SetYMin(const Value: Number);
   public
     { Public-Deklarationen }
-    constructor CreateGraph(Plots: array of IPlotObject);
+    constructor CreateGraph(Plots: TPlotsArray; ColorTbl: TColorArray);
     destructor Destroy; override;
     property XMin: Number read FXMin write SetXMin;
     property XMax: Number read FXMax write SetXMax;
@@ -144,7 +145,7 @@ end;
 
 { TGraphWindow }
 
-constructor TGraphWindow.CreateGraph(Plots: array of IPlotObject);
+constructor TGraphWindow.CreateGraph(Plots: TPlotsArray; ColorTbl: TColorArray);
 var
   i: integer;
 begin
@@ -154,6 +155,7 @@ begin
   SetLength(FPlots, Length(Plots));
   for i:= 0 to high(Plots) do
     FPlots[i]:= Plots[i];
+  FColorTbl:= ColorTbl;
 end;
 
 procedure TGraphWindow.FormCreate(Sender: TObject);
@@ -171,6 +173,7 @@ begin
   Buffer:= TBitmap.Create;
   FBufferBox:= Rect(0,0,1,1);
   FPainter:= TChartPainter.Create;
+  FPainter.ColorTable:= fColorTbl;
   miGrid.Checked:= True;
   FSXMin:= NAN;
   FSXMax:= NAN;

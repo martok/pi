@@ -54,12 +54,14 @@ type
     function PrecomputeAxisDimensions(C: TCanvas): TSize;
     function PrecomputeXAxisMargin(C: TCanvas): Integer;
     function OutsideAxis(XAxis: boolean): integer;
+    function GetAutoColor(Index: integer): TColor;
 
     procedure TickMarkGenerator(Scale: TScale; PixelHint: integer; CB: TTickMarkCallback; Info: PTickMarkInfo);
     procedure TicksComputeMax(Value: Number; Main: boolean; Axis: TScale; Info: PTickMarkInfo);
     procedure TicksDrawMarks(Value: Number; Main: boolean; Axis: TScale; Info: PTickMarkInfo);
   public        
     Plots: TPlotsArray;
+    ColorTable: TColorArray;
 
     constructor Create;
     destructor Destroy; override;
@@ -153,6 +155,11 @@ begin
   FreeAndNil(FXScale);
   FreeAndNil(FYScale);
   inherited;
+end;
+
+function TChartPainter.GetAutoColor(Index: integer): TColor;
+begin
+  Result:= ColorTable[Index mod Length(ColorTable)];
 end;
 
 procedure TChartPainter.Graphs(C: TCanvas; var R: TRect);
@@ -341,6 +348,7 @@ begin
   try
     for i:= 0 to high(Plots) do begin
       ob:= TPlotBase(Plots[i].NativeObject);
+      ob.AutomaticColor:= GetAutoColor(i);
       if ob is TPlot then
         DrawFunction_Plot(TPlot(ob))
       else if ob is THistogram then

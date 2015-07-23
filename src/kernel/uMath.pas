@@ -87,7 +87,7 @@ type
     function RegisterPackage(const Package: TFunctionPackage): boolean;
     function RegisterAsInfix(Operator: String; Precedence: integer; Options: TOperatorOptions; Pack: TFunctionPackage; Func: String): boolean;
     function GetPackageInstance(const PackageClass: TFunctionPackageClass): TFunctionPackage;
-    function PragmaSet(Name: string; Value: IExpression): boolean;
+    function PragmaSet(Name: string; NewValue: IExpression; out Value: IExpression): boolean;
     function PragmaGet(Name: string; out Value: IExpression): boolean;
 
     function Evaluate(const Expr: IExpression): IExpression;
@@ -486,15 +486,16 @@ begin
   end;
 end;
 
-function TMathSystem.PragmaSet(Name: string; Value: IExpression): boolean;
+function TMathSystem.PragmaSet(Name: string; NewValue: IExpression; out Value: IExpression): boolean;
 var
   i: integer;
   x: IExpression;
 begin
   Result:= false;
   for i:= 0 to fPackages.Count-1 do begin
-    x:= TFunctionPackage(fPackages[i]).OnPragma(Self, Name, Value);
+    x:= TFunctionPackage(fPackages[i]).OnPragma(Self, Name, NewValue);
     if x <> nil then begin
+      Value:= x;
       Result:= true;
       Exit;
     end;
@@ -2081,7 +2082,7 @@ end;
 
 function TPackageCore.Pragma_2(Context: IContext; args: TExprList): IExpression;
 begin
-  if not TContext.SystemFrom(Context).PragmaSet(EvaluateToString(Context, args[0]),Args[1]) then
+  if not TContext.SystemFrom(Context).PragmaSet(EvaluateToString(Context, args[0]),Args[1], Result) then
     Result:= TValueUnassigned.Create;
 end;
 
