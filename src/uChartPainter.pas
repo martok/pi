@@ -780,9 +780,9 @@ function TChartPainter.OutsideAxis(XAxis: boolean): integer;
 begin
   Result:= 0;
   if XAxis then begin   
-    if FYScale.Min > 0 then
+    if FYScale.Min >= 0 then
       Result:= -1
-    else if FYScale.Max < 0 then
+    else if FYScale.Max <= 0 then
       Result:= +1
     else begin
       // can only be reached on non-log scales
