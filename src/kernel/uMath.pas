@@ -1409,15 +1409,15 @@ end;
 constructor TDynamicArguments.Create(Args: TExprList; FromIndex: integer; Context: IContext);
 var
   i: integer;
-  ass: TE_Call;
+  sr: ISymbolReference;
+  ass: IFunctionCall;
 begin
   for i:= FromIndex to High(Args) do begin
-    if Args[i].IsClass(TE_SymbolRef) then
-      Add((Args[i].NativeObject as TE_SymbolRef).Name, TValueNull.Create)
-    else if Args[i].IsClass(TE_Call) then begin
-      ass:= Args[i].NativeObject as TE_Call;
-      if (ass.Name='_assign') and (ass.Arg[0].IsClass(TE_SymbolRef)) then
-        Add((ass.Arg[0].NativeObject as TE_SymbolRef).Name, ass.Arg[1].Evaluate(Context));
+    if Args[i].Represents(ISymbolReference, sr) then
+      Add(sr.Name, TValueNull.Create)
+    else if Args[i].Represents(IFunctionCall, ass) then begin
+      if (ass.Name='_assign') and (ass.Arg[0].Represents(ISymbolReference,sr)) then
+        Add(sr.Name, ass.Arg[1].Evaluate(Context));
     end;
   end;
 end;
@@ -1774,10 +1774,11 @@ end;
 function TPackageAlgebra._define_2(Context: IContext; Args: TExprList): IExpression;
 var
   name: string;
+  sr: ISymbolReference;
 begin
-  if not Args[0].IsClass(TE_SymbolRef) then
+  if not Args[0].Represents(ISymbolReference, sr) then
     raise EMathTypeError.Create('LHS of assignment needs to be a symbol reference');
-  name:= TE_SymbolRef(Args[0].NativeObject).Name;
+  name:= sr.Name;
   Context.Define(name, Args[1]);
   Result:= Args[1];
 end;
@@ -2004,13 +2005,12 @@ end;
 
 function TPackageCore._describe_1(Context: IContext; Args: TExprList): IExpression;
 var
-  name: string;
   e: IExpression;
+  sr: ISymbolReference;
 begin
   // TODO: Use interface
-  if Args[0].IsClass(TE_SymbolRef) then begin
-    name:= TE_SymbolRef(Args[0].NativeObject).Name;
-    e:= Context.Definition(name);
+  if Args[0].Represents(ISymbolReference, sr) then begin
+    e:= Context.Definition(sr.Name);
   end else
     e:= Args[0];
   if Assigned(e) then
