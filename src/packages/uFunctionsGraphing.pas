@@ -393,14 +393,9 @@ begin
 end;
 
 function TPlot.GetLegend: String;
-var
-  sc: IStringConvertible;
 begin
   if FEx<>nil then begin
-    if FEx.Represents(IStringConvertible, sc) then
-      Result:= sc.AsString(STR_FORM_STANDARD)
-    else
-      Result:= '<'+fEx.NativeObject.ClassName+'>'
+    Result:= FEx.AsString(STR_FORM_STANDARD);
   end
   else
     Result:= '-';

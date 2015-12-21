@@ -102,17 +102,13 @@ function TExpressionMatcher.Match(const Expr: IExpression): boolean;
   var
     i, j: integer;
     e: IExpression;
-    sc: IStringConvertible;
   begin
     Writeln('Candidates dump:');
     for i:= 0 to high(fVars) do begin
       Writeln(FreeVarName(i), ' = ');
       for j:= 0 to fVars[i].Count-1 do begin
         e:= TVariableAssignment(fVars[i].Objects[j]).Value;
-        if e.Represents(IStringConvertible, sc) then
-          Writeln('  ', sc.AsString(STR_FORM_FULL))
-        else
-          Writeln('  ', e.NativeObject.ClassName);
+        Writeln('  ', e.AsString(STR_FORM_FULL))
       end;
     end;
   end;
@@ -160,7 +156,6 @@ end;
 
 procedure TExpressionMatcher.StoreFreeVariable(const v: integer; const aValue: IExpression);
 var
-  sc: IStringConvertible;
   c,k: string;
   va: TVariableAssignment;
 begin
@@ -171,10 +166,7 @@ begin
   end;
 
   // yes, a faster hashCode would be nice, but this is just so cheap to code :)
-  if aValue.Represents(IStringConvertible, sc) then
-    k:= sc.AsString(STR_FORM_INPUT)
-  else
-    k:= '(addr)'+IntToHex(Cardinal(aValue),8);
+  k:= aValue.AsString(STR_FORM_INPUT);
   if fVars[v].IndexOf(k) < 0 then begin
     va:= TVariableAssignment.Create;
     va.Value:= aValue;

@@ -50,7 +50,7 @@ type
     function Diff_2(Context: IContext; args: TExprList): IExpression;
   end;
 
-  TSymbolicPattern = class(TE_Atom, ISymbolicPattern, IStringConvertible)
+  TSymbolicPattern = class(TE_Atom, ISymbolicPattern)
   private
     fVars: TStringList;
     fPattern: IExpression;
@@ -59,14 +59,13 @@ type
     destructor Destroy; override;
     // IExpression
     function Clone(Deep: Boolean): IExpression; override;
-    // IStringConvertible
     function AsString(const Format: TStringFormat): String; override;
     // ISymbolicPattern
     function GetPattern: IExpression;
     function Match(const Expr: IExpression; const Assignments: IContext): boolean;
   end;
 
-  TSymbolicRule = class(TSymbolicPattern, IStringConvertible, ISymbolicRule)
+  TSymbolicRule = class(TSymbolicPattern, ISymbolicRule)
   private
     fTarget: IExpression;
   public
@@ -74,7 +73,6 @@ type
     destructor Destroy; override;
     // IExpression
     function Clone(Deep: Boolean): IExpression; override;
-    // IStringConvertible
     function AsString(const Format: TStringFormat): String;
     // ISymbolicRule
     function GetTarget: IExpression;
@@ -235,12 +233,8 @@ end;
 function TSymbolicPattern.AsString(const Format: TStringFormat): String;
 var
   s: string;
-  sc: IStringConvertible;
 begin
-  if fPattern.Represents(IStringConvertible,sc) then
-    s:= sc.AsString(Format)
-  else
-    s:= fPattern.NativeObject.ClassName;
+  s:= fPattern.AsString(Format);
   Result:= SysUtils.format('pattern(%s  |{%s})', [s, fVars.CommaText])
 end;
 
@@ -279,16 +273,9 @@ end;
 function TSymbolicRule.AsString(const Format: TStringFormat): String;
 var
   p, t: string;
-  sc: IStringConvertible;
 begin
-  if fPattern.Represents(IStringConvertible,sc) then
-    p:= sc.AsString(Format)
-  else
-    p:= fPattern.NativeObject.ClassName;
-  if fTarget.Represents(IStringConvertible,sc) then
-    t:= sc.AsString(Format)
-  else
-    t:= fTarget.NativeObject.ClassName;
+  p:= fPattern.AsString(Format);
+  t:= fTarget.AsString(Format);
   Result:= SysUtils.format('rule(%s -> %s |{%s})', [p, t, fVars.CommaText])
 end;
 

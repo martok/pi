@@ -68,6 +68,7 @@ type
 ////////////////////////////////////////////////////////////////////////////////
 //   Expressions
 ////////////////////////////////////////////////////////////////////////////////
+  TStringFormat = type Word;
   TExprList = array of IExpression;
   IExpression = interface['{56A7A015-3E85-483F-9EC5-4C3C0E232CA5}']
     function NativeObject: TObject;
@@ -77,14 +78,10 @@ type
     procedure SetArgs(const aArgs: array of IExpression);
     function GetArgs: TExprList;
     function ArgCount: integer;
-    function GetArgument(Index: Integer): IExpression;                          
+    function GetArgument(Index: Integer): IExpression;
     property Arg[Index: integer]: IExpression read GetArgument;
     function Evaluate(const Context: IContext): IExpression;
     function Clone(Deep: boolean): IExpression;
-  end;
-
-  TStringFormat = type Word;
-  IStringConvertible = interface['{CA261D7B-A5D8-4197-B115-ECDE88A664FE}']
     function AsString(const Format: TStringFormat): string;
   end;
 

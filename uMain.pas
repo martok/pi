@@ -118,7 +118,6 @@ var ct: TContext;
     n: TTreeNode;
     s: string;
     x: IExpression;
-    sc: IStringConvertible;
 begin
   trContext.Items.BeginUpdate;
   try
@@ -131,10 +130,7 @@ begin
       n:= trContext.Items.AddObject(nil, format('%s (%d)',[s,ct.Count]), ct);
       for j:= 0 to ct.Count-1 do begin
         x:= ct.Definition(ct.Name[j]); 
-        if x.Represents(IStringConvertible, sc) then
-          s:= sc.AsString(STR_FORM_STANDARD)
-        else
-          s:= '<'+x.NativeObject.ClassName+'>';
+        s:= x.AsString(STR_FORM_STANDARD);
 
         trContext.Items.AddChild(n, format('%s = %s', [ct.Name[j], s]));
       end;

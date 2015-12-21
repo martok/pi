@@ -376,15 +376,8 @@ begin
 end;
 
 function TMathSysTest.ExprString(e: IExpression): String;
-var
-  sc: IStringConvertible;
 begin
-  if e.Represents(IStringConvertible, sc) then
-    Result:= sc.AsString(STR_FORM_FULL)
-  else begin
-    Result:= '';
-    Sys.Output.Error('Cannot convert expression to string',[]);
-  end;
+  Result:= e.AsString(STR_FORM_FULL);
 end;
 
 function TMathSysTest.EvalNum(Expr: String): Number;
@@ -400,11 +393,9 @@ end;
 function TMathSysTest.EvalStr(Expr: String): string;
 var
   e: IExpression;
-  s: IStringConvertible;
 begin
   e:= Sys.Evaluate(Sys.Parse(Expr));
-  Expect(e.Represents(IStringConvertible, s), 'Cannot cast Result to String');
-  Result:= s.AsString(STR_FORM_STANDARD);
+  Result:= e.AsString(STR_FORM_STANDARD);
 end;
 
 end.

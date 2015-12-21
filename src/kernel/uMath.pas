@@ -152,7 +152,7 @@ type
     function Combine(const UseDefine: boolean): IExpression;
   end;
 
-  TExpression = class(TInterfacedObject, IExpression, IStringConvertible)
+  TExpression = class(TInterfacedObject, IExpression)
   private
     procedure SetArgument(Index: integer; const Value: IExpression);
   protected
@@ -173,7 +173,6 @@ type
     function ArgCount: Integer;
     function GetArgument(Index: Integer): IExpression;
     property Arg[Index: integer]: IExpression read GetArgument write SetArgument;
-    // IStringConvertible
     function AsString(const Format: TStringFormat): string; virtual;
   end;
 
@@ -231,7 +230,7 @@ type
 //   Expression Primitives
 ////////////////////////////////////////////////////////////////////////////////
 
-  TE_SymbolRef = class(TExpression, ISymbolReference, IStringConvertible)
+  TE_SymbolRef = class(TExpression, ISymbolReference)
   private
     FName: string;
     function GetName: string;
@@ -239,16 +238,15 @@ type
     constructor Create(AName: string);
     function Evaluate(const Context: IContext): IExpression; override;
     function Clone(Deep: Boolean): IExpression; override;
+    function AsString(const Format: TStringFormat): String; override;
     // ISymbolReference
     property Name: string read GetName;
-    // IStringConvertible
-    function AsString(const Format: TStringFormat): String; override;
   end;
 
-  TE_Call = class(TExpression, IFunctionCall, IStringConvertible)
+  TE_Call = class(TExpression, IFunctionCall)
   private
-    FName: string;      
-    FFunctionBound: Boolean;      
+    FName: string;
+    FFunctionBound: Boolean;
     FFunction: IPackagedFunction;
     FCreatedFrom: Pointer;
     class function CheckSysCalls(StringForm: string): Boolean;
@@ -257,13 +255,12 @@ type
     constructor Create(AName: string);
     function Evaluate(const Context: IContext): IExpression; override;
     function Clone(Deep: Boolean): IExpression; override;
+    function AsString(const Format: TStringFormat): String; override;
     // IFunctionCall
     property Name: string read GetName;
-    // IStringConvertible
-    function AsString(const Format: TStringFormat): String; override;
   end;
 
-  TE_Subcontext = class(TExpression, IStringConvertible)
+  TE_Subcontext = class(TExpression)
   private
     FName: string;
   public
@@ -271,7 +268,6 @@ type
     property Name: string read FName;
     function Evaluate(const Context: IContext): IExpression; override;
     function Clone(Deep: Boolean): IExpression; override;
-    // IStringConvertible
     function AsString(const Format: TStringFormat): String; override;
   end;
 
@@ -1032,12 +1028,9 @@ begin
 end;
 
 function TMathSystem.Evaluate(const Expr: IExpression): IExpression;
-var
-  sc: IStringConvertible;
 begin
   FEvaluationStack.Clear;
-  if Expr.Represents(IStringConvertible, sc) and
-     not (TE_Call.CheckSysCalls(sc.AsString(STR_FORM_FULL))) then
+  if not (TE_Call.CheckSysCalls(Expr.AsString(STR_FORM_FULL))) then
     exit;
 
   Result:= Expr.Evaluate(FContext);
@@ -1048,7 +1041,6 @@ end;
 procedure TMathSystem.Run(const Expr: String);
 var
   x, r: IExpression;
-  sc: IStringConvertible;
 begin
   try
     x:= Parse(Expr);
@@ -1056,8 +1048,7 @@ begin
       r:= x.Evaluate(Context);
       if Assigned(r) then begin
         Context.Define('ans', r);
-        if r.Represents(IStringConvertible, sc) then
-          Output.Result(sc.AsString(STR_FORM_STANDARD));
+        Output.Result(r.AsString(STR_FORM_STANDARD));
       end else
         Output.Error('Expression did not return anything',[]);
     end;   
@@ -1388,20 +1379,13 @@ end;
 function TExpression.StringOfArgs(fmt: TStringFormat; Delim: String): String;
 var
   i: integer;
-  s: IStringConvertible;
 begin
   if Length(Arguments)=0 then
     Result:= ''
   else begin
-    if Arguments[0].Represents(IStringConvertible, s) then
-      Result:= s.AsString(fmt)
-    else
-      Result:= '<?>';
+    Result:= Arguments[0].AsString(fmt);
     for i:= 1 to high(Arguments) do
-      if Arguments[i].Represents(IStringConvertible, s) then
-        Result:= Result + Delim + s.AsString(fmt)
-      else
-        Result:= Result + Delim + '<?>';
+      Result:= Result + Delim + Arguments[i].AsString(fmt);
   end;
 end;
 
@@ -1412,7 +1396,12 @@ end;
 
 function TExpression.AsString(const Format: TStringFormat): string;
 begin
-  Result:= SysUtils.Format('<<%s:%s>>',[Self.ClassName,IntToHex(Cardinal(Self),8)]);
+  case Format of
+    STR_FORM_INPUT: Result:= SysUtils.Format('<<%s:%s>>',[Self.ClassName,IntToHex(Cardinal(Self),8)]);
+    STR_FORM_TYPEOF: Result:= 'Expression';
+  else
+    Result:= AsString(STR_FORM_INPUT);
+  end;
 end;
 
 { TDynamicArguments }
@@ -1816,9 +1805,10 @@ end;
 function TE_SymbolRef.AsString(const Format: TStringFormat): String;
 begin
   case Format of
+    STR_FORM_INPUT: Result:= Name;
     STR_FORM_TYPEOF: Result:= 'SymbolRef';
   else
-    Result:= Name;
+    Result:= inherited AsString(Format);
   end;
 end;
 
@@ -1890,7 +1880,6 @@ var
 begin
   case Format of
     STR_FORM_FULL: Result:= Name + '('+StringOfArgs(Format, ',')+')';
-    STR_FORM_STANDARD,
     STR_FORM_INPUT: begin
       if not Assigned(FCreatedFrom) then
         Result:= Name + '('+StringOfArgs(Format, ',')+')'
@@ -1936,7 +1925,6 @@ end;
 function TE_Subcontext.AsString(const Format: TStringFormat): String;
 begin
   case Format of
-    STR_FORM_STANDARD,
     STR_FORM_INPUT,
     STR_FORM_FULL: Result:= Name + '['+StringOfArgs(Format, ',')+']';
     STR_FORM_DUMP: Result:= Name + '[]';
@@ -2001,15 +1989,10 @@ end;
 function TPackageCore._dump_1(Context: IContext; Args: TExprList): IExpression;
   procedure DumpNode(ex: IExpression; Lv: Integer);
   var
-    str: IStringConvertible;
     s: string;
     i: integer;
   begin
-    s:= '';
-    if ex.Represents(IStringConvertible, str) then
-      s:= str.AsString(STR_FORM_DUMP)
-    else
-      s:= ex.NativeObject.ClassName;
+    s:= ex.AsString(STR_FORM_DUMP);
     Context.Output.Hint('%*s%s',[Lv*2, '', s]);
     for i:= 0 to ex.ArgCount-1 do
       DumpNode(ex.Arg[i], lv+1);
@@ -2023,15 +2006,15 @@ function TPackageCore._describe_1(Context: IContext; Args: TExprList): IExpressi
 var
   name: string;
   e: IExpression;
-  s: IStringConvertible;
 begin
+  // TODO: Use interface
   if Args[0].IsClass(TE_SymbolRef) then begin
     name:= TE_SymbolRef(Args[0].NativeObject).Name;
     e:= Context.Definition(name);
   end else
     e:= Args[0];
-  if Assigned(e) and e.Represents(IStringConvertible, s) then
-    Result:= TValueString.Create(s.AsString(STR_FORM_INPUT))
+  if Assigned(e) then
+    Result:= TValueString.Create(e.AsString(STR_FORM_INPUT))
   else
     Result:= TValueString.Create('<Unknown>');
 end;
@@ -2039,13 +2022,9 @@ end;
 function TPackageCore.TypeOf_1(Context: IContext; Args: TExprList): IExpression;
 var
   x: IExpression;
-  sc: IStringConvertible;
 begin
   x:= args[0].Evaluate(Context);
-  if x.Represents(IStringConvertible, sc) then
-    Result:= TValueString.Create(sc.AsString(STR_FORM_TYPEOF))
-  else
-    Result:= TValueString.Create('Unknown');
+  Result:= TValueString.Create(x.AsString(STR_FORM_TYPEOF))
 end;
 
 function TPackageCore.New_0(Context: IContext; args: TExprList): IExpression;
