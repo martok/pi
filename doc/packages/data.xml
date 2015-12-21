@@ -27,6 +27,17 @@
 			<option name="IgnoreEmpty" default="*undefined*"><description>Leere Felder ignorieren (führt zum Gruppieren von Trennzeichen)</description></option>
 		</options>
 	</function>
+	<function name="csvsave">
+		<syntax>CsvSave(<v>file,list[,options]</v>)</syntax><description>
+		Erzeugt eine CSV-Datei aus einer Liste oder einer Liste von Listen.
+		</description>
+		
+		<options>
+			<option name="Delimiter" default="';'"><description>Feldtrenner</description></option>
+			<option name="QuoteChar" default="'&quot;'"><description>Gruppierungszeichen</description></option>
+			<option name="Decimal" default="'.'"><description>Dezimaltrenner</description></option>
+		</options>
+	</function>
 	<function name="source">
 		<syntax>Source(<v>file</v>)</syntax><description>
 		Lädt eine Datei und führt sie Zeilenweise aus. Tritt ein Fehler auf, wird die Ausführung beendet.

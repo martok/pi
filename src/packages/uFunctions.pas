@@ -94,11 +94,14 @@ type
   end;
 
   TPackageData = class(TFunctionPackage)
+  private
+    procedure TakeCSVParameters(Options: TDynamicArguments; list, line: TStringList; var fs: TFormatSettings);
   published
     function PWD_0(Context: IContext; args: TExprList): IExpression;
     function CWD_1(Context: IContext; args: TExprList): IExpression;
     function Glob_1(Context: IContext; args: TExprList): IExpression;
     function CSVLoad_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+    function CSVSave_2_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
     function Source_1(Context: IContext; args: TExprList): IExpression;
     function Table_1(Context: IContext; args: TExprList): IExpression;
     function Bucket_4(Context: IContext; args: TExprList): IExpression;
@@ -1033,10 +1036,34 @@ begin
   end;
 end;
 
+procedure TPackageData.TakeCSVParameters(Options: TDynamicArguments; list,
+  line: TStringList; var fs: TFormatSettings);
+var
+  d: string;
+begin
+  line.Delimiter:= ';';
+  line.QuoteChar:= '"';
+
+  if Options.IsSet('Delimiter') then begin
+    d:= CastToString(Options['Delimiter']);
+    if d > '' then
+      line.Delimiter:= d[1];
+  end;
+  if Options.IsSet('QuoteChar') then begin
+    d:= CastToString(Options['QuoteChar']);
+    if d > '' then
+      line.QuoteChar:= d[1];
+  end;
+  if Options.IsSet('Decimal') then begin
+    d:= CastToString(Options['Decimal']);
+    if d > '' then
+      fs.DecimalSeparator:= d[1];
+  end;   
+end;
+
 function TPackageData.CSVLoad_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
 var
   list, line: TCSVStringList;
-  d: string;
   i, j, k, first, last: integer;
   res, row: IValueList;
   cn: IExpression;
@@ -1048,23 +1075,7 @@ begin
   line:= TCSVStringList.Create;
   o_fs:= NeutralFormatSettings;
   try
-    if Options.IsSet('Delimiter') then begin
-      d:= CastToString(Options['Delimiter']);
-      if d > '' then
-        line.Delimiter:= d[1];
-    end else
-      line.Delimiter:= ';';
-    if Options.IsSet('QuoteChar') then begin
-      d:= CastToString(Options['QuoteChar']);
-      if d > '' then
-        line.QuoteChar:= d[1];
-    end else
-      line.QuoteChar:= '"';
-    if Options.IsSet('Decimal') then begin
-      d:= CastToString(Options['Decimal']);
-      if d > '' then
-        NeutralFormatSettings.DecimalSeparator:= d[1];
-    end;
+    TakeCSVParameters(Options, list, line, NeutralFormatSettings);
 
     try
       list.LoadFromFile(EvaluateToString(Context, args[0]));
@@ -1101,7 +1112,7 @@ begin
       for j:= 0 to line.Count - 1 do begin
         if (Line[j] = '') and ignempt then
           continue;
-        cn:= TValueFactory.GuessFromString(Line[j], NeutralFormatSettings,#0);
+        cn:= TValueFactory.GuessFromString(Line[j], NeutralFormatSettings, #0);
         row.Length:= k + 1;
         row.Item[k]:= cn;
         inc(k);
@@ -1110,6 +1121,58 @@ begin
     end;
 
     Result:= res as IExpression;
+  finally
+    NeutralFormatSettings:= o_fs;
+    FreeAndNil(list);
+    FreeAndNil(line);
+  end;
+end;
+
+function TPackageData.CSVSave_2_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+var
+  list, line: TCSVStringList;
+  fn: string;
+  i, j: integer;
+  items, row: IValueList;
+  o_fs: TFormatSettings;
+
+  function ToString(x: IExpression): string;
+  begin
+    Result:= x.AsString(STR_FORM_INPUT);
+  end;
+
+begin
+  if not args[1].Evaluate(Context).Represents(IValueList, items) then
+    raise EMathSysError.Create('CSVSave requires a list.');
+
+  list:= TCSVStringList.Create;
+  line:= TCSVStringList.Create;
+  o_fs:= NeutralFormatSettings;
+  try
+    TakeCSVParameters(Options, list, line, NeutralFormatSettings);
+
+    for i := 0 to items.Length - 1 do begin
+      line.Clear;
+      if items.Item[i].Represents(IValueList, row) then begin
+        for j := 0 to row.Length - 1 do begin
+          line.Add(ToString(row.Item[j]));
+        end;
+      end else
+        line.Add(ToString(items.Item[i]));
+      list.add(line.StrictDelimitedText);
+    end;
+
+    fn:= EvaluateToString(Context, args[0]);
+    fn:= ExpandFileName(fn);
+
+    try
+      list.SaveToFile(fn);
+    except
+      on E: Exception do
+        Context.Output.Error('CSVSave: %s: %s', [E.ClassName, E.Message]);
+    end;
+
+    Result:= TValueString.Create(fn);
   finally
     NeutralFormatSettings:= o_fs;
     FreeAndNil(list);
@@ -1128,7 +1191,6 @@ var
   procedure RunExp(s: string);   
   var
     X: IExpression;
-    sc: IStringConvertible;
   begin
     x:= sys.Parse(s);
     if Assigned(x) then begin
@@ -1136,8 +1198,8 @@ var
       if Assigned(x) then begin
         Result:= X;
         Context.Define('ans', x);
-        if not Context.Silent and x.Represents(IStringConvertible, sc) then
-          Context.Output.Result(sc.AsString(STR_FORM_STANDARD));
+        if not Context.Silent then
+          Context.Output.Result(x.AsString(STR_FORM_STANDARD));
       end;
     end;
   end;
@@ -1190,7 +1252,6 @@ end;
 function TPackageData.Table_1(Context: IContext; args: TExprList): IExpression;
 var
   a, b: IValueList;
-  s: IStringConvertible;
   i, j, total: integer;
   l: string;
 begin
@@ -1203,17 +1264,11 @@ begin
       for j:= 0 to b.Length - 1 do begin
         if l > '' then
           l:= l + #9;
-        if b.Item[j].Represents(IStringConvertible, s) then
-          l:= l + s.AsString(STR_FORM_STANDARD)
-        else
-          l:= l + CastToString(b.Item[j]);
+        l:= l + b.Item[j].AsString(STR_FORM_STANDARD);
         inc(total);
       end;
     end else begin
-      if a.Item[i].Represents(IStringConvertible, s) then
-        l:= s.AsString(STR_FORM_STANDARD)
-      else
-        l:= CastToString(a.Item[i]);
+      a.Item[i].AsString(STR_FORM_STANDARD);
       inc(total);
     end;
     Context.Output.Hint('%s', [l]);
