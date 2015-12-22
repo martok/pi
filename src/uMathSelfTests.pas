@@ -12,7 +12,7 @@ uses SysUtils, uMath, uMathIntf;
 type
   TMathSysTest = class
   private
-    FIndent: string; 
+    FIndent: string;
     Sys: TMathSystem;
     FTotal, FFailed: integer;
     procedure BeginGroup(Name: string);
@@ -25,6 +25,7 @@ type
     procedure TestDatatypes;
     procedure TestOperations;
     procedure TestFunctions;
+    procedure TestFunctional;
     function ExprString(e: IExpression): String;
     function EvalNum(Expr: String): Number;
     function EvalStr(Expr: String): string;
@@ -101,6 +102,7 @@ begin
     TestDatatypes;  
     TestOperations;
     TestFunctions;
+    TestFunctional;
   finally
     EndGroup;
   end;               
@@ -369,6 +371,28 @@ begin
       BeginGroup('arTanh');
         ExpectEqual(EvalNum('artanh(0.5)'),0.54930614433405484569762261846126);
         EndGroup;
+      EndGroup;
+  finally
+    EndGroup;
+  end;
+end;
+
+procedure TMathSysTest.TestFunctional;
+var
+  expr: IExpression;
+begin
+  BeginGroup('Functional definitions');
+  try
+    BeginGroup('Definition');
+      expr:= Sys.Parse('{a} -> a*3');
+      ExpectEqual(ExprString(expr),'_function({a},_mult(a,3))');
+
+      expr:= Sys.Parse('f:= {a} -> a*3');
+      ExpectEqual(ExprString(expr),'_define(f,_function({a},_mult(a,3)))');
+
+      Sys.Evaluate(expr);
+      ExpectEqual(EvalNum('f[3]'), 9);
+
       EndGroup;
   finally
     EndGroup;

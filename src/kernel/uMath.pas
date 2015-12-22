@@ -318,6 +318,7 @@ type
 
     function _assign_2(Context: IContext; Args: TExprList): IExpression;
     function _define_2(Context: IContext; Args: TExprList): IExpression;
+    function _function_2(Context: IContext; Args: TExprList): IExpression;
     function _comma_N(Context: IContext; Args: TExprList): IExpression;
     function _compound_N(Context: IContext; Args: TExprList): IExpression;
   end;
@@ -1582,6 +1583,7 @@ begin
   MS.RegisterAsInfix('-', 30,[ooFlat],Self,'_subtract');
 
   MS.RegisterAsInfix('=', 100,[],Self,'_assign');
+  MS.RegisterAsInfix('->', 100,[],Self,'_function');
   MS.RegisterAsInfix(':=', 105,[],Self,'_define');
   MS.RegisterAsInfix(';', 150,[ooFlat, ooFlatAssociative, ooEndsStatement],Self,'_compound');
   MS.RegisterAsInfix(',', 200,[ooFlat, ooUnpackInArguments],Self,'_comma');
@@ -1797,6 +1799,19 @@ begin
   Result:= Args[1];
 end;
 
+function TPackageAlgebra._function_2(Context: IContext; Args: TExprList): IExpression;
+var
+  al: IValueList;
+  i: integer;
+begin
+  if not Args[0].Represents(IValueList, al) then
+    raise EMathTypeError.Create('Function arguments must be given as a list of symbol references');
+  for i:= 0 to al.Length-1 do
+    if not al.Item[i].Represents(ISymbolReference) then
+      raise EMathTypeError.Create('Function arguments must be given as a list of symbol references');
+  Result:= args[1];
+end;
+
 function TPackageAlgebra._comma_N(Context: IContext; Args: TExprList): IExpression;
 var
   i: integer;
@@ -1987,15 +2002,34 @@ end;
 function TE_Subcontext.Evaluate(const Context: IContext): IExpression;
 var
   ctx: IContext;
-  target: IExpression;
+  target,
+  ass: IExpression;
   i: integer;
+  fc: IFunctionCall;
+  al: IValueList;
 begin
   ctx:= TContext.Create(Context);
   try
     target:= Context.Definition(Name);   
     if Assigned(target) then begin
-      for i:= 0 to high(Arguments) do
-        Arguments[i].Evaluate(ctx);
+      if target.Represents(IFunctionCall, fc) and (fc.Name = '_function') then begin
+        // evaluate once to verify parameters; either throws exception or returns body (which will become our target)
+        target:= fc.Evaluate(Context);
+        fc.Arg[0].Represents(IValueList, al);
+        if Length(Arguments) < al.Length then
+          raise EMathSysError.CreateFmt('Not enough parameters for subcontext, expected %d got %d', [al.Length, Length(Arguments)]);
+
+        ass:= Context.GetSystem.Parse('a=b');
+        for i:= 0 to al.Length-1 do begin
+          ass.SetArgs([al.Item[i], Arguments[i].Evaluate(Context)]);
+          ass.Evaluate(ctx);
+        end;
+        for i:= al.Length to high(Arguments) do
+          Arguments[i].Evaluate(ctx);
+      end else begin
+        for i:= 0 to high(Arguments) do
+          Arguments[i].Evaluate(ctx);
+      end;
       Result:= target.Evaluate(ctx);
     end else begin
       Result:= TValueUnassigned.Create;
