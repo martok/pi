@@ -16,7 +16,7 @@ type
   TFunctionPackageClass = class of TFunctionPackage;
   TContext = class;
 
-  TOperatorOptions = set of (ooUnary, ooUnparsed, ooFlat, ooFlatAssociative, ooUnpackInArguments, ooHoldPackedArguments);
+  TOperatorOptions = set of (ooUnary, ooUnparsed, ooFlat, ooFlatAssociative, ooUnpackInArguments, ooHoldPackedArguments, ooEndsStatement);
   TMathSystem  = class(TIntfNoRefCount, IMathSystem)
   const
     CharQuote = '''';
@@ -319,6 +319,7 @@ type
     function _assign_2(Context: IContext; Args: TExprList): IExpression;
     function _define_2(Context: IContext; Args: TExprList): IExpression;
     function _comma_N(Context: IContext; Args: TExprList): IExpression;
+    function _compound_N(Context: IContext; Args: TExprList): IExpression;
   end;
 
 var
@@ -529,6 +530,7 @@ begin
   fInfixTable.Sort(LSC_InfixByLength);
   fOperatorTable.Add(inf);
   fOperatorTable.Sort(LSC_OperatorByPrecedence);
+  Result:= true;
 end;
 
 procedure TMathSystem.DropContext;
@@ -877,33 +879,44 @@ begin
         rr:= NextR(i);
         ll:= NextL(i);
 
-        if rr < 0 then
-          raise ESyntaxError.CreateFmt(Tokens[i].Pos, 'Operator has no RHS', []);
-
-        if Tokens[rr].Kind <> tokExpression then
-          raise ESyntaxError.CreateFmt(Tokens[rr].Pos, 'Expected expression, found %s', [Tokens[rr].Value]);
+        // - 1             // no LHS; has RHS
+        // 1 - 2           // has LHS and RHS
+        // 1 ; 2 ;         // has LHS; no RHS for the last one
 
         if (exi^.Func = '_subtract') and
           ((ll < 0) or (Tokens[ll].Kind <> tokExpression)) then begin
-          tmp:= TE_Call.Create('_negate');
-          TE_Call(tmp.NativeObject).FCreatedFrom:= FNegateDefinition;
-          tmp.SetArgs([Tokens[rr].Expr]);
-        end else begin
-          tmp:= TE_Call.Create(exi^.Func);
-          TE_Call(tmp.NativeObject).FCreatedFrom:= exi;
-
-          if ooUnary in exi^.Options then
-            tmp.SetArgs([Tokens[rr].Expr])
-          else begin
-            if ll < 0 then
-              raise ESyntaxError.CreateFmt(Tokens[i].Pos, 'Operator has no LHS', []);
-            if Tokens[ll].Kind <> tokExpression then
-              raise ESyntaxError.CreateFmt(Tokens[ll].Pos, 'Expected expression, found %s', [Tokens[ll].Value]);
-            tmp.SetArgs([Tokens[ll].Expr, Tokens[rr].Expr]);
-            Tokens[ll].Kind:= tokVoid;
-          end;
+          exi:= FNegateDefinition;
         end;
-        Tokens[rr].Kind:= tokVoid;
+
+        if not (ooUnary in exi^.Options) then begin
+          if ll < 0 then
+            raise ESyntaxError.CreateFmt(Tokens[i].Pos, 'Operator has no LHS', []);
+          if Tokens[ll].Kind <> tokExpression then
+            raise ESyntaxError.CreateFmt(Tokens[ll].Pos, 'Expected expression, found %s', [Tokens[ll].Value]);
+        end;
+
+        if not (ooEndsStatement in exi^.Options) then begin
+          if rr < 0 then
+            raise ESyntaxError.CreateFmt(Tokens[i].Pos, 'Operator has no RHS', []);
+          if Tokens[rr].Kind <> tokExpression then
+            raise ESyntaxError.CreateFmt(Tokens[rr].Pos, 'Expected expression, found %s', [Tokens[rr].Value]);
+        end;
+
+        tmp:= TE_Call.Create(exi^.Func);
+        TE_Call(tmp.NativeObject).FCreatedFrom:= exi;
+
+        if ooUnary in exi^.Options then begin
+          tmp.SetArgs([Tokens[rr].Expr]);
+          Tokens[rr].Kind:= tokVoid;
+        end else begin
+          if (rr < 0) or (Tokens[rr].Kind <> tokExpression) then
+            tmp.SetArgs([Tokens[ll].Expr])
+          else begin
+            tmp.SetArgs([Tokens[ll].Expr, Tokens[rr].Expr]);
+            Tokens[rr].Kind:= tokVoid;
+          end;
+          Tokens[ll].Kind:= tokVoid;
+        end;
         Tokens[i].Kind:= tokExpression;
         Tokens[i].Expr:= tmp;
       end;
@@ -1570,7 +1583,8 @@ begin
 
   MS.RegisterAsInfix('=', 100,[],Self,'_assign');
   MS.RegisterAsInfix(':=', 105,[],Self,'_define');
-  MS.RegisterAsInfix(',', 110,[ooFlat, ooUnpackInArguments],Self,'_comma');
+  MS.RegisterAsInfix(';', 150,[ooFlat, ooFlatAssociative, ooEndsStatement],Self,'_compound');
+  MS.RegisterAsInfix(',', 200,[ooFlat, ooUnpackInArguments],Self,'_comma');
 end;
 
 function TPackageAlgebra._char_1(Context: IContext; Args: TExprList): IExpression;
@@ -1795,6 +1809,19 @@ begin
   end;
 end;
 
+function TPackageAlgebra._compound_N(Context: IContext; Args: TExprList): IExpression;
+var
+  i: integer;
+  r: IExpression;
+begin
+  Result:= TValueUnassigned.Create;
+  for i:= 0 to high(Args) do begin
+    r:= args[i].Evaluate(Context);
+    if not r.Represents(IValueUnassigned) then
+      Result:= r;
+  end;
+end;
+
 { TE_SymbolRef }
 
 constructor TE_SymbolRef.Create(AName: string);
@@ -2008,7 +2035,6 @@ var
   e: IExpression;
   sr: ISymbolReference;
 begin
-  // TODO: Use interface
   if Args[0].Represents(ISymbolReference, sr) then begin
     e:= Context.Definition(sr.Name);
   end else
