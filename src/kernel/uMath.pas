@@ -1931,7 +1931,7 @@ begin
         if ooUnary in inf.Options then
           Result:= inf.Oper + StringOfArgs(Format, inf.Oper)
         else
-          Result:= StringOfArgs(Format, inf.Oper);
+          Result:= '(' + StringOfArgs(Format, inf.Oper) + ')';
       end;
     end;
     STR_FORM_DUMP: Result:= Name + '()';
@@ -2074,7 +2074,7 @@ begin
   end else
     e:= Args[0];
   if Assigned(e) then
-    Result:= TValueString.Create(e.AsString(STR_FORM_INPUT))
+    Result:= TValueString.Create(e.AsString(STR_FORM_FULL))
   else
     Result:= TValueString.Create('<Unknown>');
 end;
