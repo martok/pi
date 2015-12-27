@@ -10,22 +10,24 @@
 	<title>pi - Matheparser/Taschenrechner</title>
 	<section title="Über das Projekt &Pi;">
 		Offizielles Repository: <a href="https://github.com/martok/pi">GitHub</a>.<br/>
-		Projekt-Thread im Delphi-Forum: <a href="http://www.delphi-forum.de/viewtopic.php?t=106298">pi - Matheparsertaschenrechner</a>
+		Projekt-Thread in der Entwickler-Ecke: <a href="http://www.entwickler-ecke.de/viewtopic.php?t=106298">pi - Matheparsertaschenrechner</a>
 	</section>
 	<section title="Syntax">
 		<p>Gleichungen eben ;)</p>
 
-		<p>Eine Besonderheit ist, dass mit dem DynamicAssignment-Operator (<code>:=</code>) Ausdrücke
+		<p>Eine Besonderheit ist, dass mit dem Definition-Operator (<code>:=</code>) Ausdrücke
 		direkt ohne Auswertung gespeichert werden können. Diese kann man dann durch eine
 		spezielle Art des Funktionsaufrufs verwenden: Eckige Klammern führen eine Expression
 		mit neuem Kontext aus, der durch die Ausdrücke in der Klammer vorbereitet werden
 		kann.</p>
 	</section>
 	<section title="Operatoren">
+		<p>Operatoren können auch durch Packages definiert werden. Eine Reihe ist jedoch immer definiert:
+		</p>
 		<ul>
 			<li id="operator-describe">
 				<code>?</code>
-				Describe. Gibt die StringForm seines Arguments aus
+				Describe. Gibt die FullForm seines Arguments aus
 			</li>
 			<li id="operator-dump">
 				<code>??</code>
@@ -47,13 +49,13 @@
 				<code>+ -</code>
 				Addition, Subtraktion
 			</li>
-			<li id="operator-assignstat">
+			<li id="operator-assign">
 				<code>=</code>
-				AssigmentStatic. Weist der linken Seite <b>den Wert</b> der rechten Seite zu
+				Assignment. Weist der linken Seite <b>den Wert</b> der rechten Seite zu
 			</li>
-			<li id="operator-assigndyn">
+			<li id="operator-definition">
 				<code>:=</code>
-				AssigmentDynamic. Weist der linken Seite <b>den Ausdruck</b> auf der rechten Seite zu
+				Definition. Weist der linken Seite <b>den Ausdruck</b> auf der rechten Seite zu
 			</li>
 			<li id="operator-list">
 				<code>{ }</code>
@@ -63,6 +65,14 @@
 				<code>@</code>
 				ListAccess. Identisch zu <seealso p="lists" n="lget">LGet()</seealso>
 			</li>
+			<li id="operator-compound">
+				<code>;</code>
+				Compound. Trennt Ausdrücke, die der Reihe nach ausgeführt werden. Der Wert des letzten Ausdrucks wird zurückgegeben. Dieser kann leer sein.
+			</li>
+			<li id="operator-function">
+				<code>-></code>
+				Function. Wird in der Definition von Funktionen verwendet, um eine automatische Parameterzuordnung zu realisieren: <code>f:= {a} -> a*2</code>.
+			</li>
 			<li id="operator-unit">
 				<code>_</code>
 				Unit. Identisch zu <seealso p="dimensons" n="unit">Unit()</seealso>
@@ -70,31 +80,40 @@
 		</ul>
 	</section>
 	<section title="Datentypen">
-		<p><code>Number</code><br/>
-		80bit Extended (long double)<br/>
-		3.6 x 10^-4951 bis 1.1 x 10^4932 bei 19–20 stelliger Genauigkeit</p>
-		<p><code>String</code><br/>
-		Ansi-String
-		</p>
-		<p><code>Unassigned</code><br/>
-		Kein Wert zugewiesen (wird intern verwendet; Darstellung: &lt;?&gt;)
-		</p>
-		<p><code>Null</code><br/>
-		Nullwert
-		</p>
-		<p><code>RangeList</code><br/>
-		Bereich, Darstellung: {Enfang->Ende, Schrittweite}
-		</p>
-		<p><code>FixedList</code><br/>
-		Liste mehrerer Werte, Darstellung: {el1,el2,el3}
-		</p>
+		<dl>
+			<dt><code>Unassigned</code></dt>
+			<dd>Kein Wert zugewiesen (wird intern verwendet; Darstellung: &lt;?&gt;)</dd>
+
+			<dt><code>Null</code></dt>
+			<dd>Nullwert</dd>
+
+			<dt><code>Integer</code></dt>
+			<dd>64bit Integer (long long)<br/>
+			-2^63 .. 2^64-1</dd>
+
+			<dt><code>Float</code></dt>
+			<dd>80bit Extended (long double)<br/>
+			3.6 x 10^-4951 bis 1.1 x 10^4932 bei 19–20 stelliger Genauigkeit</dd>
+
+			<dt><code>FloatDimension</code></dt>
+			<dd>Wie <code>Float</code>, jedoch mit physikalischer Dimension</dd>
+
+			<dt><code>String</code></dt>
+			<dd>Ansi-String</dd>
+
+			<dt><code>RangeList</code></dt>
+			<dd>Bereich, Darstellung: {Enfang->Ende, Schrittweite}</dd>
+
+			<dt><code>FixedList</code></dt>
+			<dd>Liste mehrerer Werte, Darstellung: {el1,el2,el3}</dd>
+		</dl>
 	</section>
 	<section title="Ausdrücke, Werte und Variablen">
 		<p>Alles, was (syntaktisch korrekt) eingegeben werden kann wird als Ausdruck
 		bezeichnet. Das Umfasst sowohl mathematische Ausdrücke ("Formeln") als auch
 		Funktionsaufrufe, Listen etc. Um herauszufinden, wie ein Ausdruck definiert
 		ist kann der <a href="#operator-describe">Describe-Operator</a> <code>?</code> verwendet
-		werden. Dieser verwendet die StringForm der Ausdrücke, die den Ausdruck
+		werden. Dieser verwendet die FullForm der Ausdrücke, die den Ausdruck
 		als Baum der beteiligten Funktionen beschreibt.</p>
 		<p>In &Pi; ist es möglich, Ausdrücke ohne vorherige Zuweisung an eine
 		Variable zu verwenden. Darüber hinaus sind weitergehende Zuweisungen möglich.</p>

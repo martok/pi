@@ -1,5 +1,11 @@
 <package name="Core">
 	<description>Das Package stellt System-Funktionen zur Verfügung.</description>
+	<function name="TypeOf">
+		<syntax>Typeof(<v>Name</v>)</syntax>
+		<description>
+			Ermittelt den Typen eines Ausdrucks
+		</description>
+	</function>
 	<function name="Undef">
 		<syntax>Undef(<v>Name</v>)</syntax>
 		<description>
