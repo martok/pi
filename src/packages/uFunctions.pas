@@ -1268,7 +1268,7 @@ begin
         inc(total);
       end;
     end else begin
-      a.Item[i].AsString(STR_FORM_STANDARD);
+      l:= a.Item[i].AsString(STR_FORM_STANDARD);
       inc(total);
     end;
     Context.Output.Hint('%s', [l]);
