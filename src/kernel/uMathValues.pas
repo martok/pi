@@ -340,6 +340,7 @@ begin
   case Format of
     STR_FORM_STANDARD: Result:= FValue;
     STR_FORM_INPUT: Result:= QuotedStr(FValue);
+    STR_FORM_EXPORT: Result:= FValue;
     STR_FORM_TYPEOF: Result:= 'ValueString';
   else
     Result:= inherited AsString(Format);

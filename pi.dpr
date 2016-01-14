@@ -24,7 +24,8 @@ uses
   uChartScale in 'src\uChartScale.pas',
   uCIntegerBucketList in 'src\uCIntegerBucketList.pas',
   uMathSelfTests in 'src\uMathSelfTests.pas',
-  uChartExport in 'src\uChartExport.pas';
+  uChartExport in 'src\uChartExport.pas',
+  uDataFormats in 'src\uDataFormats.pas';
 
 {$R *.res}
 

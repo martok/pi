@@ -12,30 +12,72 @@
 		<syntax>Glob(<v>filter</v>)</syntax><description>
 		Erstellt eine Liste aller auf die Maske <v>filter</v> passenden Dateien im aktuellen Verzeichnis. <v>filter</v> kann auch ein Unterverzeichnis oder eine Absolutangabe beschreiben.
 	</description></function>
-	<function name="csvload">
-		<syntax>CsvLoad(<v>file[,options]</v>)</syntax><description>
-		Lädt eine CSV-Datei in eine Liste von Listen.<br />
-		Kann die Datei nicht geöffnet werden, wird eine leere Liste zurückgegeben.
+	<function name="Import">
+		<syntax>Import(<v>file[,options]</v>)</syntax><description>
+		Importiert Daten aus einer Datei.
 		</description>
 		
 		<options>
-			<option name="Delimiter" default="';'"><description>Feldtrenner</description></option>
-			<option name="QuoteChar" default="'&quot;'"><description>Gruppierungszeichen</description></option>
-			<option name="Decimal" default="'.'"><description>Dezimaltrenner</description></option>
-			<option name="Skip" default="0"><description>Anzahl zu überspringender Zeilen (z.b. Überschrift)</description></option>
-			<option name="Count" default="Max"><description>Maximale Anzahl zu ladender Zeilen</description></option>
-			<option name="IgnoreEmpty" default="*undefined*"><description>Leere Felder ignorieren (führt zum Gruppieren von Trennzeichen)</description></option>
+			<option name="Format" default="*undefined*"><description><seealso p="data" n="ImportExportFormats">Datenformat</seealso>. Wenn nicht angegeben, aus dem Dateinamen ermittelt.</description></option>
+		</options>
+	</function>
+	<function name="ImportString">
+		<syntax>ImportString(<v>string[,options]</v>)</syntax><description>
+		Importiert Daten aus einem String.
+		</description>
+		
+		<options>
+			<option name="Format" default="*undefined*"><description><seealso p="data" n="ImportExportFormats">Datenformat</seealso>. Muss angegeben werden.</description></option>
+		</options>
+	</function>
+	<function name="Export">
+		<syntax>Export(<v>file, data[,options]</v>)</syntax><description>
+		Exportiert Daten in eine Datei.
+		</description>
+		
+		<options>
+			<option name="Format" default="*undefined*"><description><seealso p="data" n="ImportExportFormats">Datenformat</seealso>. Wenn nicht angegeben, aus dem Dateinamen ermittelt.</description></option>
+		</options>
+	</function>
+	<function name="ExportString">
+		<syntax>ExportString(<v>data[,options]</v>)</syntax><description>
+		Exportiert Daten in einen String.
+		</description>
+		
+		<options>
+			<option name="Format" default="*undefined*"><description><seealso p="data" n="ImportExportFormats">Datenformat</seealso>. Muss angegeben werden.</description></option>
 		</options>
 	</function>
 	<function name="csvsave">
 		<syntax>CsvSave(<v>file,list[,options]</v>)</syntax><description>
-		Erzeugt eine CSV-Datei aus einer Liste oder einer Liste von Listen.
+		Alias für <seealso p="data" n="Export">Export</seealso>(<v>file</v>, <v>list</v>, format='CSV', <v>options</v>)
 		</description>
-		
+	</function>
+	<function name="csvload">
+		<syntax>CsvLoad(<v>file[,options]</v>)</syntax><description>
+		Alias für <seealso p="data" n="Import">Import</seealso>(<v>file</v>, format='CSV', <v>options</v>)
+		</description>
+	</function>
+	<function name="ImportExportFormats"><description>
+		Unterstützte werden folgende Datenformate.
+		</description>
+		<syntax>String</syntax><description>
+		Gesamte Datei als ein String.
+		</description>
+		<syntax>Text (.txt, .log)</syntax><description>
+		Datei Zeilenweise. 
+		</description>
+		<syntax>CSV (.csv)</syntax><description>
+		CSV-Datei.
+		</description>
 		<options>
-			<option name="Delimiter" default="';'"><description>Feldtrenner</description></option>
-			<option name="QuoteChar" default="'&quot;'"><description>Gruppierungszeichen</description></option>
-			<option name="Decimal" default="'.'"><description>Dezimaltrenner</description></option>
+			<option name="Delimiter" default="';'"><description>[I,E] Feldtrenner</description></option>
+			<option name="QuoteChar" default="'&quot;'"><description>[I,E] Gruppierungszeichen</description></option>
+			<option name="Decimal" default="'.'"><description>[I,E] Dezimaltrenner</description></option>
+			<option name="Skip" default="0"><description>[I] Anzahl zu überspringender Zeilen (z.b. Überschrift)</description></option>
+			<option name="Count" default="Max"><description>[I] Maximale Anzahl zu ladender Zeilen</description></option>
+			<option name="IgnoreEmpty" default="*undefined*"><description>[I] Leere Felder ignorieren (führt zum Gruppieren von Trennzeichen)</description></option>
+			<option name="AlwaysQuote" default="*undefined*"><description>[E] Quote immer verwenden, sonst nur wenn Metazeichen im Eintrag vorkommen</description></option>
 		</options>
 	</function>
 	<function name="source">

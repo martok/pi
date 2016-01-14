@@ -307,12 +307,11 @@
                   		
                </p>
             </li>
-            <li class="function" id="function-core-pragma"><a class="function-link" href="#function-core-pragma">#</a><code>Pragma(<i>name</i>)</code><br><code>Pragma(<i>name</i>,<i>value</i>)</code><br><p>
+            <li class="function" id="function-core-pragma"><a class="function-link" href="#function-core-pragma">#</a><code>Pragma(<i>name</i>)</code><br><p>
                   			Gibt eine Konfigurationsvariable zurück oder Unassigned, falls diese nicht bekannt
                   ist.
                   		
-               </p>
-               <p>
+               </p><code>Pragma(<i>name</i>,<i>value</i>)</code><br><p>
                   			Setzt eine Konfigurationsvariable und gibt den neuen Wert zurück oder Unassigned,
                   falls diese nicht bekannt ist.
                   		
@@ -323,11 +322,10 @@
                   		
                </p>
             </li>
-            <li class="function" id="function-core-constinfo"><a class="function-link" href="#function-core-constinfo">#</a><code>constinfo()</code><br><code>constinfo(<i>name</i>)</code><br><p>
+            <li class="function" id="function-core-constinfo"><a class="function-link" href="#function-core-constinfo">#</a><code>constinfo()</code><br><p>
                   			Listet verfügbare/bekannte Konstanten
                   		
-               </p>
-               <p>
+               </p><code>constinfo(<i>name</i>)</code><br><p>
                   			Gibt Information über eine Konstante zurück
                   		
                </p>
@@ -382,11 +380,10 @@
                   		
                </p>
             </li>
-            <li class="function" id="function-trig-arctan"><a class="function-link" href="#function-trig-arctan">#</a><code>ArcTan(<i>number</i>)</code><br><code>ArcTan(<i>Y</i>, <i>X</i>)</code><br><p>
+            <li class="function" id="function-trig-arctan"><a class="function-link" href="#function-trig-arctan">#</a><code>ArcTan(<i>number</i>)</code><br><p>
                   			Inverse zu Tan
                   		
-               </p>
-               <p>
+               </p><code>ArcTan(<i>Y</i>, <i>X</i>)</code><br><p>
                   			Delphi's <a href="http://docwiki.embarcadero.com/VCL/en/Math.ArcTan2">ArcTan2</a>: ArcTan im korrekten Quadranten
                   		
                </p>
@@ -682,52 +679,100 @@
                   	
                </p>
             </li>
-            <li class="function" id="function-data-csvload"><a class="function-link" href="#function-data-csvload">#</a><code>CsvLoad(<i>file[,options]</i>)</code><br><p>
-                  		Lädt eine CSV-Datei in eine Liste von Listen.<br>
-                  		Kann die Datei nicht geöffnet werden, wird eine leere Liste zurückgegeben.
+            <li class="function" id="function-data-import"><a class="function-link" href="#function-data-import">#</a><code>Import(<i>file[,options]</i>)</code><br><p>
+                  		Importiert Daten aus einer Datei.
                   		
                </p><span class="function-options">Optionen:</span><dl class="function-options">
-                  <dt>Delimiter = ';'</dt>
+                  <dt>Format = *undefined*</dt>
                   <dd>
-                     <p>Feldtrenner</p>
+                     <p><a href="#function-data-importexportformats">Datenformat</a>. Wenn nicht angegeben, aus dem Dateinamen ermittelt.
+                     </p>
                   </dd>
-                  <dt>QuoteChar = '"'</dt>
+               </dl>
+            </li>
+            <li class="function" id="function-data-importstring"><a class="function-link" href="#function-data-importstring">#</a><code>ImportString(<i>string[,options]</i>)</code><br><p>
+                  		Importiert Daten aus einem String.
+                  		
+               </p><span class="function-options">Optionen:</span><dl class="function-options">
+                  <dt>Format = *undefined*</dt>
                   <dd>
-                     <p>Gruppierungszeichen</p>
+                     <p><a href="#function-data-importexportformats">Datenformat</a>. Muss angegeben werden.
+                     </p>
                   </dd>
-                  <dt>Decimal = '.'</dt>
+               </dl>
+            </li>
+            <li class="function" id="function-data-export"><a class="function-link" href="#function-data-export">#</a><code>Export(<i>file, data[,options]</i>)</code><br><p>
+                  		Exportiert Daten in eine Datei.
+                  		
+               </p><span class="function-options">Optionen:</span><dl class="function-options">
+                  <dt>Format = *undefined*</dt>
                   <dd>
-                     <p>Dezimaltrenner</p>
+                     <p><a href="#function-data-importexportformats">Datenformat</a>. Wenn nicht angegeben, aus dem Dateinamen ermittelt.
+                     </p>
                   </dd>
-                  <dt>Skip = 0</dt>
+               </dl>
+            </li>
+            <li class="function" id="function-data-exportstring"><a class="function-link" href="#function-data-exportstring">#</a><code>ExportString(<i>data[,options]</i>)</code><br><p>
+                  		Exportiert Daten in einen String.
+                  		
+               </p><span class="function-options">Optionen:</span><dl class="function-options">
+                  <dt>Format = *undefined*</dt>
                   <dd>
-                     <p>Anzahl zu überspringender Zeilen (z.b. Überschrift)</p>
-                  </dd>
-                  <dt>Count = Max</dt>
-                  <dd>
-                     <p>Maximale Anzahl zu ladender Zeilen</p>
-                  </dd>
-                  <dt>IgnoreEmpty = *undefined*</dt>
-                  <dd>
-                     <p>Leere Felder ignorieren (führt zum Gruppieren von Trennzeichen)</p>
+                     <p><a href="#function-data-importexportformats">Datenformat</a>. Muss angegeben werden.
+                     </p>
                   </dd>
                </dl>
             </li>
             <li class="function" id="function-data-csvsave"><a class="function-link" href="#function-data-csvsave">#</a><code>CsvSave(<i>file,list[,options]</i>)</code><br><p>
-                  		Erzeugt eine CSV-Datei aus einer Liste oder einer Liste von Listen.
+                  		Alias für <a href="#function-data-export">Export</a>(<i>file</i>, <i>list</i>, format='CSV', <i>options</i>)
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-data-csvload"><a class="function-link" href="#function-data-csvload">#</a><code>CsvLoad(<i>file[,options]</i>)</code><br><p>
+                  		Alias für <a href="#function-data-import">Import</a>(<i>file</i>, format='CSV', <i>options</i>)
+                  		
+               </p>
+            </li>
+            <li class="function" id="function-data-importexportformats"><a class="function-link" href="#function-data-importexportformats">#</a><p>
+                  		Unterstützte werden folgende Datenformate.
+                  		
+               </p><code>String</code><br><p>
+                  		Gesamte Datei als ein String.
+                  		
+               </p><code>Text (.txt, .log)</code><br><p>
+                  		Datei Zeilenweise. 
+                  		
+               </p><code>CSV (.csv)</code><br><p>
+                  		CSV-Datei.
                   		
                </p><span class="function-options">Optionen:</span><dl class="function-options">
                   <dt>Delimiter = ';'</dt>
                   <dd>
-                     <p>Feldtrenner</p>
+                     <p>[I,E] Feldtrenner</p>
                   </dd>
                   <dt>QuoteChar = '"'</dt>
                   <dd>
-                     <p>Gruppierungszeichen</p>
+                     <p>[I,E] Gruppierungszeichen</p>
                   </dd>
                   <dt>Decimal = '.'</dt>
                   <dd>
-                     <p>Dezimaltrenner</p>
+                     <p>[I,E] Dezimaltrenner</p>
+                  </dd>
+                  <dt>Skip = 0</dt>
+                  <dd>
+                     <p>[I] Anzahl zu überspringender Zeilen (z.b. Überschrift)</p>
+                  </dd>
+                  <dt>Count = Max</dt>
+                  <dd>
+                     <p>[I] Maximale Anzahl zu ladender Zeilen</p>
+                  </dd>
+                  <dt>IgnoreEmpty = *undefined*</dt>
+                  <dd>
+                     <p>[I] Leere Felder ignorieren (führt zum Gruppieren von Trennzeichen)</p>
+                  </dd>
+                  <dt>AlwaysQuote = *undefined*</dt>
+                  <dd>
+                     <p>[E] Quote immer verwenden, sonst nur wenn Metazeichen im Eintrag vorkommen</p>
                   </dd>
                </dl>
             </li>

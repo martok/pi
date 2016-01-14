@@ -9,7 +9,9 @@ unit uFunctions;
 
 interface
 
-uses SysUtils, Classes, uMathIntf, uMath, uMathValues, uFPUSupport, uMathConstants;
+uses
+  SysUtils, Classes, uMathIntf, uMath, uMathValues, uFPUSupport, uMathConstants,
+  Contnrs;
 
 type
   TPackageTrig = class(TFunctionPackage)
@@ -94,14 +96,26 @@ type
   end;
 
   TPackageData = class(TFunctionPackage)
-  private
-    procedure TakeCSVParameters(Options: TDynamicArguments; list, line: TStringList; var fs: TFormatSettings);
+  protected
+    FFormats: TObjectList;
+    function GuessFormat(Str: TStream; Opts: TDynamicArguments): string;
+    function DoImport(Str: TStream; Opts: TDynamicArguments): IExpression;
+    procedure DoExport(Expr: IExpression; Str: TStream; Opts: TDynamicArguments);
+    procedure OnImport(const MS: TMathSystem); override;
+  public
+    destructor Destroy; override;
   published
     function PWD_0(Context: IContext; args: TExprList): IExpression;
     function CWD_1(Context: IContext; args: TExprList): IExpression;
     function Glob_1(Context: IContext; args: TExprList): IExpression;
+
     function CSVLoad_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
     function CSVSave_2_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+    function Import_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+    function Export_2_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+    function ImportString_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+    function ExportString_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+
     function Source_1(Context: IContext; args: TExprList): IExpression;
     function Table_1(Context: IContext; args: TExprList): IExpression;
     function Bucket_4(Context: IContext; args: TExprList): IExpression;
@@ -114,7 +128,7 @@ type
 
 implementation
 
-uses Math, uCCSVList, uMathDimensions;
+uses Math, uCCSVList, uMathDimensions, uDataFormats;
 
 const
   UNITS_RAD: TMathUnits = (0, 0, 0, 0, 0, 0, 0, 1, 0);
@@ -999,6 +1013,27 @@ end;
 
 { TPackageData }
 
+procedure TPackageData.OnImport(const MS: TMathSystem);
+begin
+  inherited;
+  FreeAndNil(FFormats);
+  FreeAndNil(FFormats);
+  FFormats:= TObjectList.Create;
+  FFormats.OwnsObjects:= true;
+  // add Formats
+  FFormats.Add(TFormatString.Create);
+  FFormats.Add(TFormatText.Create);   
+  FFormats.Add(TFormatCSV.Create);
+end;
+
+destructor TPackageData.Destroy;
+begin
+  inherited;
+  FreeAndNil(FFormats);
+  FFormats:= TObjectList.Create;
+  FFormats.OwnsObjects:= true;
+end;
+
 function TPackageData.CWD_1(Context: IContext; args: TExprList): IExpression;
 begin
   SetCurrentDir(EvaluateToString(Context, args[0]));
@@ -1035,148 +1070,180 @@ begin
     FreeAndNil(ls);
   end;
 end;
-
-procedure TPackageData.TakeCSVParameters(Options: TDynamicArguments; list,
-  line: TStringList; var fs: TFormatSettings);
-var
-  d: string;
-begin
-  line.Delimiter:= ';';
-  line.QuoteChar:= '"';
-
-  if Options.IsSet('Delimiter') then begin
-    d:= CastToString(Options['Delimiter']);
-    if d > '' then
-      line.Delimiter:= d[1];
-  end;
-  if Options.IsSet('QuoteChar') then begin
-    d:= CastToString(Options['QuoteChar']);
-    if d > '' then
-      line.QuoteChar:= d[1];
-  end;
-  if Options.IsSet('Decimal') then begin
-    d:= CastToString(Options['Decimal']);
-    if d > '' then
-      fs.DecimalSeparator:= d[1];
-  end;   
-end;
-
+      
 function TPackageData.CSVLoad_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
 var
-  list, line: TCSVStringList;
-  i, j, k, first, last: integer;
-  res, row: IValueList;
-  cn: IExpression;
-  o_fs: TFormatSettings;
-  skip, count: integer;
-  ignempt: boolean;
+  fn: string;
+  str: TFileStream;
+  ff: TFormatImportExport;
 begin
-  list:= TCSVStringList.Create;
-  line:= TCSVStringList.Create;
-  o_fs:= NeutralFormatSettings;
+  fn:= EvaluateToString(Context, args[0]);
+  str:= TFileStream.Create(fn, fmOpenRead);
   try
-    TakeCSVParameters(Options, list, line, NeutralFormatSettings);
-
+    ff:= TFormatCSV.Create;
     try
-      list.LoadFromFile(EvaluateToString(Context, args[0]));
-    except
-      on E: Exception do
-        Context.Output.Error('CSVLoad: %s: %s', [E.ClassName, E.Message]);
+      ff.Load(Str, Result, Options);
+    finally
+      FreeAndNil(ff);
     end;
-
-    if Options.IsSet('Skip') then
-      skip:= CastToInteger(Options['Skip'])
-    else
-      skip:= 0;
-
-    ignempt:= Options.IsSet('IgnoreEmpty');
-
-    first:= skip;
-    if Options.IsSet('Count') then begin
-      count:= CastToInteger(Options['Count']);
-      last:= first + count - 1;
-      if last>List.Count-1 then
-        last:= List.Count-1;
-    end else
-      last:= List.Count - 1;
-
-    if last < 0 then
-      last:= 0;
-
-    res:= TValueList.Create;
-    res.Length:= last - first + 1;
-    for i:= first to last do begin
-      line.StrictDelimitedText:= list[i];
-      row:= TValueList.Create;
-      k:= 0;
-      for j:= 0 to line.Count - 1 do begin
-        if (Line[j] = '') and ignempt then
-          continue;
-        cn:= TValueFactory.GuessFromString(Line[j], NeutralFormatSettings, #0);
-        row.Length:= k + 1;
-        row.Item[k]:= cn;
-        inc(k);
-      end;
-      res.Item[i - first]:= row as IExpression;
-    end;
-
-    Result:= res as IExpression;
   finally
-    NeutralFormatSettings:= o_fs;
-    FreeAndNil(list);
-    FreeAndNil(line);
+    FreeAndNil(str);
   end;
 end;
 
 function TPackageData.CSVSave_2_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
 var
-  list, line: TCSVStringList;
   fn: string;
-  i, j: integer;
-  items, row: IValueList;
-  o_fs: TFormatSettings;
-
-  function ToString(x: IExpression): string;
-  begin
-    Result:= x.AsString(STR_FORM_INPUT);
-  end;
-
-begin
-  if not args[1].Evaluate(Context).Represents(IValueList, items) then
-    raise EMathSysError.Create('CSVSave requires a list.');
-
-  list:= TCSVStringList.Create;
-  line:= TCSVStringList.Create;
-  o_fs:= NeutralFormatSettings;
+  dat: IExpression;
+  str: TFileStream; 
+  ff: TFormatImportExport;
+begin                 
+  fn:= EvaluateToString(Context, args[0]);
+  fn:= ExpandFileName(fn);
+  str:= TFileStream.Create(fn, fmCreate);
   try
-    TakeCSVParameters(Options, list, line, NeutralFormatSettings);
-
-    for i := 0 to items.Length - 1 do begin
-      line.Clear;
-      if items.Item[i].Represents(IValueList, row) then begin
-        for j := 0 to row.Length - 1 do begin
-          line.Add(ToString(row.Item[j]));
-        end;
-      end else
-        line.Add(ToString(items.Item[i]));
-      list.add(line.StrictDelimitedText);
-    end;
-
-    fn:= EvaluateToString(Context, args[0]);
-    fn:= ExpandFileName(fn);
-
+    dat:= args[1].Evaluate(Context);
+    ff:= TFormatCSV.Create;
     try
-      list.SaveToFile(fn);
-    except
-      on E: Exception do
-        Context.Output.Error('CSVSave: %s: %s', [E.ClassName, E.Message]);
-    end;
-
+      ff.Save(Str, Result, Options);
+    finally
+      FreeAndNil(ff);
+    end;     
     Result:= TValueString.Create(fn);
   finally
-    NeutralFormatSettings:= o_fs;
-    FreeAndNil(list);
-    FreeAndNil(line);
+    FreeAndNil(str);
+  end;
+end;
+
+function TPackageData.GuessFormat(Str: TStream; Opts: TDynamicArguments): string;
+var      
+  fx: string;
+  ffp: Pointer;
+  ff: TFormatImportExport;
+begin
+  Result:= '';
+  if Opts.IsSet('Format') then
+    Result:= CastToString(Opts.Value['Format'])
+  else begin
+    if Str is TFileStream then begin
+      fx:= UpperCase(ExtractFileExt(TFileStream(Str).FileName));
+      for ffp in FFormats do begin
+        ff:= TFormatImportExport(ffp);
+        if ff.ExtensionKnown(fx) then begin
+          Result:= ff.FormatName;
+          break;
+        end;
+      end;
+    end;
+  end;
+end;
+
+procedure TPackageData.DoExport(Expr: IExpression; Str: TStream; Opts: TDynamicArguments);
+var
+  format: string;
+  ffp: Pointer;
+  ff: TFormatImportExport;
+begin
+  format:= GuessFormat(Str, Opts);
+  if format='' then
+    raise EMathSysError.Create('Export: no format specified, use Format option.');
+
+  ff:= nil;
+  for ffp in FFormats do begin
+    if AnsiSameText(TFormatImportExport(ffp).FormatName, format) then begin
+      ff:= TFormatImportExport(ffp);
+      break;
+    end;
+  end;
+  if not Assigned(ff) then
+    raise EMathSysError.CreateFmt('Export: unsupported format: %s.', [format]);
+
+  if not ff.Save(Str, Expr, Opts) then     
+    raise EMathSysError.CreateFmt('Export: format %s does not support exporting.', [format]);
+end;
+
+function TPackageData.DoImport(Str: TStream; Opts: TDynamicArguments): IExpression;
+var
+  format: string;
+  ffp: Pointer;
+  ff: TFormatImportExport;
+begin
+  format:= GuessFormat(Str, Opts);
+  if format='' then
+    raise EMathSysError.Create('Import: no format specified, use Format option.');
+
+  ff:= nil;
+  for ffp in FFormats do begin
+    if AnsiSameText(TFormatImportExport(ffp).FormatName, format) then begin
+      ff:= TFormatImportExport(ffp);
+      break;
+    end;
+  end;  
+  if not Assigned(ff) then
+    raise EMathSysError.CreateFmt('Import: unsupported format: %s.', [format]);
+
+  if not ff.Load(Str, Result, Opts) then     
+    raise EMathSysError.CreateFmt('Import: format %s does not support importing.', [format]);
+end;
+
+function TPackageData.ImportString_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+var
+  ds: string;
+  str: TStringStream;
+begin
+  ds:= EvaluateToString(Context, args[0]);
+  str:= TStringStream.Create(ds);
+  try
+    Result:= DoImport(str, Options);
+  finally
+    FreeAndNil(str);
+  end;
+end;
+
+function TPackageData.Import_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+var
+  fn: string;
+  str: TFileStream;
+begin
+  fn:= EvaluateToString(Context, args[0]);
+  str:= TFileStream.Create(fn, fmOpenRead);
+  try
+    Result:= DoImport(str, Options);
+  finally
+    FreeAndNil(str);
+  end;
+end;
+
+function TPackageData.ExportString_1_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+var
+  dat: IExpression;
+  str: TStringStream;
+begin
+  str:= TStringStream.Create('');
+  try
+    dat:= args[0].Evaluate(Context);
+    DoExport(dat, str, Options);
+    Result:= TValueString.Create(str.DataString);
+  finally
+    FreeAndNil(str);
+  end;
+end;
+
+function TPackageData.Export_2_opt(Context: IContext; args: TExprList; Options: TDynamicArguments): IExpression;
+var
+  fn: string;
+  dat: IExpression;
+  str: TFileStream;
+begin                 
+  fn:= EvaluateToString(Context, args[0]);
+  fn:= ExpandFileName(fn);
+  str:= TFileStream.Create(fn, fmCreate);
+  try
+    dat:= args[1].Evaluate(Context);
+    DoExport(dat, str, Options);
+    Result:= TValueString.Create(fn);
+  finally
+    FreeAndNil(str);
   end;
 end;
 
@@ -1218,7 +1285,7 @@ begin
       for i:= 0 to list.Count-1 do begin
         s:= trim(list[i]);
         if s = '' then
-          Continue; 
+          Continue;
         case s[1] of
           ';': Continue;
           '§': begin

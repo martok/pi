@@ -7,10 +7,12 @@ uses Windows, SysUtils, Classes;
 type
   TCSVStringList = class(TStringList)
   private
+    FForceQuoteWords: boolean;
     function GetStrictDelText: string;
     procedure SetStrictDelText(const Value: string);
   public
     property StrictDelimitedText: string read GetStrictDelText write SetStrictDelText;
+    property ForceQuoteWords: boolean read FForceQuoteWords write FForceQuoteWords;
   end;
 
 implementation
@@ -33,6 +35,8 @@ begin
   begin
     Result := '';
     LDelimiters := [#0, QuoteChar, Delimiter];
+    if FForceQuoteWords then
+      LDelimiters := LDelimiters + [#1..' '];
     for I := 0 to Count - 1 do
     begin
       S := Get(I);

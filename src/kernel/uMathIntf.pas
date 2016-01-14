@@ -197,6 +197,7 @@ const
   STR_FORM_FULL         = TStringFormat(2);        // _plus(a,3)
   STR_FORM_DUMP         = TStringFormat(3);        // _plus()
   STR_FORM_TYPEOF       = TStringFormat(4);        // Call, SymbolRef etc
+  STR_FORM_EXPORT       = TStringFormat(5);        // format for export to string-based formats
 
 const
   MATH_UNIT_NAME : array[TMathBaseUnit] of string = ('m', 'kg', 's', 'K', 'mol', 'A', 'cd', 'rad', 'bit');

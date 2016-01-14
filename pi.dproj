@@ -62,6 +62,7 @@
     <DCCReference Include="src\uChartPainter.pas" />
     <DCCReference Include="src\uChartScale.pas" />
     <DCCReference Include="src\uCIntegerBucketList.pas" />
+    <DCCReference Include="src\uDataFormats.pas" />
     <DCCReference Include="src\uMathSelfTests.pas" />
     <DCCReference Include="uDockableForms.pas" />
     <DCCReference Include="uFrmInput.pas">

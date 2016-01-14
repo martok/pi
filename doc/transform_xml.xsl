@@ -112,6 +112,9 @@
  <xsl:template match="description">
    <xsl:element name="p"><xsl:apply-templates /></xsl:element>
  </xsl:template>
+ <xsl:template match="syntax">
+   <code><xsl:apply-templates /></code><br />
+ </xsl:template>
  <xsl:template match="seealso">
    <xsl:element name="a">
      <xsl:attribute name="href">
@@ -149,33 +152,29 @@
       	<xsl:attribute name="href"><xsl:text>#</xsl:text><xsl:value-of select="$id"/></xsl:attribute>
       	<xsl:text>#</xsl:text>
       </a>
-      <xsl:for-each select="./syntax">
-      <code><xsl:apply-templates /></code><br />
-      </xsl:for-each>
-      <xsl:apply-templates select="./description" />
-      <xsl:if test="count(./options) > 0">
-        <xsl:apply-templates select="options" />
-      </xsl:if>
+      <xsl:apply-templates select="./syntax|./description|./options" />
     </li>
  </xsl:template>
  <xsl:template match="package/function/options">
-    <span class="function-options">Optionen:</span>
-    <dl class="function-options">
-      <xsl:for-each select="./option">
-        <dt><xsl:value-of select="@name" /> = <xsl:value-of select="@default" /></dt>
-        <dd><xsl:apply-templates select="./description" />
-          <xsl:if test="count(./value) > 0">
-          <table>
-            <xsl:for-each select="./value">
-              <tr>
-                <td class="option-value"><xsl:value-of select="@value" /></td>
-                <td><xsl:value-of select="." /></td>
-              </tr>
-            </xsl:for-each>
-          </table>
-          </xsl:if>
-        </dd>
-      </xsl:for-each>
-    </dl>
+    <xsl:if test="count(./option) > 0">
+      <span class="function-options">Optionen:</span>
+      <dl class="function-options">
+        <xsl:for-each select="./option">
+          <dt><xsl:value-of select="@name" /> = <xsl:value-of select="@default" /></dt>
+          <dd><xsl:apply-templates select="./description" />
+            <xsl:if test="count(./value) > 0">
+            <table>
+              <xsl:for-each select="./value">
+                <tr>
+                  <td class="option-value"><xsl:value-of select="@value" /></td>
+                  <td><xsl:value-of select="." /></td>
+                </tr>
+              </xsl:for-each>
+            </table>
+            </xsl:if>
+          </dd>
+        </xsl:for-each>
+      </dl>
+    </xsl:if>
  </xsl:template>
 </xsl:stylesheet>
