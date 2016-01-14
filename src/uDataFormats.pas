@@ -175,7 +175,6 @@ begin
   inherited Create;
   FFormatName:= 'CSV';
   FExtensions.Add('.csv');
-  FExtensions.Add('.log');
 end;
 
 procedure TFormatCSV.TakeCSVParameters(Options: TDynamicArguments; list,
