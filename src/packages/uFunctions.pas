@@ -118,6 +118,7 @@ type
 
     function Source_1(Context: IContext; args: TExprList): IExpression;
     function Table_1(Context: IContext; args: TExprList): IExpression;
+    function Hexdump_1(Context: IContext; args: TExprList): IExpression;
     function Bucket_4(Context: IContext; args: TExprList): IExpression;
     function Min_1(Context: IContext; args: TExprList): IExpression;
     function Max_1(Context: IContext; args: TExprList): IExpression;
@@ -1340,7 +1341,60 @@ begin
     end;
     Context.Output.Hint('%s', [l]);
   end;
-  Result:= TValueFactory.Float(total);
+  Result:= TValueFactory.Integer(total);
+end;
+
+function TPackageData.Hexdump_1(Context: IContext; args: TExprList): IExpression;
+var
+  s,
+  h, r: string;
+  p: integer;
+  ctr:int64;
+
+  function printable(c:Char):Char;
+  begin
+    if c in [succ(' ')..#255] then
+      Result:= c
+    else
+      Result:= '.';
+  end;
+  function addspaces(h:string): string;
+  var
+    q: integer;
+  begin
+    Result:= h;
+    for q := Length(h) div 2 - 1 downto 1 do
+      Insert(' ', Result, 1 + q * 2);
+  end;
+  procedure doOut;
+  var
+    l: String;
+  begin
+    h:= addspaces(h);
+    l:= Format('%.8x: %-26s | %s', [ctr, h, r]);
+    Context.Output.Hint('%s', [l]);
+    inc(ctr, length(r));
+  end;
+begin
+  s:= EvaluateToString(Context, args[0]);
+
+  p:= 1;
+  h:= '';
+  r:= '';
+  ctr:= 0;
+  while p <= Length(s) do begin
+    h:= h + IntToHex(Ord(s[p]),2);
+    r:= r + printable(s[p]);
+    if length(r) >= 16 then begin
+      doOut;
+      h:= '';
+      r:= '';
+    end;
+    inc(p);
+  end;
+  if h > '' then
+    doOut;
+  Result:= args[0];
 end;
 
 function TPackageData.Bucket_4(Context: IContext; args: TExprList): IExpression;
