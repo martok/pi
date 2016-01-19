@@ -70,7 +70,7 @@ uses
   VCLFixes,
   uMathIntf,
   uMathSelfTests,
-  uFunctions, uFunctionsStatistics, uFunctionsGraphing, uFunctionsSymbolics, uMathDimensions,
+  uFunctions, uFunctionsStatistics, uFunctionsGraphing, uFunctionsSymbolics, uMathDimensions, uFunctionsString,
   RTLConsts;
 
 const
@@ -94,6 +94,7 @@ begin
     RegisterPackage(TPackageNumerical.Create);
     RegisterPackage(TPackageLists.Create);
     RegisterPackage(TPackageData.Create);
+    RegisterPackage(TPackageString.Create);
     RegisterPackage(TPackageStatistics.Create);
     RegisterPackage(TPackageGraph.Create);
     RegisterPackage(TPackageSymbolics.Create);   

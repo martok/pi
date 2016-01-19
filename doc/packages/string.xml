@@ -1,0 +1,34 @@
+<package name="String">
+	<description>Das Package stellt Funktionen zur Verarbeitung von Strings zur Verfügung.</description>
+	<function name="Insert">
+		<syntax>Insert(<v>string</v>, <v>substr</v>, <v>index</v>)</syntax>
+		<description>
+			Fügt den Teilstring <v>substr</v> an Index <v>index</v> ein.
+		</description>
+	</function>
+	<function name="Delete">
+		<syntax>Delete(<v>string</v>, <v>index</v>)</syntax>
+		<syntax>Delete(<v>string</v>, <v>index</v>, <v>count</v>)</syntax>
+		<description>
+			Löscht eins oder mehrere Zeichen <v>string</v>.
+		</description>
+	</function>
+	<function name="Substr">
+		<syntax>Substr(<v>string</v>, <v>index</v>, <v>count</v>)</syntax>
+		<description>
+			Kopiert <v>count</v> Zeichen ab <v>index</v> aus <v>string</v>.
+		</description>
+	</function>
+	<function name="Split">
+		<syntax>Split(<v>string</v>, <v>delimiter</v>)</syntax>
+		<description>
+			Trennt den <v>string</v> am Trennzeichen <v>delimiter</v> und gibt eine String-Liste zurück. Wenn <v>delimiter</v> der Leerstring ist, wird nach jedem Zeichen getrennt.
+		</description>
+	</function>
+	<function name="Join">
+		<syntax>Join(<v>strings</v>, <v>delimiter</v>)</syntax>
+		<description>
+			Kombiniert die Liste <v>strings</v> mit dem Trennzeichen <v>delimiter</v> zu einem String.
+		</description>
+	</function>
+</package>

@@ -151,6 +151,7 @@
 		<xi:include href="./packages/numerical.xml" parse="xml"/>
 		<xi:include href="./packages/lists.xml" parse="xml"/>
 		<xi:include href="./packages/data.xml" parse="xml"/>
+		<xi:include href="./packages/string.xml" parse="xml"/>
 		<xi:include href="./packages/statistics.xml" parse="xml"/>
 		<xi:include href="./packages/graph.xml" parse="xml"/>
 		<xi:include href="./packages/symbolics.xml" parse="xml"/>

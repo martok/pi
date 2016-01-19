@@ -25,7 +25,8 @@ uses
   uCIntegerBucketList in 'src\uCIntegerBucketList.pas',
   uMathSelfTests in 'src\uMathSelfTests.pas',
   uChartExport in 'src\uChartExport.pas',
-  uDataFormats in 'src\uDataFormats.pas';
+  uDataFormats in 'src\uDataFormats.pas',
+  uFunctionsString in 'src\packages\uFunctionsString.pas';
 
 {$R *.res}
 
