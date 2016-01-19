@@ -97,7 +97,7 @@ begin
   else begin
     ss:= TStringStream.Create('');
     try
-      ss.CopyFrom(Stream,-1);
+      ss.CopyFrom(Stream, 0);
       Subject:= TValueString.Create(ss.DataString);
     finally
       FreeAndNil(ss);

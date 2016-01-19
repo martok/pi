@@ -1206,7 +1206,7 @@ var
   str: TFileStream;
 begin
   fn:= EvaluateToString(Context, args[0]);
-  str:= TFileStream.Create(fn, fmOpenRead);
+  str:= TFileStream.Create(fn, fmOpenRead or fmShareDenyWrite);
   try
     Result:= DoImport(str, Options);
   finally
@@ -1237,7 +1237,7 @@ var
 begin                 
   fn:= EvaluateToString(Context, args[0]);
   fn:= ExpandFileName(fn);
-  str:= TFileStream.Create(fn, fmCreate);
+  str:= TFileStream.Create(fn, fmCreate or fmShareExclusive);
   try
     dat:= args[1].Evaluate(Context);
     DoExport(dat, str, Options);
