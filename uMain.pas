@@ -75,7 +75,7 @@ uses
 
 const
   sProgramTitle = 'Pi Advanced Calculator';
-  sProgramVersionStr = 'V8';
+  sProgramVersionStr = 'V9';
   sTabInput = 'Input';
 
 {$R *.dfm}
