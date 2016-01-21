@@ -1,5 +1,5 @@
 <package name="Symbolics">
-	<description>Das Package implementiert Funktionen zur symbolischen Manipulation von Ausdrücken</description>
+	<description>Das Package implementiert Funktionen zur symbolischen Manipulation von Ausdrücken. Achtung: Experimentell!</description>
 	<function name="Clone">
 		<syntax>Clone(<v>expr</v>)</syntax>
 		<description>
