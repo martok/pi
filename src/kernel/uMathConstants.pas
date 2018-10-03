@@ -64,7 +64,7 @@ const
     (LongName: 'Lightyear'; Value: 9460730472580800; Uni: 'm'),
     (LongName: 'Parsec'; Value: 3.0856776E16; Uni: 'm'),
     //Chemistry
-    (LongName: 'Avogadro'; Value: 6.022142E32; Uni: 'mol^-1'),
+    (LongName: 'Avogadro'; Value: 6.022142E23; Uni: 'mol^-1'),
     (LongName: 'Boltzmann'; Value: 1.380650E-23; Uni: 'J/K'; Comment: 'MolarGasConstant/Avogadro'),
     (LongName: 'MolarVolume'; Value: 22.414E-3; Uni: 'm^3/mol'),
     (LongName: 'Faraday'; Value: 9.648534E4; Uni: 'A s/mol'; Comment: 'Avogadro*ElectronCharge'),
