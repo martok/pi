@@ -32,6 +32,7 @@ uses
 
 begin
   {$IFDEF USEFASTMM}FastMM4.ReportMemoryLeaksOnShutdown:= True;{$ENDIF}
+  Application.MainFormOnTaskBar:= True;
   Application.Initialize;
   Application.CreateForm(TfmPiMain, fmPiMain);
   Application.Run;
