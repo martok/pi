@@ -828,7 +828,7 @@ initialization
   DefineUnit('AU'     , 'astronomical unit'     , 149.597870691e9 , [  1,  0,  0,  0,  0,  0,  0]);
   DefineUnit('ly'     , 'light-year'            , 94607304725808e2, [  1,  0,  0,  0,  0,  0,  0]);
   DefineUnit('pc'     , 'parsec'                , 30.857e15       , [  1,  0,  0,  0,  0,  0,  0]);
-  DefineUnit('ang'    , 'Angström'              , 1E-10           , [  1,  0,  0,  0,  0,  0,  0]);
+  DefineUnit('Ang'    , 'Angström'              , 1E-10           , [  1,  0,  0,  0,  0,  0,  0]);
   // Arc
   DefineUnit('rad'    , 'radiant'               , 1               , [  0,  0,  0,  0,  0,  0,  0,  1]);
   DefineUnit('°'      , 'degree'                , cTau / 360      , [  0,  0,  0,  0,  0,  0,  0,  1]);
@@ -872,7 +872,7 @@ initialization
   DefineUnit('cal'    , 'Calories'              , 4.1868          , [  2,  1, -2,  0,  0,  0,  0]);
   DefineUnit('btu'    , 'british thermal unit'  , 1055.056        , [  2,  1, -2,  0,  0,  0,  0]);
   DefineUnit('erg'    , 'Erg'                   , 1e-7            , [  2,  1, -2,  0,  0,  0,  0]);
-  DefineUnit('eV'     , 'Electronvolt'          , 1.602176565e-19 , [  2,  1, -2,  0,  0,  0,  0]);
+  DefineUnit('eV'     , 'Electronvolt'          , 1.6021766208e-19, [  2,  1, -2,  0,  0,  0,  0]);
   // Power
   DefineUnit('hp'     , 'Horsepower'            , 745.7           , [  2,  1, -3,  0,  0,  0,  0]);
   // Photometry
@@ -881,5 +881,10 @@ initialization
   // Information Theory
   DefineUnit('bit'    , 'Bit'                   , 1               , [  0,  0,  0,  0,  0,  0,  0,  0,  1]);
   DefineUnit('B'      , 'Byte'                  , 8               , [  0,  0,  0,  0,  0,  0,  0,  0,  1]);
+  // (Physical) Chemistry, Atomic Units
+  DefineUnit('Bohr'   , 'Bohr Radius'           , 5.2917721067E-11, [  1,  0,  0,  0,  0,  0,  0]);
+  DefineUnit('Bmag'   , 'Bohr megneton'         , 9.274009994E-21 , [  2,  0,  0,  0,  0,  1,  0]);
+  DefineUnit('Ha'     , 'Hartree'               , 4.359744650E-18 , [  2,  1, -2,  0,  0,  0,  0]);
+  DefineUnit('Ry'     , 'Rydberg'               , 2.179872325E-18 , [  2,  1, -2,  0,  0,  0,  0]);
 end.
 
