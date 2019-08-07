@@ -40,7 +40,7 @@ const
     (LongName: 'AtomicUnit'; Value: 1.660539E-27; Uni: 'kg'),
     (LongName: 'SpeedOfLight'; Value: 2.99792458E8; Uni: 'm/s'),
     (LongName: 'SpeedOfSound'; Value: 343.051; Uni: 'm/s'),
-    (LongName: 'Planck'; Value: 6.626069E-34; Uni: 'J/s'),
+    (LongName: 'Planck'; Value: 6.626069E-34; Uni: 'J s'),
     (LongName: 'PlanckMass'; Value: 2.177E-8; Uni: 'kg'),
     (LongName: 'Rydberg'; Value: 1.097373E7; Uni: 'm^-1'),
     //Electromagnetics
